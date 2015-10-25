@@ -4843,8 +4843,8 @@ void BuiltStyledStreamWriter::writeCommentBeforeValue(Value const &root) {
   indented_ = false;
 }
 
-void
-BuiltStyledStreamWriter::writeCommentAfterValueOnSameLine(Value const &root) {
+void BuiltStyledStreamWriter::writeCommentAfterValueOnSameLine(
+    Value const &root) {
   if (cs_ == CommentStyle::None)
     return;
   if (root.hasComment(commentAfterOnSameLine))

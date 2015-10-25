@@ -10,11 +10,13 @@
 #include <iostream>
 
 namespace Http {
+using namespace Http::Components;
 class Response {
 public:
   Response();
   Response(const Request &);
   Response(const Request &, int);
+  Response(const Request &, StatusCode);
   Response(const Request &, const std::string &);
   Response(const Request &, int, const std::string &);
   Response(const Request &, const Resource &);

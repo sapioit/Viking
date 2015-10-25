@@ -13,11 +13,8 @@ inline void IO::OutputScheduler::add_socket(const IO::Socket &sock,
                                             const std::string &data) {
   Log::i("socket with fd = " + std::to_string(sock.get_fd()) +
          " will be copied to fd = ");
-  std::unique_ptr<IO::Socket> new_sock(new Socket(sock));
 
-  scheduled_write sw(std::move(new_sock), data);
-
-  _schedule.push_back(std::move(sw));
+  _schedule.emplace_back(new Socket(sock), data);
 
   struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));
@@ -141,8 +138,8 @@ void IO::OutputScheduler::Run() {
                      ", wrote " + std::to_string(written) + " remaining = " +
                      std::to_string(_schedule[scheduled_item_pos].data.size() -
                                     written));
-              std::vector<
-                  decltype(_schedule[scheduled_item_pos].data)::value_type>(
+              std::vector<decltype(
+                  _schedule[scheduled_item_pos].data)::value_type>(
                   _schedule[scheduled_item_pos].data.begin() + written,
                   _schedule[scheduled_item_pos].data.end())
                   .swap(_schedule[scheduled_item_pos].data);

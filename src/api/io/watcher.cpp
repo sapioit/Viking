@@ -66,9 +66,19 @@ void Watcher::setStopRequested(bool stopRequested) {
   _stopRequested = stopRequested;
 }
 
+template <class T> bool ConnectionClosed(T event) {
+  if (event.data.fd & EPOLLRDHUP)
+    return true;
+  return false;
+}
+
 std::vector<std::shared_ptr<Socket>> Watcher::Watch() {
   int events_number;
   std::vector<std::shared_ptr<Socket>> result;
+
+  /* TODO Improve this to mess with memory allocation as little as possible and
+   * be more compact */
+  /* TODO Put this into a separate method */
   _events.resize(_maxEvents);
   do {
     events_number = epoll_wait(_efd, _events.data(), _maxEvents, -1);
@@ -77,7 +87,8 @@ std::vector<std::shared_ptr<Socket>> Watcher::Watch() {
                                std::to_string(errno));
   } while (events_number == -1);
   _events.resize(events_number);
-  for (int index = 0; index < events_number; ++index) {
+
+  for (auto index = 0u; index < events_number; ++index) {
     if ((_events[index].events & EPOLLERR) ||
         (_events[index].events & EPOLLHUP) ||
         (!(_events[index].events & EPOLLIN))) {
@@ -91,16 +102,22 @@ std::vector<std::shared_ptr<Socket>> Watcher::Watch() {
 
       Log::e(error.str());
 
-      // TODO call the member Close
+      // TODO Call the member Close
       ::close(_events[index].data.fd);
       ::close((*_to_observe[index]).get_fd());
       _to_observe.erase(_to_observe.begin() + index);
       continue;
     }
 
+    if (ConnectionClosed(_events[index])
+      RemoveSocket(_events[index].data.fd);
+    
+    /* Old
     if (_events[index].events & EPOLLRDHUP)
       RemoveSocket(_events[index].data.fd);
+    */
 
+    
     if ((*_socket).get_fd() == _events[index].data.fd) {
       /* the listening socket received something,
        * that means we'll accept a new connection */
@@ -121,10 +138,11 @@ std::vector<std::shared_ptr<Socket>> Watcher::Watch() {
     } else {
       /* a connection socket received something, we'll add it
        * to the list of active socekts */
-      auto connection_it = std::find_if(_to_observe.begin(), _to_observe.end(),
-                                        [&](std::shared_ptr<Socket> ptr) {
-        return (*ptr).get_fd() == _events[index].data.fd;
-      });
+      auto connection_it =
+          std::find_if(_to_observe.begin(), _to_observe.end(),
+                       [&](std::shared_ptr<Socket> ptr) {
+                         return (*ptr).get_fd() == _events[index].data.fd;
+                       });
       if (connection_it != _to_observe.end()) {
         result.push_back(std::shared_ptr<Socket>(*connection_it));
       } else

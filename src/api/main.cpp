@@ -12,32 +12,32 @@ int main() {
         std::make_pair(std::make_pair(Http::Components::Method::Get,
                                       "^\\/adsaf\\/json\\/(\\d+)$"),
                        [](Http::Request req) -> Http::Response {
-          // /adsaf/json/<int>
+                         // /adsaf/json/<int>
 
-          Json::Value root(Json::arrayValue);
-          Json::Value records(Json::arrayValue);
+                         Json::Value root(Json::arrayValue);
+                         Json::Value records(Json::arrayValue);
 
-          Json::Value val;
-          val["this"] = "that ";
+                         Json::Value val;
+                         val["this"] = "that ";
 
-          records.append(val);
+                         records.append(val);
 
-          Json::Value a1(Json::arrayValue);
-          decltype(a1) a2(Json::arrayValue);
+                         Json::Value a1(Json::arrayValue);
+                         decltype(a1) a2(Json::arrayValue);
 
-          a1.append("1");
-          a1.append("2");
+                         a1.append("1");
+                         a1.append("2");
 
-          a2.append(req.uri_components().at(2));
-          a2.append("2");
+                         a2.append(req.uri_components().at(2));
+                         a2.append("2");
 
-          records.append(a1);
-          records.append(a2);
+                         records.append(a1);
+                         records.append(a2);
 
-          root.append(records);
+                         root.append(records);
 
-          return {req, root};
-        }));
+                         return {req, root};
+                       }));
 
     Web::Dispatcher::routes.insert(std::make_pair(
         std::make_pair(Http::Components::Method::Get, "^\\/adsaf\\/json\\/$"),

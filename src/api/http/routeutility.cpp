@@ -13,13 +13,13 @@ std::function<Http::Response(Http::Request)> RouteUtility::GetHandler(
       [&](const std::pair<std::pair<Http::Components::Method, std::string>,
                           std::function<Http::Response(Http::Request)>> &route)
           -> bool {
-        auto &method = route.first.first;
-        if (request.method != method)
-          return false;
-        auto &pattern = route.first.second;
-        std::regex regex(pattern);
-        return std::regex_match(strippedRoute, regex);
-      });
+            auto &method = route.first.first;
+            if (request.method != method)
+              return false;
+            auto &pattern = route.first.second;
+            std::regex regex(pattern);
+            return std::regex_match(strippedRoute, regex);
+          });
 
   if (result != routes.end()) {
     return result->second;

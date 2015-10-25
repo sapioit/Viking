@@ -35,25 +35,30 @@ void Server::run() {
     throw std::runtime_error("Port number not set!");
   try {
     _masterSocket = IO::Socket::start_socket(_port, _maxPending);
-    IO::Watcher _master_listener(_masterSocket, _maxPending);
+    // IO::Watcher _master_listener(_masterSocket, _maxPending);
 
     IO::OutputScheduler &output_scheduler = IO::OutputScheduler::get();
     std::thread output_thread(&IO::OutputScheduler::Run,
                               std::ref(output_scheduler));
 
     output_thread.detach();
-    _master_listener.Start(
-        [&](std::vector<std::shared_ptr<IO::Socket>> sockets) {
-          for (auto &sock : sockets) {
-            Log::i("Will dispatch " + std::to_string(sockets.size()) +
-                   " connections");
-            auto should_close = Dispatcher::Dispatch((*sock));
-            if (should_close)
-              _master_listener.RemoveSocket(sock);
-          }
+
+    IO::SocketWatcher<IO::Socket> watcher(_masterSocket);
+
+     auto watcher_callbacks = [&](std::vector<std::shared_ptr<IO::Socket>> sockets) {
+      for (auto &sock : sockets) {
+        Log::i("Will dispatch " + std::to_string(sockets.size()) +
+               " connections");
+        auto should_close = Dispatcher::Dispatch(*sock);
+        if (should_close)
+          watcher.Remove(*sock);
+      }
         });
 
-    output_thread.join();
+     while (true) {
+       watcher.run(watcher_callbacks);
+     }
+
   } catch (std::exception &ex) {
     Log::e(std::string("Server error: ").append(ex.what()));
     auto msg =

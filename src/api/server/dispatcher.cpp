@@ -15,6 +15,7 @@ std::map<std::pair<Http::Components::Method, std::string>,
          std::function<Http::Response(Http::Request)>> Web::Dispatcher::routes;
 
 using namespace Web;
+using namespace Http::Components;
 
 constexpr auto close_after_resource = true;
 
@@ -40,7 +41,7 @@ bool Dispatcher::Dispatch(IO::Socket &connection) {
           auto resource = std::move(CacheManager::GetResource(request.URI));
           ResponseManager::Respond(request, resource, connection);
           return close_after_resource;
-        } catch (int code) {
+        } catch (StatusCode code) {
           ResponseManager::Respond({request, code}, connection);
           return false;
         }

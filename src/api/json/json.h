@@ -516,8 +516,8 @@ public:
 
   static const Value &null; ///< We regret this reference to a global instance;
   /// prefer the simpler Value().
-  static const Value &
-      nullRef; ///< just a kludge for binary-compatibility; same as null
+  static const Value
+      &nullRef; ///< just a kludge for binary-compatibility; same as null
   /// Minimum signed integer value that can be stored in a Json::Value.
   static const LargestInt minLargestInt;
   /// Maximum signed integer value that can be stored in a Json::Value.
@@ -624,8 +624,8 @@ Json::Value obj_value(Json::objectValue); // {}
    * \endcode
    */
   Value(const StaticString &value);
-  Value(const std::string &
-            value); ///< Copy data() til size(). Embedded zeroes too.
+  Value(const std::string
+            &value); ///< Copy data() til size(). Embedded zeroes too.
 #ifdef JSON_USE_CPPTL
   Value(const CppTL::ConstString &value);
 #endif
@@ -1657,8 +1657,8 @@ public:
 /** \brief Write into stringstream, then return string, for convenience.
  * A StreamWriter will be created from the factory, used, and then deleted.
  */
-std::string JSON_API
-    writeString(StreamWriter::Factory const &factory, Value const &root);
+std::string JSON_API writeString(StreamWriter::Factory const &factory,
+                                 Value const &root);
 
 /** \brief Build a StreamWriter implementation.
 

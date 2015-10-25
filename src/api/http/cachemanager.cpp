@@ -1,10 +1,13 @@
 #include <http/cachemanager.h>
+#include <http/components.h>
 #include <io/filesystem.h>
 #include <misc/storage.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+using namespace Http::Components;
 
 std::map<std::string, Resource> CacheManager::_resources;
 std::mutex CacheManager::_cacheLock;
@@ -41,7 +44,7 @@ Resource CacheManager::GetResource(const std::string &path) {
     if (st_res != 0) {
       // The item has been removed from the disk but it is still in cache, it
       // should be removed
-      throw 404;
+      throw StatusCode::NotFound;
     } else {
       // The item has been updated on disk
       if (st.st_mtime > item.stat().st_mtime) {
@@ -50,9 +53,9 @@ Resource CacheManager::GetResource(const std::string &path) {
           CacheManager::ReplaceItem(fpath, res);
           return res;
         } catch (IO::fs_error &ex) {
-          throw 404;
+          throw StatusCode::NotFound;
         } catch (std::system_error &ex) {
-          throw 500;
+          throw StatusCode::InternalServerError;
         }
       } else
         return item;
@@ -65,9 +68,9 @@ Resource CacheManager::GetResource(const std::string &path) {
       CacheManager::PutItem(std::make_pair(fpath, res));
       return res;
     } catch (IO::fs_error &ex) {
-      throw 404;
+      throw StatusCode::NotFound;
     } catch (std::system_error &ex) {
-      throw 500;
+      throw StatusCode::InternalServerError;
     }
   }
 }

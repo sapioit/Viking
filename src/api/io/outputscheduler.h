@@ -11,7 +11,7 @@ class OutputScheduler {
   struct scheduled_write {
     std::shared_ptr<Socket> sock;
     std::vector<char> data;
-    scheduled_write(std::shared_ptr<Socket> s, const std::string &d)
+    scheduled_write(Socket *s, const std::string &d)
         : sock(s), data(d.begin(), d.end()) {}
     ~scheduled_write() = default;
     scheduled_write(scheduled_write &&) = default;

@@ -13,8 +13,8 @@ const std::vector<Components::ContentType> &Request::accepted() const {
   return _accepted;
 }
 
-void
-Request::setAccepted(const std::vector<Components::ContentType> &accepted) {
+void Request::setAccepted(
+    const std::vector<Components::ContentType> &accepted) {
   _accepted = accepted;
 }
 
@@ -22,17 +22,14 @@ std::vector<std::string> Request::uri_components() const {
   return _uri_components;
 }
 
-void
-Request::setUri_components(const std::vector<std::string> &uri_components) {
+void Request::setUri_components(
+    const std::vector<std::string> &uri_components) {
   _uri_components = uri_components;
 }
 bool Http::Request::operator==(const Http::Request &other) {
-  bool bmethod = method == other.method;
-  bool buri = URI == other.URI;
-  bool bversion = version == other.version;
-  bool bheader = header == other.header;
-  bool bbody = body == other.body;
-  return (bmethod && buri && bversion && bheader && bbody);
+  return (method == other.method && URI == other.URI &&
+          version == other.version && header == other.header &&
+          body == other.body);
 }
 
 bool Http::Request::IsPassable() const {

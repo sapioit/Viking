@@ -10,6 +10,7 @@
 #include <iterator>
 
 using namespace Http;
+using namespace Http::Components;
 
 int Response::code() const { return _code; }
 
@@ -78,7 +79,8 @@ std::string Response::str() const {
       stream << "HTTP/" << std::setprecision(2) << 1.1;
       stream << " " << code() << " ";
       stream << Components::status_codes.at(
-                    static_cast<Components::StatusCode>(code())) << crlf;
+                    static_cast<Components::StatusCode>(code()))
+             << crlf;
       machine.transition(transitions::EndStatusLine);
       break;
     }
@@ -96,7 +98,7 @@ std::string Response::str() const {
     case states::ResponseHeader: {
       auto type_str_it = mime_types.find(getContent_type());
       if (type_str_it == mime_types.end())
-        throw 415;
+        throw static_cast<int>(StatusCode::UnsupportedMediaType);
       std::string type_str(type_str_it->second);
       stream << Http::Header::Fields::Content_Type << ": " << type_str << crlf;
       stream << Http::Header::Fields::Content_Length << ": ";
@@ -107,7 +109,8 @@ std::string Response::str() const {
       stream << crlf;
       stream << Http::Header::Fields::Cache_Control << ": "
              << (should_cache() ? "max-age=" + std::to_string(get_expiry())
-                                : "no-cache") << crlf;
+                                : "no-cache")
+             << crlf;
       if (has_resource()) {
         if (getContent_type() == Components::ContentType::TextHtml ||
             getContent_type() == Components::ContentType::TextPlain) {
@@ -203,15 +206,20 @@ Response::Response(const Request &request) : _request(request) {}
 Response::Response(const Request &request, int code)
     : _request(request), _code(code) {}
 
+Response::Response(const Request &request, StatusCode code)
+    : _request(request), _code(static_cast<int>(code)) {}
+
 Response::Response(const Request &request, const std::string &text)
-    : _request(request), _code(200), _text(text) {}
+    : _request(request), _code(static_cast<int>(StatusCode::OK)), _text(text) {}
 
 Response::Response(const Request &request, int code, const std::string &text)
     : _request(request), _code(code), _text(text) {}
 
 Response::Response(const Request &request, const Resource &resource)
-    : _request(request), _resource(resource), _code(200) {}
+    : _request(request), _resource(resource),
+      _code(static_cast<int>(StatusCode::OK)) {}
 
 Response::Response(const Request &request, const Json::Value &json)
-    : _request(request), _code(200), _text(json.toStyledString()),
+    : _request(request), _code(static_cast<int>(StatusCode::OK)),
+      _text(json.toStyledString()),
       _content_type(Components::ContentType::ApplicationJson) {}
