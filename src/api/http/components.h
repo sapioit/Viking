@@ -89,4 +89,4 @@ const std::map<const StatusCode, const std::string> status_codes{
     std::make_pair(StatusCode::InternalServerError, "Internal Server Error")};
 }
 }
-#endif  // COMPONENTS
+#endif // COMPONENTS

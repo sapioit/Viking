@@ -7,56 +7,66 @@
 #include <unistd.h>
 
 std::map<std::string, Resource> CacheManager::_resources;
-std::mutex CacheManager::_putLock;
+std::mutex CacheManager::_cacheLock;
 
-Resource CacheManager::GetItem(const std::string& path) {
+constexpr auto synchronize_cache = false;
+
+Resource CacheManager::GetItem(const std::string &path) {
+  std::lock_guard<std::mutex> lock(_cacheLock);
   auto item = CacheManager::_resources.find(path);
-  if (item != CacheManager::_resources.end()) return item->second;
+  if (item != CacheManager::_resources.end())
+    return item->second;
 
   return {};
 }
 
-void CacheManager::PutItem(const std::pair<std::string, Resource>&& item) {
-  std::lock_guard<std::mutex> lock(_putLock);
+void CacheManager::PutItem(const std::pair<std::string, Resource> &&item) {
+  std::lock_guard<std::mutex> lock(_cacheLock);
   CacheManager::_resources.insert(item);
 }
 
-void CacheManager::ReplaceItem(const std::string& path, const Resource& res) {
+void CacheManager::ReplaceItem(const std::string &path, const Resource &res) {
+  std::lock_guard<std::mutex> lock(_cacheLock);
   _resources[path] = res;
 }
-Resource CacheManager::GetResource(const std::string& path) {
+Resource CacheManager::GetResource(const std::string &path) {
   std::string fpath(Storage::settings().root_path + path);
 
   auto item = CacheManager::GetItem(fpath);
 
   if (item) {
+    // The item is in cache
     struct stat st;
     auto st_res = stat(fpath.c_str(), &st);
     if (st_res != 0) {
-      // TODO remove item from cache
+      // The item has been removed from the disk but it is still in cache, it
+      // should be removed
       throw 404;
     } else {
+      // The item has been updated on disk
       if (st.st_mtime > item.stat().st_mtime) {
         try {
           Resource res(fpath);
           CacheManager::ReplaceItem(fpath, res);
           return res;
-        } catch (IO::fs_error& ex) {
+        } catch (IO::fs_error &ex) {
           throw 404;
-        } catch (std::system_error& ex) {
+        } catch (std::system_error &ex) {
           throw 500;
         }
       } else
         return item;
     }
   } else {
+    // Fetch the item from disk and cache it
+    // TODO make some decision on whether or not it should be cached
     try {
       Resource res(fpath);
       CacheManager::PutItem(std::make_pair(fpath, res));
       return res;
-    } catch (IO::fs_error& ex) {
+    } catch (IO::fs_error &ex) {
       throw 404;
-    } catch (std::system_error& ex) {
+    } catch (std::system_error &ex) {
       throw 500;
     }
   }

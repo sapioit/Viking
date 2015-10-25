@@ -16,12 +16,12 @@ constexpr auto space = ' ';
 constexpr auto token = ':';
 constexpr auto CRLF = "\r\n";
 
-std::vector<Components::ContentType> GetAcceptedEncodings(
-    const std::string& line) {
+std::vector<Components::ContentType>
+GetAcceptedEncodings(const std::string &line) {
   return std::vector<Components::ContentType>();
 }
 
-Components::ContentType GetMimeType(const std::string& line) {
+Components::ContentType GetMimeType(const std::string &line) {
   // TODO parse line and get it
   return Components::ContentType::ApplicationJson;
 }
@@ -31,7 +31,7 @@ Request Parser::operator()() {
     auto request = Init();
     request.header = std::move(GetHeader());
     return request;
-  } catch (std::runtime_error& ex) {
+  } catch (std::runtime_error &ex) {
     Log::e(ex.what());
     throw std::runtime_error("Could not parse request");
   } catch (IO::Socket::connection_closed_by_peer) {
@@ -42,14 +42,15 @@ Request Parser::operator()() {
 Request Parser::Init() {
   try {
     auto line = _sock.ReadUntil(CRLF);
-    if (line == "") throw std::runtime_error("Malformed request");
+    if (line == "")
+      throw std::runtime_error("Malformed request");
 
     Request request;
     auto first_space = line.find(space);
     try {
       request.method =
           GetMethod(std::string(line.begin(), line.begin() + first_space));
-    } catch (std::runtime_error& ex) {
+    } catch (std::runtime_error &ex) {
       throw;
     }
     try {
@@ -66,8 +67,11 @@ Request Parser::Init() {
                           http_version_str.end());
       float version_f = std::stof(version);
       request.version = version_f;
+
+      request.setUri_components(
+          Parser::Split(Parser::StripRoute(request.URI), '/'));
       return request;
-    } catch (std::exception& ex) {
+    } catch (std::exception &ex) {
       throw;
     }
   } catch (IO::Socket::connection_closed_by_peer) {
@@ -75,7 +79,7 @@ Request Parser::Init() {
   }
 }
 
-Components::Method Parser::GetMethod(const std::string& str) {
+Components::Method Parser::GetMethod(const std::string &str) {
   auto method = Http::Components::methods.find(str);
   if (method == Http::Components::methods.end())
     throw std::runtime_error("Method not found");
@@ -87,8 +91,10 @@ Header Parser::GetHeader() {
   std::size_t line_begin = 0;
   while (true) {
     auto line = _sock.ReadUntil(CRLF);
-    if (line.size() == 2) break;
-    if (line.empty()) throw std::runtime_error("Bad request");
+    if (line.size() == 2)
+      break;
+    if (line.empty())
+      throw std::runtime_error("Bad request");
 
     auto key_begin = line_begin;
     auto key_end = line.find_first_of(token, line_begin);
@@ -107,33 +113,39 @@ Header Parser::GetHeader() {
   return header;
 }
 
-Components::ContentType Parser::GetMimeTypeByExtension(const std::string& URI) {
+Components::ContentType Parser::GetMimeTypeByExtension(const std::string &URI) {
   auto dot = URI.find_last_of('.');
   std::string ext(URI.begin() + dot + 1, URI.end());
 
   using namespace Components;
 
-  if (ext == "png") return ContentType::ImagePng;
-  if (ext == "jpg") return ContentType::ImageJpeg;
-  if (ext == "mp4") return ContentType::MovieMp4;
-  if (ext == "html" || ext == "htm") return ContentType::TextHtml;
-  if (ext == "json") return ContentType::ApplicationJson;
+  if (ext == "png")
+    return ContentType::ImagePng;
+  if (ext == "jpg")
+    return ContentType::ImageJpeg;
+  if (ext == "mp4")
+    return ContentType::MovieMp4;
+  if (ext == "html" || ext == "htm")
+    return ContentType::TextHtml;
+  if (ext == "json")
+    return ContentType::ApplicationJson;
 
   return ContentType::TextPlain;
 }
 
-std::string Parser::StripRoute(const std::string& URI) {
+std::string Parser::StripRoute(const std::string &URI) {
   auto firstSlash = URI.find_first_of('/');
   return {URI.begin() + firstSlash, URI.end()};
 }
 
 std::vector<std::string> Parser::Split(std::string source, char delimiter) {
   std::vector<std::string> result;
-  std::istringstream ss(source);  // Turn the string into a stream.
+  std::istringstream ss(source); // Turn the string into a stream.
   std::string tok;
 
   while (std::getline(ss, tok, delimiter)) {
-    if (!tok.empty()) result.push_back(tok);
+    if (!tok.empty())
+      result.push_back(tok);
   }
   return result;
 }

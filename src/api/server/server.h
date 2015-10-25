@@ -10,19 +10,19 @@
 #include <fstream>
 namespace Web {
 class Server {
- public:
+public:
   Server(int);
   void run();
-  void setSettings(const Settings&);
+  void setSettings(const Settings &);
 
   int maxPending() const;
   void setMaxPending(int maxPending);
 
- private:
+private:
   int _port = -1;
   int _maxPending;
   std::shared_ptr<IO::Socket> _masterSocket;
 };
 };
 
-#endif  // SERVER_H
+#endif // SERVER_H

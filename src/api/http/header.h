@@ -13,10 +13,10 @@
 namespace Http {
 struct Header {
   Header() = default;
-  Header(const Header&) = default;
-  Header(Header&&) = default;
-  bool operator==(const Header& other) { return fields == other.fields; }
-  Header& operator=(const Header&) = default;
+  Header(const Header &) = default;
+  Header(Header &&) = default;
+  bool operator==(const Header &other) { return fields == other.fields; }
+  Header &operator=(const Header &) = default;
   ~Header() = default;
 
   Components::ContentType mime_type;
@@ -120,4 +120,4 @@ struct Header {
 };
 }
 
-#endif  // SOCKET_HEADER_H
+#endif // SOCKET_HEADER_H

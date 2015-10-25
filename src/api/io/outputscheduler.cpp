@@ -9,8 +9,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-inline void IO::OutputScheduler::add_socket(const IO::Socket& sock,
-                                            const std::string& data) {
+inline void IO::OutputScheduler::add_socket(const IO::Socket &sock,
+                                            const std::string &data) {
   Log::i("socket with fd = " + std::to_string(sock.get_fd()) +
          " will be copied to fd = ");
   std::unique_ptr<IO::Socket> new_sock(new Socket(sock));
@@ -31,21 +31,21 @@ inline void IO::OutputScheduler::add_socket(const IO::Socket& sock,
                              std::to_string(sock.get_fd()));
 }
 
-void IO::OutputScheduler::ScheduleWrite(const IO::Socket& sock,
-                                        const std::string& data) {
+void IO::OutputScheduler::ScheduleWrite(const IO::Socket &sock,
+                                        const std::string &data) {
   Log::i("scheduling write on fd = " + std::to_string(sock.get_fd()));
   volatile std::lock_guard<std::mutex> schedule_lock(_scheduling_mutex);
   add_socket(sock, data);
 }
 
-void IO::OutputScheduler::remove_socket(IO::Socket& sock, int position,
-                                        epoll_event* ev) {
+void IO::OutputScheduler::remove_socket(IO::Socket &sock, int position,
+                                        epoll_event *ev) {
   epoll_ctl(_efd, EPOLL_CTL_DEL, sock.get_fd(), ev);
   _schedule.erase(_schedule.begin() + position);
 }
 
 void IO::OutputScheduler::remove_socket(int sockfd) {
-  IO::Socket* socket = nullptr;
+  IO::Socket *socket = nullptr;
   int socket_position = -1;
   unsigned int index = 0;
   for (index = 0; index < _schedule.size(); ++index) {
@@ -59,9 +59,10 @@ void IO::OutputScheduler::remove_socket(int sockfd) {
   assert(socket != nullptr);
 
   if (socket != nullptr) {
-    struct epoll_event* ev = nullptr;
-    for (auto& event : _events) {
-      if ((event.data.fd) == socket->get_fd()) ev = &(event);
+    struct epoll_event *ev = nullptr;
+    for (auto &event : _events) {
+      if ((event.data.fd) == socket->get_fd())
+        ev = &(event);
     }
 
     remove_socket(*socket, socket_position, ev);
@@ -76,7 +77,7 @@ IO::OutputScheduler::OutputScheduler(int max_events) : _maxEv(max_events) {
   _events.resize(_maxEv);
 }
 
-bool is_error(const std::uint32_t& ev) {
+bool is_error(const std::uint32_t &ev) {
   if ((ev & EPOLLERR) || (ev & EPOLLHUP) || (ev & EPOLLRDHUP) ||
       (!(ev & EPOLLOUT)))
     return true;
@@ -87,7 +88,7 @@ void log_error(int efd) {
   std::ostringstream error;
   int ierror = 0;
   socklen_t errlen = sizeof(ierror);
-  if (!getsockopt(efd, SOL_SOCKET, SO_ERROR, (void*)&ierror, &errlen)) {
+  if (!getsockopt(efd, SOL_SOCKET, SO_ERROR, (void *)&ierror, &errlen)) {
     error << "getsockopt SO_ERROR = " << ierror
           << " strerror: " << strerror(ierror);
   }
@@ -140,8 +141,8 @@ void IO::OutputScheduler::Run() {
                      ", wrote " + std::to_string(written) + " remaining = " +
                      std::to_string(_schedule[scheduled_item_pos].data.size() -
                                     written));
-              std::vector<decltype(
-                  _schedule[scheduled_item_pos].data)::value_type>(
+              std::vector<
+                  decltype(_schedule[scheduled_item_pos].data)::value_type>(
                   _schedule[scheduled_item_pos].data.begin() + written,
                   _schedule[scheduled_item_pos].data.end())
                   .swap(_schedule[scheduled_item_pos].data);
@@ -154,14 +155,14 @@ void IO::OutputScheduler::Run() {
         }
       }
     }
-  } catch (std::exception& ex) {
+  } catch (std::exception &ex) {
     throw;
   }
 }
 
 std::unique_ptr<IO::OutputScheduler> IO::OutputScheduler::_instance;
 
-IO::OutputScheduler& IO::OutputScheduler::get() {
+IO::OutputScheduler &IO::OutputScheduler::get() {
   if (_instance.get() == nullptr)
     _instance.reset(new OutputScheduler(Storage::settings().max_connections));
   return (*_instance);

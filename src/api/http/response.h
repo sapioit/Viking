@@ -11,17 +11,17 @@
 
 namespace Http {
 class Response {
- public:
+public:
   Response();
-  Response(const Request&);
-  Response(const Request&, int);
-  Response(const Request&, const std::string&);
-  Response(const Request&, int, const std::string&);
-  Response(const Request&, const Resource&);
-  Response(const Request&, const Json::Value&);
-  Response(const Response&) = default;
-  Response(Response&&) = default;
-  Response& operator=(const Response&) = default;
+  Response(const Request &);
+  Response(const Request &, int);
+  Response(const Request &, const std::string &);
+  Response(const Request &, int, const std::string &);
+  Response(const Request &, const Resource &);
+  Response(const Request &, const Json::Value &);
+  Response(const Response &) = default;
+  Response(Response &&) = default;
+  Response &operator=(const Response &) = default;
   ~Response() = default;
 
   bool should_cache() const;
@@ -34,19 +34,19 @@ class Response {
   int code() const;
   void setCode(int code);
 
-  const Components::ContentType& getContent_type() const;
-  void setContent_type(const Components::ContentType& value);
+  const Components::ContentType &getContent_type() const;
+  void setContent_type(const Components::ContentType &value);
 
-  const Resource& getResource() const;
-  void setResource(const Resource& resource);
+  const Resource &getResource() const;
+  void setResource(const Resource &resource);
 
   std::string str() const;
-  const Request& getRequest() const;
+  const Request &getRequest() const;
 
   std::string getText() const;
-  void setText(const std::string& text);
+  void setText(const std::string &text);
 
- private:
+private:
   Request _request;
   Resource _resource;
   int _code;
@@ -55,4 +55,4 @@ class Response {
 };
 };
 
-#endif  // RESPONSE_H
+#endif // RESPONSE_H

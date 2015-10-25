@@ -10,7 +10,7 @@ class Date {
   time_t _time;
   struct tm tm;
 
- public:
+public:
   Date(time_t time) : _time(time), tm(*gmtime(&_time)) {}
 
   std::string operator()() {
@@ -22,10 +22,10 @@ class Date {
     return text;
   }
 
-  bool operator<(const Date& other) { return _time < other._time; }
+  bool operator<(const Date &other) { return _time < other._time; }
 
   static Date Now() { return Date(time(0)); }
 };
 }
 
-#endif  // DATE
+#endif // DATE

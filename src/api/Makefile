@@ -20,33 +20,43 @@ OBJS    = cachemanager.o parser.o request.o response.o responsemanager.o routeut
 	server.o
 TOBJS	= main.o
 
+-include $(OBJS:.o=.o.d)
+
 # Targets
 $(PROJECT): $(OBJS) $(TOBJS)
 	$(CXX) $(OPTS) $(DEBUGOPTS) $(LIBS) $^ -o $@
 
 %.o : %.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
+	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 	
 %.o : http/%.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
+	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 
 %.o : io/%.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
+	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 	
 %.o : json/%.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
+	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 	
 %.o : misc/%.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
+	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 	
 %.o : server/%.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
+	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 
 clean:
-	rm *.o $(PROJECT) $(LIBNAME) -Rf
+	rm *.o *d $(PROJECT) $(LIBNAME) -Rf
 
 lib: $(OBJS)
 	$(CXX) $(OPTS) $(DEBUGOPTS) $(LIBS) $(LDFLAGS) $^ -o $(LIBNAME)
+#$^ -o $(LIBNAME)
+
 
 testapp: main.o
 	$(CXX) $(OPTS) $(DEBUGOPTS) $(LIBS) -L./ $(LIBNAME_ABBREVIATED) $^ -o $(PROJECT)
