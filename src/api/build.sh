@@ -1,2 +1,1 @@
-export CXX=g++
-make lib -j4 -e && make testapp -j4 -e && make install
+make lib -j4 && make testapp -j4 && make install

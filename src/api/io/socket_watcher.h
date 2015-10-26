@@ -12,38 +12,56 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
   std::shared_ptr<Sock> master_socket_;
 
 public:
-  SocketWatcher(const Sock &sock) : master_socket_(sock) {}
+  SocketWatcher(const std::shared_ptr<Sock> sock) : master_socket_(sock) {
+    try {
+      FileWatcher<Sock>::Add(sock);
+      Schedule((*sock).get_fd(), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+                              static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+    }
+    catch(SysEpoll::Error) {
+      throw;
+    }
+  }
   ~SocketWatcher() = default;
 
   void Add(int file_descriptor) {
-    FileWatcher::Add(file_descriptor);
-    SysEpoll::Schedule(file_descriptor, SysEpoll::Description::Read |
-                                            SysEpoll::Description::Termination);
+    FileWatcher<Sock>::Add(file_descriptor);
+    SysEpoll::Schedule(
+        file_descriptor,
+        static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+            static_cast<std::uint32_t>(SysEpoll::Description::Termination));
   }
 
   void Remove(const Sock &socket) {
-    FileWatcher::Remove([&socket](int file_descriptor) {
-      return socket.get_fd() == file_descriptor;
+    FileWatcher<Sock>::Remove([&socket](std::shared_ptr<Sock> candidate) {
+      return socket.get_fd() == (*candidate).get_fd();
     });
     SysEpoll::Remove(socket.get_fd());
   }
 
-  template <class Callback> void Run(Callback callback) {
-    const auto events = std::move(SysEpoll::Wait(watched_files_.size()));
+  void Run(std::function<void(std::vector<std::shared_ptr<Sock>>)> callback) {
+    const auto events =
+        std::move(SysEpoll::Wait(FileWatcher<Sock>::watched_files_.size()));
 
-    std::vector<shared_ptr<Sock>> active_sockets;
+    std::vector<std::shared_ptr<Sock>> active_sockets;
 
     for (const auto &event : events) {
-      auto associated_socket = std::find_if(
-          watched_files_.begin(), watched_files_.end(), [](const Sock &socket) {
-            return event.file_descriptor == socket->get_fd();
-          }) if (associated_socket != watched_files_.end()) {
+      auto associated_socket =
+          std::find_if(FileWatcher<Sock>::watched_files_.begin(),
+                       FileWatcher<Sock>::watched_files_.end(),
+                       [this, &event](const std::shared_ptr<Sock> socket) {
+                         return event.file_descriptor == (*socket).get_fd();
+                       });
+      if (associated_socket != FileWatcher<Sock>::watched_files_.end()) {
 
-        if (event.description & SysEpoll::Description::Termination ||
-            event.description & SysEpoll::Description::Error)
-          Remove(*associated_socket);
-        if (event.description & SysEpoll::Description::Read)
-          active_sockets.emplace_back(*associated_socket);
+        if (event.description & static_cast<std::uint32_t>(
+                                    SysEpoll::Description::Termination) ||
+            event.description &
+                static_cast<std::uint32_t>(SysEpoll::Description::Error))
+          Remove((*(*associated_socket)));
+        if (event.description &
+            static_cast<std::uint32_t>(SysEpoll::Description::Read))
+          active_sockets.emplace_back((*associated_socket));
       }
     }
 

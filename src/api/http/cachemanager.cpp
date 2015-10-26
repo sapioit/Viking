@@ -12,8 +12,6 @@ using namespace Http::Components;
 std::map<std::string, Resource> CacheManager::_resources;
 std::mutex CacheManager::_cacheLock;
 
-constexpr auto synchronize_cache = false;
-
 Resource CacheManager::GetItem(const std::string &path) {
   std::lock_guard<std::mutex> lock(_cacheLock);
   auto item = CacheManager::_resources.find(path);

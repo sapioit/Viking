@@ -3,6 +3,7 @@
 
 #include <sys/epoll.h>
 #include <vector>
+#include <stdexcept>
 
 class SysEpoll {
   int efd_;
@@ -14,12 +15,12 @@ public:
     int file_descriptor;
     std::uint32_t description;
     Event() noexcept = default;
-    Event(int fd, int description) noexcept : fd(fd),
+    Event(int fd, int description) noexcept : file_descriptor(fd),
                                               description(description) {}
   };
 
-  struct Error : std::exception {
-    Error(const std::string &err) : std::exception(err.c_str()) {}
+  struct Error : public std::runtime_error {
+    Error(const std::string &err) : std::runtime_error(err) {}
   };
   enum class Description {
     Read = EPOLLIN,
@@ -27,9 +28,9 @@ public:
     Error = EPOLLERR,
     Termination = EPOLLRDHUP
   };
-  Schedule(int, std::uint32_t);
-  Remove(int);
-  auto Wait(std::uint32_t = 1000) const;
+  void Schedule(int, std::uint32_t);
+  void Remove(int);
+  std::vector<Event> Wait(std::uint32_t = 1000) const;
 
   SysEpoll();
   virtual ~SysEpoll() = default;

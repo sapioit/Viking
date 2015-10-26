@@ -22,7 +22,7 @@ constexpr auto close_after_resource = true;
 bool Dispatcher::Dispatch(IO::Socket &connection) {
   try {
     auto parser = Http::Parser(connection);
-    auto request = std::move(parser());
+    auto request = parser();
     if (request.IsPassable()) {
       if (!request.IsResource()) {
         auto handler = RouteUtility::GetHandler(request, routes);
@@ -38,7 +38,7 @@ bool Dispatcher::Dispatch(IO::Socket &connection) {
       } else {
         // it's a resource
         try {
-          auto resource = std::move(CacheManager::GetResource(request.URI));
+          auto resource = CacheManager::GetResource(request.URI);
           ResponseManager::Respond(request, resource, connection);
           return close_after_resource;
         } catch (StatusCode code) {

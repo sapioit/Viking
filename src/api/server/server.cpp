@@ -1,6 +1,7 @@
 #include <server/server.h>
 #include <server/dispatcher.h>
 #include <io/watcher.h>
+#include <io/socket_watcher.h>
 #include <http/parser.h>
 #include <misc/storage.h>
 #include <io/outputscheduler.h>
@@ -45,7 +46,8 @@ void Server::run() {
 
     IO::SocketWatcher<IO::Socket> watcher(_masterSocket);
 
-     auto watcher_callbacks = [&](std::vector<std::shared_ptr<IO::Socket>> sockets) {
+    auto watcher_callbacks = [&](
+        std::vector<std::shared_ptr<IO::Socket>> sockets) {
       for (auto &sock : sockets) {
         Log::i("Will dispatch " + std::to_string(sockets.size()) +
                " connections");
@@ -53,11 +55,11 @@ void Server::run() {
         if (should_close)
           watcher.Remove(*sock);
       }
-        });
+    };
 
-     while (true) {
-       watcher.run(watcher_callbacks);
-     }
+    while (true) {
+      watcher.Run(watcher_callbacks);
+    }
 
   } catch (std::exception &ex) {
     Log::e(std::string("Server error: ").append(ex.what()));

@@ -109,15 +109,14 @@ std::vector<std::shared_ptr<Socket>> Watcher::Watch() {
       continue;
     }
 
-    if (ConnectionClosed(_events[index])
+    if (ConnectionClosed(_events[index]))
       RemoveSocket(_events[index].data.fd);
-    
+
     /* Old
     if (_events[index].events & EPOLLRDHUP)
       RemoveSocket(_events[index].data.fd);
     */
 
-    
     if ((*_socket).get_fd() == _events[index].data.fd) {
       /* the listening socket received something,
        * that means we'll accept a new connection */
