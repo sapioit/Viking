@@ -13,6 +13,7 @@
 #include <memory>
 #include <unistd.h>
 #include <vector>
+#include <functional>
 
 namespace IO {
 class Socket {
@@ -56,6 +57,7 @@ private:
   bool _blocking = false;
   bool _connection;
 };
-};
+typedef Socket SocketRef;
+}
 
 #endif // SOCKET_SOCKET_H

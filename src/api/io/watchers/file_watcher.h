@@ -33,7 +33,7 @@ public:
   }
 
   // template <class Callback>
-  virtual void Run(std::function<void(std::vector<std::shared_ptr<T>>)>) = 0;
+  virtual void Run(std::function<void(std::vector<std::weak_ptr<T>>)>) = 0;
 };
 }
 

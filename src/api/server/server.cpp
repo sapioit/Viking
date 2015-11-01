@@ -49,13 +49,15 @@ void Server::run() {
     IO::SocketWatcher<IO::Socket> watcher(_masterSocket);
 
     auto watcher_callbacks = [&](
-        std::vector<std::shared_ptr<IO::Socket>> sockets) {
-      for (auto &sock : sockets) {
-        debug("Will dispatch " + std::to_string(sockets.size()) +
-              " connections");
-        auto should_close = Dispatcher::Dispatch(*sock);
-        if (should_close)
-          watcher.Remove(*sock);
+        std::vector<std::weak_ptr<IO::Socket>> sockets) {
+      for (auto &sock_weak : sockets) {
+        if (auto sock = sock_weak.lock()) {
+          debug("Will dispatch " + std::to_string(sockets.size()) +
+                " connections");
+          auto should_close = Dispatcher::Dispatch(*sock);
+          if (should_close)
+            watcher.Remove(*sock);
+        }
       }
     };
 

@@ -10,9 +10,15 @@
 namespace IO {
 template <class Sock>
 class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
+protected:
   std::shared_ptr<Sock> master_socket_;
 
 public:
+  virtual std::uint32_t GetBasicFlags() {
+    return (static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+            static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+  }
+
   SocketWatcher(const std::shared_ptr<Sock> sock) : master_socket_(sock) {
     try {
       SocketWatcher<Sock>::Add(sock);
@@ -25,10 +31,7 @@ public:
   void Add(std::shared_ptr<IO::Socket> socket) {
     try {
       FileWatcher<Sock>::Add(socket);
-      SysEpoll::Schedule(
-          (*socket).get_fd(),
-          static_cast<std::uint32_t>(SysEpoll::Description::Read) |
-              static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+      SysEpoll::Schedule((*socket).get_fd(), GetBasicFlags());
     } catch (const SysEpoll::Error &) {
       throw;
     }
@@ -43,27 +46,31 @@ public:
     const auto events =
         std::move(SysEpoll::Wait(FileWatcher<Sock>::watched_files_.size()));
 
-    std::vector<std::shared_ptr<Sock>> active_sockets;
+    std::vector<std::weak_ptr<Sock>> active_sockets;
 
     for (const auto &event : events) {
-      auto associated_socket =
+      auto sock_it =
           std::find_if(FileWatcher<Sock>::watched_files_.begin(),
                        FileWatcher<Sock>::watched_files_.end(),
-                       [this, &event](const std::shared_ptr<Sock> socket) {
-                         if (event.file_descriptor == (*socket).get_fd()) {
-                           debug("Matched the event with fd = " +
-                                 std::to_string(event.file_descriptor) +
-                                 " with an active socket");
-                           return true;
+                       [this, &event](std::weak_ptr<Sock> socket) {
+                         if (auto sock_ptr = socket.lock()) {
+                           if (event.file_descriptor == (*sock_ptr).get_fd()) {
+                             debug("Matched the event with fd = " +
+                                   std::to_string(event.file_descriptor) +
+                                   " with an active socket");
+                             return true;
+                           }
                          }
                          return false;
                        });
-      if (associated_socket != FileWatcher<Sock>::watched_files_.end()) {
+      if (sock_it != FileWatcher<Sock>::watched_files_.end()) {
 
-        if ((*(*associated_socket)) == (*master_socket_)) {
-          AddNewConnections();
-          continue;
-        }
+        std::weak_ptr<Sock> associated_socket = (*sock_it);
+
+        if ((*associated_socket)) == (*master_socket_)) {
+            AddNewConnections();
+            continue;
+          }
 
         if (event.description & static_cast<std::uint32_t>(
                                     SysEpoll::Description::Termination) ||
@@ -71,14 +78,14 @@ public:
                 static_cast<std::uint32_t>(SysEpoll::Description::Error)) {
           debug("Event with fd = " + std::to_string(event.file_descriptor) +
                 " must be closed");
-          Remove((*(*associated_socket)));
+          Remove((*associated_socket));
         }
         if (event.description &
             static_cast<std::uint32_t>(SysEpoll::Description::Read)) {
           debug("Socket with fd = " +
-                std::to_string((*(*associated_socket)).get_fd()) +
+                std::to_string((*associated_socket).get_fd()) +
                 " can be read from");
-          active_sockets.emplace_back((*associated_socket));
+          active_sockets.emplace_back(associated_socket);
         }
       }
 
