@@ -2,7 +2,7 @@
 // Created by Vladimir on 8/2/2015.
 //
 
-#include <io/watcher.h>
+#include <io/watchers/watcher.h>
 #include <misc/log.h>
 
 #include <algorithm>

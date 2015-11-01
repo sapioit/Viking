@@ -10,7 +10,8 @@ struct Settings {
   Settings &operator=(const Settings &) = default;
 
   std::string root_path;
-  int max_connections;
+  std::uint32_t max_connections;
+  bool allow_directory_listing;
 };
 
 #endif // SETTINGS_H

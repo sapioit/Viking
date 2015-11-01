@@ -3,7 +3,7 @@
 
 #include <http/response.h>
 #include <http/request.h>
-#include <io/socket.h>
+#include <io/socket/socket.h>
 
 class ResponseManager {
 public:

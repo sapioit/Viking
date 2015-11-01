@@ -7,7 +7,7 @@
 
 #include <http/components.h>
 #include <http/header.h>
-#include <io/socket.h>
+#include <io/socket/socket.h>
 
 #include <string>
 #include <map>

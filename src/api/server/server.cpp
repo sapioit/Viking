@@ -1,11 +1,10 @@
 #include <server/server.h>
 #include <server/dispatcher.h>
-#include <io/watcher.h>
-#include <io/socket_watcher.h>
+#include <io/outputscheduler.h>
+#include <io/watchers/socket_watcher.h>
 #include <http/parser.h>
 #include <misc/storage.h>
 #include <misc/debug.h>
-#include <io/outputscheduler.h>
 
 #include <utility>
 #include <algorithm>

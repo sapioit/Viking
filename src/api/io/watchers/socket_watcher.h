@@ -1,9 +1,9 @@
 #ifndef SOCKET_WATCHER_H
 #define SOCKET_WATCHER_H
 
-#include <io/file_watcher.h>
-#include <io/socket.h>
-#include <io/sys_epoll.h>
+#include <io/watchers/file_watcher.h>
+#include <io/socket/socket.h>
+#include <io/watchers/sys_epoll.h>
 #include <misc/debug.h>
 #include <algorithm>
 

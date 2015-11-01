@@ -13,12 +13,15 @@ LDFLAGS = -shared
 LIBNAME = libcppweb.so
 LIBNAME_ABBREVIATED = -lcppweb
 
-# Files and folders
-#include main.o back
-OBJS    = debug.o cachemanager.o parser.o request.o response.o responsemanager.o routeutility.o filesystem.o \
-	outputscheduler.o socket.o watcher.o jsoncpp.o dfa.o log.o resource.o settings.o storage.o dispatcher.o \
-	server.o file_watcher.o socket_watcher.o sys_epoll.o
+SUBDIR_ROOTS := .
+DIRS := . $(shell find $(SUBDIR_ROOTS) -type d)
+GARBAGE_PATTERNS := *.o *.o.d *~ core .depend .*.cmd *.ko *.mod.c
+GARBAGE := $(foreach DIR,$(DIRS),$(addprefix $(DIR)/,$(GARBAGE_PATTERNS)))
+
 TOBJS	= main.o
+
+CPP_FILES = $(shell find ./ -type f -name '*.cpp')
+OBJS = $(patsubst ./%.cpp, ./%.o, $(CPP_FILES))
 
 -include $(OBJS:.o=.o.d)
 
@@ -29,34 +32,13 @@ $(PROJECT): $(OBJS) $(TOBJS)
 %.o : %.cpp
 	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
 	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
-	
-%.o : http/%.cpp
-	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
-	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
 
-%.o : io/%.cpp
-	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
-	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
-	
-%.o : json/%.cpp
-	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
-	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
-	
-%.o : misc/%.cpp
-	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
-	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
-	
-%.o : server/%.cpp
-	$(CXX) -c $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< -o $@
-	$(CXX) -MM $(OPTS) $(DEBUGOPTS) $(INCLUDEDIRS) $< > $@.d
-
-clean:
-	rm *.o *d $(PROJECT) $(LIBNAME) -Rf
+clean: 
+	rm -rf $(GARBAGE)
+	rm *.o *.d $(PROJECT) $(LIBNAME) -Rf
 
 lib: $(OBJS)
 	$(CXX) $(OPTS) $(DEBUGOPTS) $(LIBS) $(LDFLAGS) $^ -o $(LIBNAME)
-#$^ -o $(LIBNAME)
-
 
 testapp: main.o
 	$(CXX) $(OPTS) $(DEBUGOPTS) $(LIBS) -L./ $(LIBNAME_ABBREVIATED) $^ -o $(PROJECT)

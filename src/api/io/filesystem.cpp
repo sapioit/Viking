@@ -1,15 +1,11 @@
 #include <io/filesystem.h>
+#include <misc/debug.h>
 #include <fstream>
 #include <unistd.h>
-#ifndef NDEBUG
-#include <iostream>
-#endif
 using namespace IO;
 
 std::vector<char> FileSystem::ReadFile(const std::string &path) {
-#ifndef NDEBUG
-  std::cout << path << std::endl;
-#endif
+  debug("File requested: " + path);
   std::ifstream stream(path, std::ios::binary);
   if (!stream.is_open())
     throw fs_error("File could not be opened");

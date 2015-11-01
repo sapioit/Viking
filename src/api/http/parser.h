@@ -5,7 +5,7 @@
 #ifndef SOCKET_HTTPUTILITY_H
 #define SOCKET_HTTPUTILITY_H
 
-#include <io/socket.h>
+#include <io/socket/socket.h>
 #include <http/request.h>
 
 namespace Http {

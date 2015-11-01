@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <io/socket.h>
+#include <io/socket/socket.h>
 #include <misc/settings.h>
 #include <misc/log.h>
 
