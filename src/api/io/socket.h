@@ -41,7 +41,8 @@ public:
   ssize_t Write(const std::string &);
   bool WasShutDown();
 
-  bool operator<(const Socket &);
+  bool operator<(const Socket &) const;
+  bool operator==(const Socket &) const;
   std::uint64_t getReads() const;
 
   bool getConnection() const;

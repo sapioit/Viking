@@ -4,6 +4,7 @@
 #include <io/socket_watcher.h>
 #include <http/parser.h>
 #include <misc/storage.h>
+#include <misc/debug.h>
 #include <io/outputscheduler.h>
 
 #include <utility>
@@ -36,6 +37,8 @@ void Server::run() {
     throw std::runtime_error("Port number not set!");
   try {
     _masterSocket = IO::Socket::start_socket(_port, _maxPending);
+    debug("Master socket has fd = " +
+          std::to_string((*_masterSocket).get_fd()));
     // IO::Watcher _master_listener(_masterSocket, _maxPending);
 
     IO::OutputScheduler &output_scheduler = IO::OutputScheduler::get();
@@ -49,8 +52,8 @@ void Server::run() {
     auto watcher_callbacks = [&](
         std::vector<std::shared_ptr<IO::Socket>> sockets) {
       for (auto &sock : sockets) {
-        Log::i("Will dispatch " + std::to_string(sockets.size()) +
-               " connections");
+        debug("Will dispatch " + std::to_string(sockets.size()) +
+              " connections");
         auto should_close = Dispatcher::Dispatch(*sock);
         if (should_close)
           watcher.Remove(*sock);

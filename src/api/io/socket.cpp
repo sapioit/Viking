@@ -4,6 +4,7 @@
 
 #include <io/socket.h>
 #include <misc/log.h>
+#include <misc/debug.h>
 
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
@@ -113,6 +114,7 @@ ssize_t Socket::Write(const std::vector<char> &vector) {
 int Socket::get_fd() const { return _fd; }
 
 void Socket::Close() {
+  debug("Closing socket with fd = " + std::to_string(-1));
   if (_fd != -1)
     ::close(_fd);
 }
@@ -148,7 +150,10 @@ bool Socket::WasShutDown() {
   return bytesRead == 0;
 }
 
-bool Socket::operator<(const Socket &other) { return _reads < other._reads; }
+bool Socket::operator<(const Socket &other) const {
+  return _reads < other._reads;
+}
+bool Socket::operator==(const Socket &other) const { return _fd == other._fd; }
 std::uint64_t Socket::getReads() const { return _reads; }
 bool Socket::getConnection() const { return _connection; }
 

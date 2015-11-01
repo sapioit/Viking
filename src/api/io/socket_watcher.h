@@ -4,6 +4,7 @@
 #include <io/file_watcher.h>
 #include <io/socket.h>
 #include <io/sys_epoll.h>
+#include <misc/debug.h>
 #include <algorithm>
 
 namespace IO {
@@ -14,28 +15,27 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
 public:
   SocketWatcher(const std::shared_ptr<Sock> sock) : master_socket_(sock) {
     try {
-      FileWatcher<Sock>::Add(sock);
-      Schedule((*sock).get_fd(), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
-                              static_cast<std::uint32_t>(SysEpoll::Description::Termination));
-    }
-    catch(SysEpoll::Error) {
+      SocketWatcher<Sock>::Add(sock);
+    } catch (const SysEpoll::Error &) {
       throw;
     }
   }
   ~SocketWatcher() = default;
 
-  void Add(int file_descriptor) {
-    FileWatcher<Sock>::Add(file_descriptor);
-    SysEpoll::Schedule(
-        file_descriptor,
-        static_cast<std::uint32_t>(SysEpoll::Description::Read) |
-            static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+  void Add(std::shared_ptr<IO::Socket> socket) {
+    try {
+      FileWatcher<Sock>::Add(socket);
+      SysEpoll::Schedule(
+          (*socket).get_fd(),
+          static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+              static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+    } catch (const SysEpoll::Error &) {
+      throw;
+    }
   }
 
   void Remove(const Sock &socket) {
-    FileWatcher<Sock>::Remove([&socket](std::shared_ptr<Sock> candidate) {
-      return socket.get_fd() == (*candidate).get_fd();
-    });
+    FileWatcher<Sock>::Remove(socket);
     SysEpoll::Remove(socket.get_fd());
   }
 
@@ -50,22 +50,53 @@ public:
           std::find_if(FileWatcher<Sock>::watched_files_.begin(),
                        FileWatcher<Sock>::watched_files_.end(),
                        [this, &event](const std::shared_ptr<Sock> socket) {
-                         return event.file_descriptor == (*socket).get_fd();
+                         if (event.file_descriptor == (*socket).get_fd()) {
+                           debug("Matched the event with fd = " +
+                                 std::to_string(event.file_descriptor) +
+                                 " with an active socket");
+                           return true;
+                         }
+                         return false;
                        });
       if (associated_socket != FileWatcher<Sock>::watched_files_.end()) {
+
+        if ((*(*associated_socket)) == (*master_socket_)) {
+          AddNewConnections();
+          continue;
+        }
 
         if (event.description & static_cast<std::uint32_t>(
                                     SysEpoll::Description::Termination) ||
             event.description &
-                static_cast<std::uint32_t>(SysEpoll::Description::Error))
+                static_cast<std::uint32_t>(SysEpoll::Description::Error)) {
+          debug("Event with fd = " + std::to_string(event.file_descriptor) +
+                " must be closed");
           Remove((*(*associated_socket)));
+        }
         if (event.description &
-            static_cast<std::uint32_t>(SysEpoll::Description::Read))
+            static_cast<std::uint32_t>(SysEpoll::Description::Read)) {
+          debug("Socket with fd = " +
+                std::to_string((*(*associated_socket)).get_fd()) +
+                " can be read from");
           active_sockets.emplace_back((*associated_socket));
+        }
       }
-    }
 
-    callback(active_sockets);
+      debug("We have " + std::to_string(active_sockets.size()) +
+            " active sockets");
+
+      callback(active_sockets);
+    }
+  }
+
+  void AddNewConnections() noexcept {
+    while (true) {
+      auto new_connection = (*master_socket_).Accept();
+      if ((*new_connection).get_fd() == -1)
+        break;
+      (*new_connection).MakeNonBlocking();
+      SocketWatcher<Sock>::Add(new_connection);
+    }
   }
 };
 }

@@ -15,7 +15,7 @@ LIBNAME_ABBREVIATED = -lcppweb
 
 # Files and folders
 #include main.o back
-OBJS    = cachemanager.o parser.o request.o response.o responsemanager.o routeutility.o filesystem.o \
+OBJS    = debug.o cachemanager.o parser.o request.o response.o responsemanager.o routeutility.o filesystem.o \
 	outputscheduler.o socket.o watcher.o jsoncpp.o dfa.o log.o resource.o settings.o storage.o dispatcher.o \
 	server.o file_watcher.o socket_watcher.o sys_epoll.o
 TOBJS	= main.o

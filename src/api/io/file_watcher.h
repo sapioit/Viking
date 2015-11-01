@@ -17,12 +17,19 @@ public:
   template <typename... FileArgs> void Add(FileArgs &&... params) noexcept {
     watched_files_.emplace_back(std::forward<FileArgs>(params)...);
   }
-  void Add(std::shared_ptr<T> file) noexcept {
-    watched_files_.push_back(file);
-  }
+  void Add(std::shared_ptr<T> file) noexcept { watched_files_.push_back(file); }
 
   template <class Predicate> void Remove(Predicate p) noexcept {
     std::remove_if(watched_files_.begin(), watched_files_.end(), p);
+  }
+
+  void Remove(const T &file) {
+    for (auto it = watched_files_.cbegin(); it != watched_files_.end(); ++it) {
+      if ((*(*it)) == file) {
+        watched_files_.erase(it);
+        break;
+      }
+    }
   }
 
   // template <class Callback>
