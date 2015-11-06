@@ -5,29 +5,29 @@ namespace Http {
 namespace Components {
 
 enum class Method {
-  Delete,
-  Get,
-  Head,
-  Post,
-  Put,
-  Connect,
-  Options,
-  Trace,
-  Copy,
-  Lock,
-  Mkcol,
-  Move,
-  Propfind,
-  Proppatch,
-  Unlock,
-  Report,
-  Mkactivity,
-  Checkout,
-  Merge,
-  M_Search,
-  Notify,
-  Subscribe,
-  Unsubscribe
+        Delete,
+        Get,
+        Head,
+        Post,
+        Put,
+        Connect,
+        Options,
+        Trace,
+        Copy,
+        Lock,
+        Mkcol,
+        Move,
+        Propfind,
+        Proppatch,
+        Unlock,
+        Report,
+        Mkactivity,
+        Checkout,
+        Merge,
+        M_Search,
+        Notify,
+        Subscribe,
+        Unsubscribe
 };
 
 const std::map<const std::string, const Method> methods{
@@ -56,13 +56,13 @@ const std::map<const std::string, const Method> methods{
     std::make_pair("UNSUBSCRIBE", Method::Unsubscribe)};
 
 enum class ContentType {
-  ApplicationJson,
-  TextPlain,
-  TextHtml,
-  ImageJpeg,
-  ImagePng,
-  MovieMp4,
-  Zip
+        ApplicationJson,
+        TextPlain,
+        TextHtml,
+        ImageJpeg,
+        ImagePng,
+        MovieMp4,
+        Zip
 };
 
 const std::map<const ContentType, const std::string> content_types{
@@ -74,11 +74,11 @@ const std::map<const ContentType, const std::string> content_types{
     std::make_pair(ContentType::MovieMp4, "video/mp4")};
 
 enum class StatusCode {
-  OK = 200,
-  BadRequest = 400,
-  NotFound = 404,
-  UnsupportedMediaType = 415,
-  InternalServerError = 500
+        OK = 200,
+        BadRequest = 400,
+        NotFound = 404,
+        UnsupportedMediaType = 415,
+        InternalServerError = 500
 };
 
 const std::map<const StatusCode, const std::string> status_codes{

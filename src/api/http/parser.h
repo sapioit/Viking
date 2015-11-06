@@ -10,20 +10,22 @@
 
 namespace Http {
 class Parser {
-  IO::Socket &_sock;
+        IO::Socket &_sock;
 
-  Request Init();
-  Components::Method GetMethod(const std::string &str);
-  Header GetHeader();
+        Request Init();
+        Components::Method GetMethod(const std::string &str);
+        Header GetHeader();
 
-public:
-  Parser(IO::Socket &sock) : _sock(sock) {}
-  Request operator()();
+      public:
+        Parser(IO::Socket &sock) : _sock(sock) {}
+        Request operator()();
 
-  static Components::ContentType GetMimeTypeByExtension(const std::string &URI);
-  static std::string StripRoute(const std::string &URI);
-  static std::vector<std::string> Split(std::string source, char delimiter);
-  // static std::string GetURI(const std::string& line);
+        static Components::ContentType
+        GetMimeTypeByExtension(const std::string &URI);
+        static std::string StripRoute(const std::string &URI);
+        static std::vector<std::string> Split(std::string source,
+                                              char delimiter);
+        // static std::string GetURI(const std::string& line);
 };
 };
 

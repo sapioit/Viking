@@ -20,58 +20,59 @@ using namespace Web;
 std::mutex Log::mLock;
 std::string Log::_fn;
 Server::Server(int port) : _port(port) {
-  Log::Init("log_file.txt");
-  Log::SetEnabled(false);
-  Log::i("Started logging");
-  setSettings({});
+        Log::Init("log_file.txt");
+        Log::SetEnabled(false);
+        Log::i("Started logging");
+        setSettings({});
 }
 
 void Server::setSettings(const Settings &s) {
-  Storage::setSettings(s);
-  _maxPending = s.max_connections;
+        Storage::setSettings(s);
+        _maxPending = s.max_connections;
 }
 
 void Server::run() {
-  if (_port == -1)
-    throw std::runtime_error("Port number not set!");
-  try {
-    _masterSocket = IO::Socket::start_socket(_port, _maxPending);
-    debug("Master socket has fd = " +
-          std::to_string((*_masterSocket).get_fd()));
-    // IO::Watcher _master_listener(_masterSocket, _maxPending);
+        if (_port == -1)
+                throw std::runtime_error("Port number not set!");
+        try {
+                auto master_socket =
+                    IO::Socket::start_socket(_port, _maxPending);
+                debug("Master socket has fd = " +
+                      std::to_string(master_socket.get_fd()));
+                // IO::Watcher _master_listener(_masterSocket, _maxPending);
 
-    IO::OutputScheduler &output_scheduler = IO::OutputScheduler::get();
-    std::thread output_thread(&IO::OutputScheduler::Run,
-                              std::ref(output_scheduler));
+                IO::OutputScheduler &output_scheduler =
+                    IO::OutputScheduler::get();
+                std::thread output_thread(&IO::OutputScheduler::Run,
+                                          std::ref(output_scheduler));
 
-    output_thread.detach();
+                output_thread.detach();
 
-    IO::SocketWatcher<IO::Socket> watcher(_masterSocket);
+                IO::SocketWatcher<IO::Socket> watcher(std::move(master_socket));
 
-    auto watcher_callbacks = [&](
-        std::vector<std::weak_ptr<IO::Socket>> sockets) {
-      for (auto &sock_weak : sockets) {
-        if (auto sock = sock_weak.lock()) {
-          debug("Will dispatch " + std::to_string(sockets.size()) +
-                " connections");
-          auto should_close = Dispatcher::Dispatch(*sock);
-          if (should_close)
-            watcher.Remove(*sock);
+                auto watcher_callbacks = [&](
+                    std::vector<std::reference_wrapper<IO::Socket>> sockets) {
+                        for (auto &sock : sockets) {
+                                debug("Will dispatch " +
+                                      std::to_string(sockets.size()) +
+                                      " connections");
+                                auto should_close = Dispatcher::Dispatch(sock);
+                                if (should_close)
+                                        watcher.Remove(sock);
+                        }
+                };
+
+                while (true) {
+                        watcher.Run(watcher_callbacks);
+                }
+
+        } catch (std::exception &ex) {
+                Log::e(std::string("Server error: ").append(ex.what()));
+                auto msg = std::string(
+                    "Server error. Please see the log file. Last exception: ");
+                msg += ex.what();
+                throw std::runtime_error(msg);
         }
-      }
-    };
-
-    while (true) {
-      watcher.Run(watcher_callbacks);
-    }
-
-  } catch (std::exception &ex) {
-    Log::e(std::string("Server error: ").append(ex.what()));
-    auto msg =
-        std::string("Server error. Please see the log file. Last exception: ");
-    msg += ex.what();
-    throw std::runtime_error(msg);
-  }
 }
 int Server::maxPending() const { return _maxPending; }
 

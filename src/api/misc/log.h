@@ -13,19 +13,19 @@
 #define DEBUG "Debug:"
 
 class Log {
-  static std::string _fn;
-  static bool _loggingEnabled;
+        static std::string _fn;
+        static bool _loggingEnabled;
 
-public:
-  static void Init(const std::string &fileName);
-  static void SetEnabled(bool);
+      public:
+        static void Init(const std::string &fileName);
+        static void SetEnabled(bool);
 
-  static void i(const std::string &text);
-  static void e(const std::string &text);
+        static void i(const std::string &text);
+        static void e(const std::string &text);
 
-private:
-  static std::mutex mLock;
+      private:
+        static std::mutex mLock;
 
-  static std::string getTimeStamp();
+        static std::string getTimeStamp();
 };
 #endif

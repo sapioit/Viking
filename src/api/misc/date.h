@@ -7,24 +7,24 @@
 namespace Http {
 
 class Date {
-  time_t _time;
-  struct tm tm;
+        time_t _time;
+        struct tm tm;
 
-public:
-  Date(time_t time) : _time(time), tm(*gmtime(&_time)) {}
+      public:
+        Date(time_t time) : _time(time), tm(*gmtime(&_time)) {}
 
-  std::string operator()() {
-    std::string text;
-    text.resize(100);
-    auto size =
-        strftime(&text.front(), text.size(), "%a, %d %b %Y %H:%M:%S %Z", &tm);
-    text.resize(size);
-    return text;
-  }
+        std::string operator()() {
+                std::string text;
+                text.resize(100);
+                auto size = strftime(&text.front(), text.size(),
+                                     "%a, %d %b %Y %H:%M:%S %Z", &tm);
+                text.resize(size);
+                return text;
+        }
 
-  bool operator<(const Date &other) { return _time < other._time; }
+        bool operator<(const Date &other) { return _time < other._time; }
 
-  static Date Now() { return Date(time(0)); }
+        static Date Now() { return Date(time(0)); }
 };
 }
 

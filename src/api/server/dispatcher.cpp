@@ -20,51 +20,49 @@ using namespace Http::Components;
 constexpr auto close_after_resource = true;
 
 bool Dispatcher::Dispatch(IO::Socket &connection) {
-  try {
-    auto parser = Http::Parser(connection);
-    auto request = parser();
-    if (request.IsPassable()) {
-      if (!request.IsResource()) {
-        auto handler = RouteUtility::GetHandler(request, routes);
-        if (handler) {
-          auto response = handler(request);
-          ResponseManager::Respond(response, connection);
-          return response.should_close();
-        } else {
-          // no user-defined handler, return not found
-          ResponseManager::Respond({request, 404}, connection);
-          return true;
-        }
-      } else {
-        // it's a resource
         try {
-          auto resource = CacheManager::GetResource(request.URI);
-          ResponseManager::Respond(request, resource, connection);
-          return close_after_resource;
-        } catch (StatusCode code) {
-          ResponseManager::Respond({request, code}, connection);
-          return false;
+                auto parser = Http::Parser(connection);
+                auto request = parser();
+                if (request.IsPassable()) {
+                        if (!request.IsResource()) {
+                                auto handler =
+                                    RouteUtility::GetHandler(request, routes);
+                                if (handler) {
+                                        auto response = handler(request);
+                                        ResponseManager::Respond(response,
+                                                                 connection);
+                                        return response.should_close();
+                                } else {
+                                        // no user-defined handler, return not
+                                        // found
+                                        ResponseManager::Respond({request, 404},
+                                                                 connection);
+                                        return true;
+                                }
+                        } else {
+                                // it's a resource
+                                try {
+                                        auto resource =
+                                            CacheManager::GetResource(
+                                                request.URI);
+                                        ResponseManager::Respond(
+                                            request, resource, connection);
+                                        return close_after_resource;
+                                } catch (StatusCode code) {
+                                        ResponseManager::Respond(
+                                            {request, code}, connection);
+                                        return false;
+                                }
+                        }
+                } else {
+                        // The request is not passable to the user and it is not
+                        // a resource either
+                        // TODO see what the standards says about this?
+                }
+        } catch (std::runtime_error &ex) {
+                Log::e(ex.what());
+        } catch (IO::Socket::connection_closed_by_peer) {
+                return true;
         }
-      }
-    } else {
-      // The request is not passable to the user and it is not a resource either
-      // TODO see what the standards says about this?
-    }
-  } catch (std::runtime_error &ex) {
-    Log::e(ex.what());
-  } catch (IO::Socket::connection_closed_by_peer) {
-    return true;
-  }
-  return true;
+        return true;
 }
-
-/*void Dispatcher::PassToUser(
-    Http::Request request,
-    std::function<Http::Response(Http::Request)> user_handler,
-    IO::Socket &socket) {
-
-  auto response = user_handler(request);
-
-  ResponseManager::Respond(std::move(response), socket);
-}
-*/
