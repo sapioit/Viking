@@ -38,7 +38,7 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
 
         void Add(Sock socket) {
                 try {
-                        auto fd = socket.get_fd();
+                        auto fd = socket.GetFD();
                         FileWatcher<Sock>::Add(std::move(socket));
                         SysEpoll::Schedule(fd, GetBasicFlags());
                 } catch (const SysEpoll::Error &) {
@@ -48,7 +48,7 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
 
         void Remove(const Sock &socket) {
                 try {
-                        SysEpoll::Remove(socket.get_fd());
+                        SysEpoll::Remove(socket.GetFD());
                         FileWatcher<Sock>::Remove(socket);
                 } catch (const typename FileWatcher<Sock>::FileNotFound &ex) {
                         // WTF?
@@ -71,7 +71,7 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
                             FileWatcher<Sock>::watched_files_.end(),
                             [this, &event](const Sock &socket) {
                                     if (event.file_descriptor ==
-                                        socket.get_fd()) {
+                                        socket.GetFD()) {
                                             debug(
                                                 "Matched the event with fd = " +
                                                 std::to_string(
@@ -110,7 +110,7 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
                                         SysEpoll::Description::Read)) {
                                         debug("Socket with fd = " +
                                               std::to_string(
-                                                  associated_socket.get_fd()) +
+                                                  associated_socket.GetFD()) +
                                               " can be read from");
                                         active_sockets.emplace_back(
                                             associated_socket);
@@ -131,7 +131,7 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
                 while (auto new_connection = acceptor.Accept()) {
                         new_connection.MakeNonBlocking();
                         debug("Will add a new connection with fd = " +
-                              std::to_string(new_connection.get_fd()));
+                              std::to_string(new_connection.GetFD()));
                         SocketWatcher<Sock>::Add(std::move(new_connection));
                 }
         }

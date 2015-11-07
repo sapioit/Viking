@@ -33,8 +33,8 @@ template <class T> class FileWatcher {
                         }
                 }
                 debug("FileWatcher could not remove the file with fd = " +
-                      std::to_string(file.get_fd()));
-                // throw FileNotFound {file.get_fd()};
+                      std::to_string(file.GetFD()));
+                // throw FileNotFound {file.getfd()};
         }
 
         virtual void

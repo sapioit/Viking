@@ -38,7 +38,7 @@ void Server::run() {
                 auto master_socket =
                     IO::Socket::start_socket(_port, _maxPending);
                 debug("Master socket has fd = " +
-                      std::to_string(master_socket.get_fd()));
+                      std::to_string(master_socket.GetFD()));
                 // IO::Watcher _master_listener(_masterSocket, _maxPending);
 
                 IO::OutputScheduler &output_scheduler =

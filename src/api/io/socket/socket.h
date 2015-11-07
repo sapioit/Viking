@@ -17,72 +17,132 @@
 
 namespace IO {
 class Socket {
-      public:
-        struct AcceptError {
-                int fd;
-                AcceptError(int sockfd) : fd(sockfd) {}
-        };
-        struct connection_closed_by_peer {};
-        int get_fd() const;
-        bool is_blocking() const;
-        Socket(int port, bool connection);
-        Socket(const Socket &) = delete;
-        Socket(Socket &&other) {
-                _fd = other._fd;
-                other._fd = -1;
-                _port = other._port;
-                _reads = other._reads;
-                _blocking = other._blocking;
-                _address = other._address;
-                _connection = other._connection;
-        }
-        Socket &operator=(Socket &&other) {
-                if (this != &other) {
-                        _fd = other._fd;
-                        other._fd = -1;
-                        _port = other._port;
-                        _reads = other._reads;
-                        _blocking = other._blocking;
-                        _address = other._address;
-                        _connection = other._connection;
-                }
-                return *this;
-        }
-        Socket &operator=(const Socket &) = delete;
-        Socket *Duplicate() const;
-        virtual ~Socket();
-        static Socket start_socket(int port, int maxConnections);
-        void Close();
-        void Bind();
-        void MakeNonBlocking();
-        void Listen(int pending_max);
-        Socket Accept() const;
-        Socket(std::uint16_t fd);
+public:
+  struct AcceptError {
+    int fd;
+  };
+  struct ConnectionClosedByPeer {
+      int fd;
+  };
+  Socket(int);
+  Socket(int port, int);
+  Socket(const Socket &) = delete;
+  Socket(Socket &&other) {
+      operator=(std::move(other));
+  }
+  Socket &operator=(Socket &&other) {
+    if (this != &other) {
+      fd_ = other.fd_;
+      other.fd_ = -1;
+      port_ = other.port_;
+      hits_ = other.hits_;
+      address_ = other.address_;
+      connection_ = other.connection_;
+    }
+    return *this;
+  }
+  Socket &operator=(const Socket &) = delete;
+  bool operator<(const Socket &) const;
+  bool operator==(const Socket &) const;
+  operator bool() const;
+  virtual ~Socket();
+  Socket Accept() const;
+  Socket *Duplicate() const;
+  int GetFD() const;
+  bool IsAcceptor() const;
+  void Bind() const;
+  void MakeNonBlocking() const;
+  void Listen(int pending_max) const;
+  long AvailableToRead() const;
+  bool WasShutDown() const;
+  void Close();
 
-        template <class T> T Read(std::size_t size = 0);
+  static Socket start_socket(int port, int maxConnections);
 
-        std::string ReadUntil(const std::string &U, bool peek = false);
-        ssize_t Write(const char *, std::size_t);
-        ssize_t Write(const std::vector<char> &);
-        ssize_t Write(const std::string &);
-        bool WasShutDown();
+  template <class T> T ReadSome() {
+    T result;
+    ssize_t available = 0;
+    try {
+      available = static_cast<std::size_t>(AvailableToRead());
+    } catch (std::runtime_error &ex) {
+      throw;
+    }
+    result.resize(available);
+    ssize_t readBytes = ::read(fd_, &result.front(), available);
+    if (available != readBytes)
+      throw std::runtime_error("Socket read error on fd = " +
+                               std::to_string(fd_) + "."
+                                                     "Expected to read " +
+                               std::to_string(available) +
+                               " bytes, but could only read " +
+                               std::to_string(readBytes) + " bytes");
+    ++hits_;
+    return result;
+  }
 
-        bool operator<(const Socket &) const;
-        bool operator==(const Socket &) const;
-        operator bool() const;
-        std::uint64_t getReads() const;
+  template <class T> T Read(std::size_t size = 0) {
+    T result;
+    result.resize(size);
+    auto readBytes = ::read(fd_, &result.front(), size);
+    if (readBytes == 0)
+      throw ConnectionClosedByPeer{fd_};
+    if (readBytes == -1) {
+      if (!(errno == EAGAIN || errno == EWOULDBLOCK))
+        throw std::runtime_error("Error when reading from socket, "
+                                 "errno = " +
+                                 std::to_string(errno));
+    } else if (static_cast<std::size_t>(readBytes) != size)
+      result.resize(readBytes);
+    ++hits_;
+    return result;
+  }
 
-        bool getConnection() const;
+  std::string ReadUntil(const std::string &until, bool peek = false) {
+      std::string result;
+      constexpr std::size_t buffSize = 20;
+      std::size_t sum = 0;
+      do {
+          result.resize(sum + buffSize);
+          auto bytesRead =
+                  ::recv(fd_, &result.front(), buffSize + sum, MSG_PEEK);
+          if (bytesRead == 0)
+              throw ConnectionClosedByPeer{fd_};
+          if (bytesRead == -1) {
+              if (!(errno == EAGAIN || errno == EWOULDBLOCK))
+                  throw std::runtime_error(
+                          "Error when reading from socket, errno = " +
+                          std::to_string(errno));
+              else
+                  return "";
+          }
+          auto position = result.find(until.c_str(), 0, until.size());
+          if (position != std::string::npos) {
+              position += until.size();
+              try {
+                  if (peek)
+                      return result.substr(0, position);
+                  return Read<std::string>(
+                              position);
+              } catch (std::runtime_error &ex) {
+                  throw;
+              }
+          } else
+              sum += bytesRead;
+      } while (true);
+  }
 
-        bool IsAcceptor() const { return (!_connection); }
+  template <typename T> ssize_t Write(const T &data) {
+    auto written = ::send(fd_, static_cast<const void *>(data.data()),
+                          data.size(), MSG_NOSIGNAL);
+    return written == -1 ? 0 : written;
+  }
 
-      private:
-        int _port, _opt;
-        std::uint64_t _reads = 0;
-        int _fd = -1;
-        bool _connection = false;
-        struct sockaddr_in _address;
-        bool _blocking = false;
+private:
+  int fd_ = -1;
+  int port_;
+  std::uint64_t hits_ = 0;
+  bool connection_ = false;
+  struct sockaddr_in address_;
 };
 typedef std::reference_wrapper<Socket> SocketRef;
 }

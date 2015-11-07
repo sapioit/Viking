@@ -61,7 +61,7 @@ bool Dispatcher::Dispatch(IO::Socket &connection) {
                 }
         } catch (std::runtime_error &ex) {
                 Log::e(ex.what());
-        } catch (IO::Socket::connection_closed_by_peer) {
+        } catch (IO::Socket::ConnectionClosedByPeer) {
                 return true;
         }
         return true;

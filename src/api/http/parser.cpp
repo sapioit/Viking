@@ -34,7 +34,7 @@ Request Parser::operator()() {
         } catch (std::runtime_error &ex) {
                 Log::e(ex.what());
                 throw std::runtime_error("Could not parse request");
-        } catch (IO::Socket::connection_closed_by_peer &) {
+        } catch (IO::Socket::ConnectionClosedByPeer &) {
                 throw;
         }
 }
@@ -79,7 +79,7 @@ Request Parser::Init() {
                 } catch (std::exception &ex) {
                         throw;
                 }
-        } catch (IO::Socket::connection_closed_by_peer) {
+        } catch (IO::Socket::ConnectionClosedByPeer) {
                 throw;
         }
 }

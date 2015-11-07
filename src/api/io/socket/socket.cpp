@@ -13,56 +13,50 @@
 
 using namespace IO;
 
-Socket::Socket(std::uint16_t port) : _port(port) {
-        _fd = ::socket(AF_INET, SOCK_STREAM, 0);
-        if (_fd == -1)
+Socket::Socket(int port) : port_(port) {
+        if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
                 throw std::runtime_error("Could not create socket");
-        int opt_res;
-        opt_res =
-            setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt));
-        if (opt_res < -1)
+        int opt;
+        if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < -1)
                 throw std::runtime_error("Setsockopt error");
-        _address.sin_family = AF_INET;
-        _address.sin_addr.s_addr = INADDR_ANY;
-        _address.sin_port = htons(port);
+        address_.sin_family = AF_INET;
+        address_.sin_addr.s_addr = INADDR_ANY;
+        address_.sin_port = htons(port);
 }
 
-Socket::Socket(int fd, bool connection) : _fd(fd), _connection(connection) {}
+Socket::Socket(int fd, int port) : fd_(fd), port_(port), connection_(true) {}
 
 Socket *Socket::Duplicate() const {
-        auto *new_socket = new Socket(::dup(_fd), true);
+        auto *new_socket = new Socket(::dup(fd_), true);
         new_socket->MakeNonBlocking();
         return new_socket;
 }
 
-void Socket::Bind() {
-        int bind_result =
-            ::bind(_fd, reinterpret_cast<struct sockaddr *>(&_address),
-                   sizeof(_address));
-        if (bind_result < 0) {
+void Socket::Bind() const {
+        if (::bind(fd_, reinterpret_cast<const struct sockaddr *>(&address_),
+                   sizeof(address_)) < 0) {
                 if (errno == EADDRINUSE)
                         throw std::runtime_error("Port " +
-                                                 std::to_string(_port) +
+                                                 std::to_string(port_) +
                                                  " is already in use");
                 throw std::runtime_error("Bind failed, errno = " +
                                          std::to_string(errno));
         }
 }
 
-void Socket::Listen(int pending_max) {
-        int listen_result = ::listen(_fd, pending_max);
+void Socket::Listen(int pending_max) const {
+        int listen_result = ::listen(fd_, pending_max);
         if (listen_result < 0)
                 throw std::runtime_error("Listen failed");
 }
 
-void Socket::MakeNonBlocking() {
-        int flags = fcntl(_fd, F_GETFL, 0);
+void Socket::MakeNonBlocking() const {
+        int flags = fcntl(fd_, F_GETFL, 0);
         if (flags == -1)
                 throw std::runtime_error("Could not get file descriptor flags");
 
-        flags |= (_blocking ? (~O_NONBLOCK) : O_NONBLOCK);
-        int result = fcntl(_fd, F_SETFL, flags);
-        if (result == -1)
+        flags |= O_NONBLOCK;
+        if (fcntl(fd_, F_SETFL, flags) == -1)
                 throw std::runtime_error("Could not set the non-blocking flag "
                                          "for the file descriptor");
 }
@@ -71,36 +65,19 @@ Socket Socket::Accept() const {
         struct sockaddr in_addr;
         socklen_t in_len;
         in_len = sizeof(in_addr);
-
-        int accept_result = ::accept(_fd, &in_addr, &in_len);
-        // if (accept_result == -1) {
-        //   if (! ((errno == EAGAIN) || (errno == EWOULDBLOCK)) ) {
-        //       throw _fd;
-        //   }
-        // }
-
-        return Socket(accept_result, true);
+        return Socket(::accept(fd_, &in_addr, &in_len), port_);
 }
 
-ssize_t Socket::Write(const char *data, size_t size) {
-        auto bytesWritten =
-            ::send(_fd, static_cast<const void *>(data), size, MSG_NOSIGNAL);
-        if (bytesWritten == -1)
-                return 0;
-        else
-                return bytesWritten;
-}
 
-ssize_t Socket::Write(const std::vector<char> &vector) {
-        return Write(vector.data(), vector.size());
-}
+int Socket::GetFD() const { return fd_; }
 
-int Socket::get_fd() const { return _fd; }
+bool Socket::IsAcceptor() const { return (!connection_); }
 
 void Socket::Close() {
-        if (_fd != -1) {
-                debug("Closing socket with fd = " + std::to_string(_fd));
-                ::close(_fd);
+    if (fd_ != -1) {
+        debug("Closing socket with fd = " + std::to_string(fd_));
+                ::close(fd_);
+                fd_ = -1;
         }
 }
 
@@ -118,131 +95,14 @@ Socket Socket::start_socket(int port, int maxConnections) {
         }
 }
 
-bool Socket::is_blocking() const { return _blocking; }
-
-ssize_t Socket::Write(const std::string &string) {
-        try {
-                return Write(string.data(), string.length());
-        } catch (std::runtime_error &ex) {
-                Log::e(ex.what());
-                throw;
-        }
-}
-
-bool Socket::WasShutDown() {
+bool Socket::WasShutDown() const {
         char a;
-        auto bytesRead = ::recv(_fd, &a, 1, MSG_PEEK);
-        return bytesRead == 0;
+        return (::recv(fd_, &a, 1, MSG_PEEK) == 0);
 }
 
 bool Socket::operator<(const Socket &other) const {
-        return _reads < other._reads;
+        return hits_ < other.hits_;
 }
-bool Socket::operator==(const Socket &other) const { return _fd == other._fd; }
+bool Socket::operator==(const Socket &other) const { return fd_ == other.fd_; }
 
-Socket::operator bool() const { return _fd != -1; }
-
-std::uint64_t Socket::getReads() const { return _reads; }
-bool Socket::getConnection() const { return _connection; }
-
-template <class T> T Socket::Read(std::size_t size) {
-        T result;
-
-        try {
-                if (size == 0) {
-                        auto bytesAvailable = [&]() -> int {
-                                int available = -1, errorCode;
-                                errorCode = ioctl(_fd, FIONREAD, &available);
-                                if (errorCode < 0)
-                                        throw std::runtime_error(
-                                            "Could not determine bytes "
-                                            "available on socket with fd = " +
-                                            std::to_string(_fd) +
-                                            ". ioctl failed, errno = " +
-                                            std::to_string(errno));
-                                return available;
-                        };
-
-                        ssize_t available = 0;
-                        try {
-                                available =
-                                    static_cast<std::size_t>(bytesAvailable());
-                        } catch (std::runtime_error &ex) {
-                                throw;
-                        }
-                        result.resize(available);
-                        ssize_t readBytes =
-                            ::read(_fd, &result.front(), available);
-                        if (available != readBytes)
-                                throw std::runtime_error(
-                                    "Socket read error on fd = " +
-                                    std::to_string(_fd) + "."
-                                                          "Expected to read " +
-                                    std::to_string(available) +
-                                    " bytes, but could only read " +
-                                    std::to_string(readBytes) + " bytes");
-                        ++_reads;
-                        return result;
-                } else {
-                        result.resize(size);
-                        auto readBytes = ::read(_fd, &result.front(), size);
-                        if (readBytes == 0)
-                                throw connection_closed_by_peer{};
-                        if (readBytes == -1) {
-                                if (!(((errno == EAGAIN) ||
-                                       (errno == EWOULDBLOCK)) &&
-                                      _blocking))
-                                        throw std::runtime_error(
-                                            "Error when reading from socket, "
-                                            "errno = " +
-                                            std::to_string(errno));
-                        } else if (static_cast<std::size_t>(readBytes) != size)
-                                result.resize(readBytes);
-                        ++_reads;
-                        return result;
-                }
-        } catch (std::system_error &ex) {
-                throw std::runtime_error(
-                    "Caught system error while reading from socket. Text: " +
-                    std::string(ex.what()));
-        }
-}
-
-template std::vector<char> Socket::Read<std::vector<char>>(std::size_t = 0);
-
-template std::string Socket::Read<std::string>(std::size_t = 0);
-
-std::string Socket::ReadUntil(const std::string &until, bool peek) {
-        std::string result;
-        constexpr std::size_t buffSize = 20;
-        std::size_t sum = 0;
-        do {
-                result.resize(sum + buffSize);
-                auto bytesRead =
-                    ::recv(_fd, &result.front(), buffSize + sum, MSG_PEEK);
-                if (bytesRead == 0)
-                        throw connection_closed_by_peer{};
-                if (bytesRead == -1) {
-                        if (!(((errno == EAGAIN) || (errno == EWOULDBLOCK)) &&
-                              _blocking))
-                                throw std::runtime_error(
-                                    "Error when reading from socket, errno = " +
-                                    std::to_string(errno));
-                        else
-                                return "";
-                }
-                auto position = result.find(until.c_str(), 0, until.size());
-                if (position != std::string::npos) {
-                        position += until.size();
-                        try {
-                                if (peek)
-                                        return result.substr(0, position);
-                                return Read<std::string>(
-                                    position); // result.substr(0, position);
-                        } catch (std::runtime_error &ex) {
-                                throw;
-                        }
-                } else
-                        sum += bytesRead;
-        } while (true);
-}
+Socket::operator bool() const { return fd_ != -1; }

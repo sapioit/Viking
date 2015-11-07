@@ -11,33 +11,33 @@
 
 inline void IO::OutputScheduler::add_socket(const IO::Socket &sock,
                                             const std::string &data) {
-        Log::i("socket with fd = " + std::to_string(sock.get_fd()) +
+        Log::i("socket with fd = " + std::to_string(sock.GetFD()) +
                " will be copied to fd = ");
 
         _schedule.emplace_back(sock.Duplicate(), data);
 
         struct epoll_event ev;
         memset(&ev, 0, sizeof(struct epoll_event));
-        ev.data.fd = (*_schedule.back().sock).get_fd();
+        ev.data.fd = (*_schedule.back().sock).GetFD();
         ev.events = EPOLLOUT | EPOLLET;
 
-        Log::i(std::to_string((*_schedule.back().sock).get_fd()));
+        Log::i(std::to_string((*_schedule.back().sock).GetFD()));
 
         if (-1 == epoll_ctl(_efd, EPOLL_CTL_ADD, ev.data.fd, &ev))
                 throw std::runtime_error("Could not add event with fd:" +
-                                         std::to_string(sock.get_fd()));
+                                         std::to_string(sock.GetFD()));
 }
 
 void IO::OutputScheduler::ScheduleWrite(const IO::Socket &sock,
                                         const std::string &data) {
-        Log::i("scheduling write on fd = " + std::to_string(sock.get_fd()));
+        Log::i("scheduling write on fd = " + std::to_string(sock.GetFD()));
         volatile std::lock_guard<std::mutex> schedule_lock(_scheduling_mutex);
         add_socket(sock, data);
 }
 
 void IO::OutputScheduler::remove_socket(IO::Socket &sock, int position,
                                         epoll_event *ev) {
-        epoll_ctl(_efd, EPOLL_CTL_DEL, sock.get_fd(), ev);
+        epoll_ctl(_efd, EPOLL_CTL_DEL, sock.GetFD(), ev);
         _schedule.erase(_schedule.begin() + position);
 }
 
@@ -46,7 +46,7 @@ void IO::OutputScheduler::remove_socket(int sockfd) {
         int socket_position = -1;
         unsigned int index = 0;
         for (index = 0; index < _schedule.size(); ++index) {
-                if ((*_schedule[index].sock).get_fd() == sockfd) {
+                if ((*_schedule[index].sock).GetFD() == sockfd) {
                         socket = &((*_schedule[index].sock));
                         socket_position = index;
                         break;
@@ -58,7 +58,7 @@ void IO::OutputScheduler::remove_socket(int sockfd) {
         if (socket != nullptr) {
                 struct epoll_event *ev = nullptr;
                 for (auto &event : _events) {
-                        if ((event.data.fd) == socket->get_fd())
+                        if ((event.data.fd) == socket->GetFD())
                                 ev = &(event);
                 }
 
@@ -127,7 +127,7 @@ void IO::OutputScheduler::Run() {
                                              index2 < _schedule.size();
                                              ++index2) {
                                                 if (_schedule[index2]
-                                                        .sock->get_fd() ==
+                                                        .sock->GetFD() ==
                                                     _events[index].data.fd) {
                                                         scheduled_item_pos =
                                                             index2;
@@ -142,7 +142,7 @@ void IO::OutputScheduler::Run() {
                                                             _schedule
                                                                 [scheduled_item_pos]
                                                                     .sock
-                                                                    ->get_fd());
+                                                                    ->GetFD());
 
                                                 auto written = static_cast<
                                                     std::size_t>(
