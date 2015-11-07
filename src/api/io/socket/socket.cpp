@@ -68,14 +68,13 @@ Socket Socket::Accept() const {
         return Socket(::accept(fd_, &in_addr, &in_len), port_);
 }
 
-
 int Socket::GetFD() const { return fd_; }
 
 bool Socket::IsAcceptor() const { return (!connection_); }
 
 void Socket::Close() {
-    if (fd_ != -1) {
-        debug("Closing socket with fd = " + std::to_string(fd_));
+        if (fd_ != -1) {
+                debug("Closing socket with fd = " + std::to_string(fd_));
                 ::close(fd_);
                 fd_ = -1;
         }
