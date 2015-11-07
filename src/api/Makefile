@@ -1,7 +1,7 @@
 # Compiler
 CXX = clang++
-OPTS =  -fPIC -std=c++14 -O0 -Wall
-DEBUGOPTS = -g3
+OPTS = -fPIC -std=c++14 -O3 -Wall
+DEBUGOPTS = 
 INCLUDEDIRS = -I.
 
 # Project name

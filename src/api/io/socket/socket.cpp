@@ -17,7 +17,7 @@ Socket::Socket(int port) : port_(port) {
         if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
                 throw std::runtime_error("Could not create socket");
         int opt;
-        if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < -1)
+        if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
                 throw std::runtime_error("Setsockopt error");
         address_.sin_family = AF_INET;
         address_.sin_addr.s_addr = INADDR_ANY;
@@ -33,12 +33,14 @@ Socket *Socket::Duplicate() const {
 }
 
 void Socket::Bind() const {
+        assert(port_ != 0);
         if (::bind(fd_, reinterpret_cast<const struct sockaddr *>(&address_),
-                   sizeof(address_)) < 0) {
+                   sizeof(address_)) == -1) {
                 if (errno == EADDRINUSE)
-                        throw std::runtime_error("Port " +
-                                                 std::to_string(port_) +
-                                                 " is already in use");
+                        throw std::runtime_error(
+                            "Port " + std::to_string(port_) +
+                            " is already in use (errno = " +
+                            std::to_string(errno) + ")\n");
                 throw std::runtime_error("Bind failed, errno = " +
                                          std::to_string(errno));
         }
@@ -99,9 +101,7 @@ bool Socket::WasShutDown() const {
         return (::recv(fd_, &a, 1, MSG_PEEK) == 0);
 }
 
-bool Socket::operator<(const Socket &other) const {
-        return hits_ < other.hits_;
-}
+bool Socket::operator<(const Socket &other) const { return fd_ < other.fd_; }
 bool Socket::operator==(const Socket &other) const { return fd_ == other.fd_; }
 
 Socket::operator bool() const { return fd_ != -1; }

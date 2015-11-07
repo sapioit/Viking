@@ -10,14 +10,14 @@
 
 namespace Http {
 class Parser {
-        IO::Socket &_sock;
+        const IO::Socket &_sock;
 
         Request Init();
         Components::Method GetMethod(const std::string &str);
         Header GetHeader();
 
       public:
-        Parser(IO::Socket &sock) : _sock(sock) {}
+        Parser(const IO::Socket &sock) : _sock(sock) {}
         Request operator()();
 
         static Components::ContentType

@@ -13,7 +13,7 @@ class Dispatcher {
       public:
         static std::map<std::pair<Http::Components::Method, std::string>,
                         std::function<Http::Response(Http::Request)>> routes;
-        static bool Dispatch(IO::Socket &connection);
+        static bool Dispatch(const IO::Socket &connection);
         /*static void
         PassToUser(Http::Request request,
                    std::function<Http::Response(Http::Request)> user_handler,

@@ -13,7 +13,6 @@ QMAKE_CXXFLAGS += -Wall
 QMAKE_CXXFLAGS += -Ijson/ -I$$PWD
 DEFINES += API_LIBRARY
 
-message($$PWD)
 
 QMAKE_CXXFLAGS_DEBUG += -O0 -g
 QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -81,6 +80,15 @@ HEADERS += \
     misc/storage.h \
     misc/debug.h \
 #MISC-END
+
+#UTIL
+SOURCES +=
+
+HEADERS += \
+    util/utility.h \
+    util/set.h \
+
+#UTIL-END
 
 #SERVER
 SOURCES += \

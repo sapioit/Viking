@@ -1,7 +1,7 @@
 #ifndef FILEWATCHER_H
 #define FILEWATCHER_H
 
-#include <vector>
+#include <set>
 #include <memory>
 #include <algorithm>
 #include <misc/debug.h>
@@ -9,7 +9,7 @@
 namespace IO {
 template <class T> class FileWatcher {
       protected:
-        std::vector<T> watched_files_;
+        std::set<T> watched_files_;
 
       public:
         struct FileNotFound {
@@ -19,26 +19,17 @@ template <class T> class FileWatcher {
         FileWatcher() = default;
         virtual ~FileWatcher() = default;
 
-        T &Add(T file) noexcept {
-                watched_files_.emplace_back(std::move(file));
-                return watched_files_.front();
-        }
+        void Add(T file) noexcept { watched_files_.emplace(std::move(file)); }
 
         void Remove(const T &file) {
-                for (auto it = watched_files_.cbegin();
-                     it != watched_files_.end(); ++it) {
-                        if ((*it) == file) {
-                                watched_files_.erase(it);
-                                return;
-                        }
-                }
-                debug("FileWatcher could not remove the file with fd = " +
-                      std::to_string(file.GetFD()));
-                // throw FileNotFound {file.getfd()};
+                auto elements_removed = watched_files_.erase(file);
+                if (elements_removed == 0)
+                        debug(
+                            "FileWatcher could not remove the file with fd = " +
+                            std::to_string(file.GetFD()));
         }
 
-        virtual void
-        Run(std::function<void(std::vector<std::reference_wrapper<T>>)>) = 0;
+        virtual void Run(std::function<bool(const T &)>) = 0;
 };
 }
 

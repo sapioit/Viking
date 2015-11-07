@@ -7,9 +7,9 @@
 
 class ResponseManager {
       public:
-        static void Respond(Http::Response, IO::Socket &);
+        static void Respond(Http::Response, const IO::Socket &);
         static void Respond(const Http::Request &, const Resource &,
-                            IO::Socket &);
+                            const IO::Socket &);
 };
 
 #endif // RESPONSEMANAGER_H

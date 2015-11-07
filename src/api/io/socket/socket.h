@@ -33,7 +33,6 @@ class Socket {
                         fd_ = other.fd_;
                         other.fd_ = -1;
                         port_ = other.port_;
-                        hits_ = other.hits_;
                         address_ = other.address_;
                         connection_ = other.connection_;
                 }
@@ -57,7 +56,7 @@ class Socket {
 
         static Socket start_socket(int port, int maxConnections);
 
-        template <class T> T ReadSome() {
+        template <class T> T ReadSome() const {
                 T result;
                 ssize_t available = 0;
                 try {
@@ -75,11 +74,10 @@ class Socket {
                             std::to_string(available) +
                             " bytes, but could only read " +
                             std::to_string(readBytes) + " bytes");
-                ++hits_;
                 return result;
         }
 
-        template <class T> T Read(std::size_t size = 0) {
+        template <class T> T Read(std::size_t size = 0) const {
                 T result;
                 result.resize(size);
                 auto readBytes = ::read(fd_, &result.front(), size);
@@ -93,11 +91,11 @@ class Socket {
                                     std::to_string(errno));
                 } else if (static_cast<std::size_t>(readBytes) != size)
                         result.resize(readBytes);
-                ++hits_;
                 return result;
         }
 
-        std::string ReadUntil(const std::string &until, bool peek = false) {
+        std::string ReadUntil(const std::string &until,
+                              bool peek = false) const {
                 std::string result;
                 constexpr std::size_t buffSize = 20;
                 std::size_t sum = 0;
@@ -133,7 +131,7 @@ class Socket {
                 } while (true);
         }
 
-        template <typename T> ssize_t Write(const T &data) {
+        template <typename T> ssize_t Write(const T &data) const {
                 auto written =
                     ::send(fd_, static_cast<const void *>(data.data()),
                            data.size(), MSG_NOSIGNAL);
@@ -143,7 +141,6 @@ class Socket {
       private:
         int fd_ = -1;
         int port_;
-        std::uint64_t hits_ = 0;
         bool connection_ = false;
         struct sockaddr_in address_;
 };

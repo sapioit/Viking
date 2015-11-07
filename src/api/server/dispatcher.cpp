@@ -19,7 +19,7 @@ using namespace Http::Components;
 
 constexpr auto close_after_resource = true;
 
-bool Dispatcher::Dispatch(IO::Socket &connection) {
+bool Dispatcher::Dispatch(const IO::Socket &connection) {
         try {
                 auto parser = Http::Parser(connection);
                 auto request = parser();

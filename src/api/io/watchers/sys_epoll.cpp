@@ -3,6 +3,7 @@
 #include <cstring>
 #include <algorithm>
 #include <errno.h>
+#include <cassert>
 
 SysEpoll::SysEpoll() {
         efd_ = epoll_create1(0);
@@ -22,21 +23,23 @@ void SysEpoll::Schedule(int file_descriptor, std::uint32_t flags) {
         else
                 debug("Scheduled file descriptor " +
                       std::to_string(file_descriptor));
+        events_.push_back(ev);
 }
 
 void SysEpoll::Remove(int file_descriptor) {
         // FIXME
         epoll_event *event = nullptr;
-        std::remove_if(events_.begin(), events_.end(),
-                       [file_descriptor, &event](epoll_event &ev) {
-                               if (file_descriptor == ev.data.fd) {
-                                       event = &ev;
-                                       return true;
-                               }
-                               return false;
-                       });
-
-        if (event != nullptr) {
+        auto event_it =
+            std::find_if(events_.begin(), events_.end(),
+                         [file_descriptor, &event](epoll_event &ev) {
+                                 if (file_descriptor == ev.data.fd) {
+                                         event = &ev;
+                                         return true;
+                                 }
+                                 return false;
+                         });
+        if (event_it != events_.end()) {
+                auto *event = std::addressof(*event_it);
                 if (-1 ==
                     epoll_ctl(efd_, EPOLL_CTL_DEL, file_descriptor, event))
                         throw Error("Could not remove the file with fd = " +
@@ -44,25 +47,24 @@ void SysEpoll::Remove(int file_descriptor) {
                                     " from the OS queue");
                 debug("Removed file descriptor " +
                       std::to_string(file_descriptor) + " from SysEpoll");
+                events_.erase(event_it);
         } else {
                 debug("SysEpoll could not find event with fd = " +
                       std::to_string(file_descriptor));
         }
 }
 
-static std::vector<SysEpoll::Event>
+static std::set<SysEpoll::Event>
 CreateEvents(const std::vector<epoll_event> &events) noexcept {
-        std::vector<SysEpoll::Event> epoll_events;
+        std::set<SysEpoll::Event> epoll_events;
         for (const auto &event : events) {
-                epoll_events.emplace_back(event.data.fd, event.events);
+                epoll_events.emplace(event.data.fd, event.events);
                 debug("Event with fd = " + std::to_string(event.data.fd) +
                       " was reported to be active");
         }
         return epoll_events;
 }
-#include <iostream>
-
-std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
+std::set<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
         std::vector<epoll_event> active_files;
         active_files.resize(chunk_size);
 

@@ -14,6 +14,7 @@
 #include <future>
 #include <regex>
 #include <map>
+#include <cassert>
 
 using namespace Web;
 
@@ -50,20 +51,21 @@ void Server::run() {
 
                 IO::SocketWatcher<IO::Socket> watcher(std::move(master_socket));
 
-                auto watcher_callbacks = [&](
-                    std::vector<std::reference_wrapper<IO::Socket>> sockets) {
-                        for (auto &sock : sockets) {
-                                debug("Will dispatch " +
-                                      std::to_string(sockets.size()) +
-                                      " connections");
-                                auto should_close = Dispatcher::Dispatch(sock);
-                                if (should_close)
-                                        watcher.Remove(sock);
-                        }
-                };
+                //                auto watcher_callbacks = [&](
+                //                    std::vector<const IO::Socket *> sockets) {
+                //                        debug("Will dispatch " +
+                //                              std::to_string(sockets.size()) +
+                //                              " connections");
+                //                        for (auto &sock : sockets) {
+                //                                auto should_close =
+                //                                Dispatcher::Dispatch(*sock);
+                //                                if (should_close)
+                //                                        watcher.Remove(*sock);
+                //                        }
+                //                };
 
                 while (true) {
-                        watcher.Run(watcher_callbacks);
+                        watcher.Run(Dispatcher::Dispatch);
                 }
 
         } catch (std::exception &ex) {

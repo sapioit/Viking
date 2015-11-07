@@ -8,7 +8,8 @@
 
 using namespace Http::Components;
 
-void ResponseManager::Respond(Http::Response response, IO::Socket &socket) {
+void ResponseManager::Respond(Http::Response response,
+                              const IO::Socket &socket) {
         try {
                 auto raw_response = response.str();
                 IO::OutputScheduler::get().ScheduleWrite(
@@ -22,7 +23,7 @@ void ResponseManager::Respond(Http::Response response, IO::Socket &socket) {
 }
 
 void ResponseManager::Respond(const Http::Request &request, const Resource &res,
-                              IO::Socket &socket) {
+                              const IO::Socket &socket) {
         Http::Response response{request, res};
         response.setContent_type(
             Http::Parser::GetMimeTypeByExtension(request.URI));

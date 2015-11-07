@@ -4,9 +4,12 @@
 #include <io/watchers/file_watcher.h>
 #include <io/socket/socket.h>
 #include <io/watchers/sys_epoll.h>
+#include <util/set.h>
+
 #include <misc/debug.h>
 #include <stdexcept>
 #include <algorithm>
+#include <utility>
 
 namespace IO {
 template <class Sock>
@@ -47,83 +50,66 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
         }
 
         void Remove(const Sock &socket) {
-                try {
-                        SysEpoll::Remove(socket.GetFD());
-                        FileWatcher<Sock>::Remove(socket);
-                } catch (const typename FileWatcher<Sock>::FileNotFound &ex) {
-                        // WTF?
-                        // debug("FileWatcher could not remove the file with fd
-                        // = " + std::to_string(ex.fd));
-                }
+                SysEpoll::Remove(socket.GetFD());
+                FileWatcher<Sock>::Remove(socket);
         }
 
-        virtual void
-        Run(std::function<void(std::vector<std::reference_wrapper<Sock>>)>
-                callback) {
+        virtual void Run(std::function<bool(const Sock &)> callback) {
+                if (FileWatcher<Sock>::watched_files_.size() == 0)
+                        return;
                 const auto events = std::move(
                     SysEpoll::Wait(FileWatcher<Sock>::watched_files_.size()));
 
-                std::vector<std::reference_wrapper<Sock>> active_sockets;
+                std::vector<std::pair<const Sock *, const Event *>>
+                    active_sockets;
 
-                for (const auto &event : events) {
-                        auto sock_it = std::find_if(
-                            FileWatcher<Sock>::watched_files_.begin(),
-                            FileWatcher<Sock>::watched_files_.end(),
-                            [this, &event](const Sock &socket) {
-                                    if (event.file_descriptor ==
-                                        socket.GetFD()) {
-                                            debug(
-                                                "Matched the event with fd = " +
-                                                std::to_string(
-                                                    event.file_descriptor) +
-                                                " with an active socket");
-                                            return true;
-                                    }
-                                    return false;
-                            });
-                        if (sock_it !=
-                            FileWatcher<Sock>::watched_files_.end()) {
+                Utility::SetIntersection(
+                    FileWatcher<Sock>::watched_files_.begin(),
+                    FileWatcher<Sock>::watched_files_.end(), events.begin(),
+                    events.end(), std::back_inserter(active_sockets),
+                    SysEpoll::EventComparer<Sock>(),
+                    Utility::Merge<const IO::Socket, const Event>);
 
-                                auto &associated_socket = (*sock_it);
+                if (active_sockets.size() == 0 &&
+                    (*FileWatcher<Sock>::watched_files_.begin()).IsAcceptor()) {
+                        debug("The master socket is active");
+                        AddNewConnections(
+                            *FileWatcher<Sock>::watched_files_.begin());
+                }
 
-                                if (associated_socket.IsAcceptor()) {
-                                        debug("The master socket is active");
-                                        AddNewConnections(associated_socket);
-                                        continue;
-                                }
+                for (const auto &event : active_sockets) {
+                        const auto &associated_socket = *event.first;
+                        const auto &associated_event = *event.second;
 
-                                if (event.description &
-                                        static_cast<std::uint32_t>(
-                                            SysEpoll::Description::
-                                                Termination) ||
-                                    event.description &
-                                        static_cast<std::uint32_t>(
-                                            SysEpoll::Description::Error)) {
-                                        debug("Event with fd = " +
-                                              std::to_string(
-                                                  event.file_descriptor) +
-                                              " must be closed");
-                                        Remove(associated_socket);
-                                }
-                                if (event.description &
-                                    static_cast<std::uint32_t>(
-                                        SysEpoll::Description::Read)) {
-                                        debug("Socket with fd = " +
-                                              std::to_string(
-                                                  associated_socket.GetFD()) +
-                                              " can be read from");
-                                        active_sockets.emplace_back(
-                                            associated_socket);
-                                }
+                        if (associated_socket.IsAcceptor()) {
+                                debug("The master socket is active");
+                                AddNewConnections(associated_socket);
+                                continue;
                         }
 
-                        debug("We have " +
-                              std::to_string(active_sockets.size()) +
-                              " active sockets out of " +
-                              std::to_string(
-                                  FileWatcher<Sock>::watched_files_.size()));
-
-                        callback(active_sockets);
+                        if (associated_event.description &
+                                static_cast<std::uint32_t>(
+                                    SysEpoll::Description::Termination) ||
+                            associated_event.description &
+                                static_cast<std::uint32_t>(
+                                    SysEpoll::Description::Error)) {
+                                debug("Event with fd = " +
+                                      std::to_string(
+                                          associated_event.file_descriptor) +
+                                      " must be closed");
+                                Remove(associated_socket);
+                        }
+                        if (associated_event.description &
+                            static_cast<std::uint32_t>(
+                                SysEpoll::Description::Read)) {
+                                debug(
+                                    "Socket with fd = " +
+                                    std::to_string(associated_socket.GetFD()) +
+                                    " can be read from");
+                                bool should_close = callback(associated_socket);
+                                if (should_close)
+                                        Remove(associated_socket);
+                        }
                 }
         }
 
