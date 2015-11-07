@@ -70,13 +70,6 @@ class SocketWatcher : public FileWatcher<Sock>, public SysEpoll {
                     SysEpoll::EventComparer<Sock>(),
                     Utility::Merge<const IO::Socket, const Event>);
 
-                if (active_sockets.size() == 0 &&
-                    (*FileWatcher<Sock>::watched_files_.begin()).IsAcceptor()) {
-                        debug("The master socket is active");
-                        AddNewConnections(
-                            *FileWatcher<Sock>::watched_files_.begin());
-                }
-
                 for (const auto &event : active_sockets) {
                         const auto &associated_socket = *event.first;
                         const auto &associated_event = *event.second;

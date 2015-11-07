@@ -40,8 +40,6 @@ void Server::run() {
                     IO::Socket::start_socket(_port, _maxPending);
                 debug("Master socket has fd = " +
                       std::to_string(master_socket.GetFD()));
-                // IO::Watcher _master_listener(_masterSocket, _maxPending);
-
                 IO::OutputScheduler &output_scheduler =
                     IO::OutputScheduler::get();
                 std::thread output_thread(&IO::OutputScheduler::Run,
@@ -50,19 +48,6 @@ void Server::run() {
                 output_thread.detach();
 
                 IO::SocketWatcher<IO::Socket> watcher(std::move(master_socket));
-
-                //                auto watcher_callbacks = [&](
-                //                    std::vector<const IO::Socket *> sockets) {
-                //                        debug("Will dispatch " +
-                //                              std::to_string(sockets.size()) +
-                //                              " connections");
-                //                        for (auto &sock : sockets) {
-                //                                auto should_close =
-                //                                Dispatcher::Dispatch(*sock);
-                //                                if (should_close)
-                //                                        watcher.Remove(*sock);
-                //                        }
-                //                };
 
                 while (true) {
                         watcher.Run(Dispatcher::Dispatch);
