@@ -64,12 +64,7 @@ int main() {
                             return {req, root};
                     }));
                 Settings settings;
-#ifndef __arm__
-                settings.root_path =
-                    "/media/vladimir/Seagate Expansion Drive/server";
-#else
                 settings.root_path = "/mnt/exthdd/server";
-#endif
                 settings.max_connections = 1000;
                 s.setSettings(settings);
                 s.run();

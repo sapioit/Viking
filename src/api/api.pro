@@ -43,14 +43,16 @@ HEADERS += \
 SOURCES += \
     io/filesystem.cpp \
     io/outputscheduler.cpp \
-    io/socket.cpp \
-    io/watcher.cpp
+    io/socket/socket.cpp \
+    io/watchers/sys_epoll.cpp
 
 HEADERS += \
     io/filesystem.h \
     io/outputscheduler.h \
-    io/socket.h \
-    io/watcher.h
+    io/socket/socket.h \
+    io/watchers/file_watcher.h \
+    io/watchers/socket_watcher.h \
+    io/watchers/sys_epoll.h
 #IO-END
 
 #JSON
@@ -67,7 +69,8 @@ SOURCES += \
     misc/log.cpp \
     misc/resource.cpp \
     misc/settings.cpp \
-    misc/storage.cpp
+    misc/storage.cpp \
+    misc/debug.cpp \
 
 HEADERS += \
     misc/date.h \
@@ -75,7 +78,8 @@ HEADERS += \
     misc/log.h \
     misc/resource.h \
     misc/settings.h \
-    misc/storage.h
+    misc/storage.h \
+    misc/debug.h \
 #MISC-END
 
 #SERVER

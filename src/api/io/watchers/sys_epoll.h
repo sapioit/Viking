@@ -15,13 +15,11 @@ class SysEpoll {
                 int file_descriptor;
                 std::uint32_t description;
                 Event() noexcept = default;
-                Event(int fd, int description) noexcept
-                    : file_descriptor(fd),
-                      description(description) {}
+                Event(int fd, int description) noexcept;
         };
 
         struct Error : public std::runtime_error {
-                Error(const std::string &err) : std::runtime_error(err) {}
+                Error(const std::string &err);
         };
         enum class Description {
                 Read = EPOLLIN,

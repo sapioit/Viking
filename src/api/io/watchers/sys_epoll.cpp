@@ -80,3 +80,8 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
 
         return CreateEvents(active_files);
 }
+SysEpoll::Event::Event(int fd, int description) noexcept
+    : file_descriptor(fd),
+      description(description) {}
+
+SysEpoll::Error::Error(const std::string &err) : std::runtime_error(err) {}
