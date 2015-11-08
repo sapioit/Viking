@@ -3,12 +3,13 @@
 
 #include "settings.h"
 
-class Storage {
-        static Settings _settings;
+class Storage
+{
+	static Settings _settings;
 
       public:
-        static const Settings &settings();
-        static void setSettings(const Settings &settings);
+	static const Settings &settings();
+	static void setSettings(const Settings &settings);
 };
 
 #endif // STORAGE_H

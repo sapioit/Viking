@@ -21,39 +21,40 @@ using namespace Web;
 std::mutex Log::mLock;
 std::string Log::_fn;
 
-Server::Server(int port) : _port(port) {
-        Log::Init("log_file.txt");
-        Log::SetEnabled(false);
-        Log::i("Started logging");
+Server::Server(int port) : _port(port)
+{
+	Log::Init("log_file.txt");
+	Log::SetEnabled(false);
+	Log::i("Started logging");
 }
 
-void Server::setSettings(const Settings &s) {
-        Storage::setSettings(s);
-        _maxPending = s.max_connections;
+void Server::setSettings(const Settings &s)
+{
+	Storage::setSettings(s);
+	_maxPending = s.max_connections;
 }
-void Server::run() {
-        if (_port == -1)
-                throw std::runtime_error("Port number not set!");
-        try {
-                auto master_socket =
-                    IO::Socket::start_socket(_port, _maxPending);
-                debug("Master socket has fd = " +
-                      std::to_string(master_socket.GetFD()));
-                IO::SocketWatcher<IO::Socket> watcher(std::move(master_socket));
-                while (true) {
-                        using namespace std::placeholders;
-                        watcher.Run(
-                            std::bind(&Dispatcher::Dispatch, &dispatcher_, _1));
-                }
+void Server::run()
+{
+	if (_port == -1)
+		throw std::runtime_error("Port number not set!");
+	try {
+		auto master_socket = IO::Socket::start_socket(_port, _maxPending);
+		debug("Master socket has fd = " + std::to_string(master_socket.GetFD()));
+		using namespace std::placeholders;
+		auto dispatcher_callback = std::bind(&Dispatcher::Dispatch, &dispatcher_, _1);
+		IO::SocketWatcher<IO::Socket, decltype(dispatcher_callback)> watcher(std::move(master_socket),
+										     dispatcher_callback);
+		while (true) {
+			watcher.Run();
+		}
 
-        } catch (std::exception &ex) {
-                Log::e(std::string("Server error: ").append(ex.what()));
-                auto msg = std::string(
-                    "Server error. Please see the log file. Last exception: ");
-                msg += ex.what();
-                msg += "\n";
-                throw std::runtime_error(msg);
-        }
+	} catch (std::exception &ex) {
+		Log::e(std::string("Server error: ").append(ex.what()));
+		auto msg = std::string("Server error. Please see the log file. Last exception: ");
+		msg += ex.what();
+		msg += "\n";
+		throw std::runtime_error(msg);
+	}
 }
 int Server::maxPending() const { return _maxPending; }
 

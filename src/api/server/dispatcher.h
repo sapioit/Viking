@@ -17,20 +17,21 @@
 #include <memory>
 #include <functional>
 
-namespace Web {
-class Dispatcher {
-        using DataType = std::vector<char>;
-        using Connection = IO::Socket;
-        std::map<std::pair<Http::Components::Method, std::string>,
-                 std::function<Http::Response(Http::Request)>> routes;
-        IO::Scheduler::Out<Connection, DataType> output_sched;
-        std::thread output_thread;
+namespace Web
+{
+class Dispatcher
+{
+	using DataType = std::vector<char>;
+	using Connection = IO::Socket;
+	std::map<std::pair<Http::Components::Method, std::string>, std::function<Http::Response(Http::Request)>> routes;
+	IO::Scheduler::Out<Connection, DataType> output_sched;
+	std::thread output_thread;
 
       public:
-        Dispatcher();
+	Dispatcher();
 
-        template <typename T> void AddRoute(T route) { routes.insert(route); }
-        bool Dispatch(const Connection &connection);
+	template <typename T> void AddRoute(T route) { routes.insert(route); }
+	bool Dispatch(const Connection &connection);
 };
 }
 

@@ -1,6 +1,6 @@
 # Compiler
 CXX = clang++
-OPTS = -fPIC -std=c++14 -O3 -Wall
+OPTS = -fPIC -std=c++14 -O3 -Wall -Werror
 DEBUGOPTS = 
 INCLUDEDIRS = -I.
 

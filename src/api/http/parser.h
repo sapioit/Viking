@@ -8,24 +8,24 @@
 #include <io/socket/socket.h>
 #include <http/request.h>
 
-namespace Http {
-class Parser {
-        const IO::Socket &_sock;
+namespace Http
+{
+class Parser
+{
+	const IO::Socket &_sock;
 
-        Request Init();
-        Components::Method GetMethod(const std::string &str);
-        Header GetHeader();
+	Request Init();
+	Components::Method GetMethod(const std::string &str);
+	Header GetHeader();
 
       public:
-        Parser(const IO::Socket &sock) : _sock(sock) {}
-        Request operator()();
+	Parser(const IO::Socket &sock) : _sock(sock) {}
+	Request operator()();
 
-        static Components::ContentType
-        GetMimeTypeByExtension(const std::string &URI);
-        static std::string StripRoute(const std::string &URI);
-        static std::vector<std::string> Split(std::string source,
-                                              char delimiter);
-        // static std::string GetURI(const std::string& line);
+	static Components::ContentType GetMimeTypeByExtension(const std::string &URI);
+	static std::string StripRoute(const std::string &URI);
+	static std::vector<std::string> Split(std::string source, char delimiter);
+	// static std::string GetURI(const std::string& line);
 };
 };
 

@@ -9,7 +9,7 @@ QT       -= core gui
 TARGET = api
 TEMPLATE = app
 QMAKE_CXXFLAGS += -std=c++14
-QMAKE_CXXFLAGS += -Wall
+QMAKE_CXXFLAGS += -Wall -Werror
 QMAKE_CXXFLAGS += -Ijson/ -I$$PWD
 DEFINES += API_LIBRARY
 
@@ -43,7 +43,6 @@ SOURCES += \
     io/filesystem.cpp \
     io/socket/socket.cpp \
     io/watchers/sys_epoll.cpp \
-    io/schedulers/out.cpp \
 
 HEADERS += \
     io/filesystem.h \

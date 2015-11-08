@@ -9,25 +9,25 @@
 #include <vector>
 #include <memory>
 #include <fstream>
-namespace Web {
-class Server {
+namespace Web
+{
+class Server
+{
       public:
-        Server(int);
-        void run();
-        void setSettings(const Settings &);
+	Server(int);
+	void run();
+	void setSettings(const Settings &);
 
-        int maxPending() const;
-        void setMaxPending(int maxPending);
+	int maxPending() const;
+	void setMaxPending(int maxPending);
 
-        template <class T> void AddRoute(T route) {
-                dispatcher_.AddRoute(route);
-        }
+	template <class T> void AddRoute(T route) { dispatcher_.AddRoute(route); }
 
       private:
-        typedef std::vector<char> DataType;
-        Dispatcher dispatcher_;
-        int _port = -1;
-        int _maxPending;
+	typedef std::vector<char> DataType;
+	Dispatcher dispatcher_;
+	int _port = -1;
+	int _maxPending;
 };
 };
 
