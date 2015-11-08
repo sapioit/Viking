@@ -1,6 +1,5 @@
 #include <server/server.h>
 #include <server/dispatcher.h>
-#include <io/outputscheduler.h>
 #include <io/schedulers/out.h>
 #include <io/watchers/socket_watcher.h>
 #include <http/parser.h>
@@ -40,14 +39,6 @@ void Server::run() {
                     IO::Socket::start_socket(_port, _maxPending);
                 debug("Master socket has fd = " +
                       std::to_string(master_socket.GetFD()));
-
-                //                IO::OutputScheduler &output_scheduler =
-                //                    IO::OutputScheduler::get();
-                //                std::thread
-                //                output_thread(&IO::OutputScheduler::Run,
-                //                                          std::ref(output_scheduler));
-                //                output_thread.detach();
-
                 IO::SocketWatcher<IO::Socket> watcher(std::move(master_socket));
                 while (true) {
                         using namespace std::placeholders;

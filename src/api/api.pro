@@ -24,7 +24,7 @@ SOURCES += \
     http/parser.cpp \
     http/request.cpp \
     http/response.cpp \
-    http/responsemanager.cpp \
+    http/responder.cpp \
     http/routeutility.cpp \
 
 HEADERS += \
@@ -34,7 +34,7 @@ HEADERS += \
     http/parser.h \
     http/request.h \
     http/response.h \
-    http/responsemanager.h \
+    http/responder.h \
     http/routeutility.h
 #HTTP-END
 
