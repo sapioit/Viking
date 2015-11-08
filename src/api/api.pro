@@ -25,7 +25,7 @@ SOURCES += \
     http/request.cpp \
     http/response.cpp \
     http/responsemanager.cpp \
-    http/routeutility.cpp
+    http/routeutility.cpp \
 
 HEADERS += \
     http/cachemanager.h \
@@ -41,17 +41,18 @@ HEADERS += \
 #IO
 SOURCES += \
     io/filesystem.cpp \
-    io/outputscheduler.cpp \
     io/socket/socket.cpp \
-    io/watchers/sys_epoll.cpp
+    io/watchers/sys_epoll.cpp \
+    io/schedulers/out.cpp \
 
 HEADERS += \
     io/filesystem.h \
-    io/outputscheduler.h \
     io/socket/socket.h \
     io/watchers/file_watcher.h \
     io/watchers/socket_watcher.h \
-    io/watchers/sys_epoll.h
+    io/watchers/sys_epoll.h \
+    io/schedulers/out.h \
+
 #IO-END
 
 #JSON
@@ -87,7 +88,6 @@ SOURCES +=
 HEADERS += \
     util/utility.h \
     util/set.h \
-
 #UTIL-END
 
 #SERVER

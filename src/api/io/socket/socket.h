@@ -20,10 +20,17 @@ class Socket {
       public:
         struct AcceptError {
                 int fd;
+                const Socket *ptr;
+        };
+        struct WriteError {
+                int fd;
+                const Socket *ptr;
         };
         struct ConnectionClosedByPeer {
                 int fd;
+                const Socket *ptr;
         };
+
         Socket(int);
         Socket(int port, int);
         Socket(const Socket &) = delete;
@@ -44,7 +51,7 @@ class Socket {
         operator bool() const;
         virtual ~Socket();
         Socket Accept() const;
-        Socket *Duplicate() const;
+        Socket Duplicate() const noexcept;
         int GetFD() const;
         bool IsAcceptor() const;
         void Bind() const;
@@ -82,7 +89,7 @@ class Socket {
                 result.resize(size);
                 auto readBytes = ::read(fd_, &result.front(), size);
                 if (readBytes == 0)
-                        throw ConnectionClosedByPeer{fd_};
+                        throw ConnectionClosedByPeer{fd_, this};
                 if (readBytes == -1) {
                         if (!(errno == EAGAIN || errno == EWOULDBLOCK))
                                 throw std::runtime_error(
@@ -104,7 +111,7 @@ class Socket {
                         auto bytesRead = ::recv(fd_, &result.front(),
                                                 buffSize + sum, MSG_PEEK);
                         if (bytesRead == 0)
-                                throw ConnectionClosedByPeer{fd_};
+                                throw ConnectionClosedByPeer{fd_, this};
                         if (bytesRead == -1) {
                                 if (!(errno == EAGAIN || errno == EWOULDBLOCK))
                                         throw std::runtime_error(
@@ -131,10 +138,18 @@ class Socket {
                 } while (true);
         }
 
-        template <typename T> ssize_t Write(const T &data) const {
+        template <typename T> std::size_t Write(const T &data) const {
                 auto written =
                     ::send(fd_, static_cast<const void *>(data.data()),
                            data.size(), MSG_NOSIGNAL);
+                if (written == -1) {
+                        if (!(errno == EAGAIN || errno == EWOULDBLOCK))
+                                throw WriteError{fd_, this};
+                        if (errno == ECONNRESET)
+                                throw ConnectionClosedByPeer{fd_, this};
+                        if (errno == EPIPE)
+                                throw ConnectionClosedByPeer{fd_, this};
+                }
                 return written == -1 ? 0 : written;
         }
 

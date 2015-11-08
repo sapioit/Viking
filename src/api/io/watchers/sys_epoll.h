@@ -45,7 +45,7 @@ class SysEpoll {
         void Schedule(int, std::uint32_t);
         void Remove(int);
         std::set<Event> Wait(std::uint32_t = 1000) const;
-        virtual std::uint32_t GetBasicFlags() = 0;
+        virtual std::uint32_t GetBasicFlags() const = 0;
 
         SysEpoll();
         virtual ~SysEpoll() = default;

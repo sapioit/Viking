@@ -29,7 +29,7 @@ template <class T> class FileWatcher {
                             std::to_string(file.GetFD()));
         }
 
-        virtual void Run(std::function<bool(const T &)>) = 0;
+        // virtual void Run(std::function<bool(const T &)>) noexcept = 0;
 };
 }
 

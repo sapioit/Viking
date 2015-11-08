@@ -3,13 +3,38 @@
 
 #include <http/response.h>
 #include <http/request.h>
+#include <http/parser.h>
+#include <io/outputscheduler.h>
 #include <io/socket/socket.h>
+#include <io/schedulers/out.h>
 
-class ResponseManager {
+template <typename Stream> class Responder {
+        Stream stream;
+
       public:
-        static void Respond(Http::Response, const IO::Socket &);
-        static void Respond(const Http::Request &, const Resource &,
-                            const IO::Socket &);
+        Responder(Stream stream) : stream(stream){};
+        void Respond(Http::Response response, const IO::Socket &socket) {
+                try {
+                        auto raw_response = response.str();
+                        auto raw_resp_vec = std::vector<char>(
+                            raw_response.begin(), raw_response.end());
+                        /*IO::OutputScheduler::get().ScheduleWrite(socket,
+                                                                 raw_response);*/
+                        stream(std::move(socket.Duplicate()), raw_resp_vec);
+
+                } catch (std::exception &ex) {
+                        Respond({response.getRequest(),
+                                 Http::StatusCode::InternalServerError},
+                                socket);
+                }
+        }
+        void Respond(const Http::Request &request, const Resource &res,
+                     const IO::Socket &socket) {
+                Http::Response response{request, res};
+                response.setContent_type(
+                    Http::Parser::GetMimeTypeByExtension(request.URI));
+                Respond(response, socket);
+        }
 };
 
 #endif // RESPONSEMANAGER_H

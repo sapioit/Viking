@@ -1,3 +1,6 @@
+#ifndef UTILITY_H
+#define UTILITY_H
+
 #include <utility>
 
 namespace Utility {
@@ -6,3 +9,5 @@ std::pair<T1 *, T2 *> Merge(const T1 &f, T2 &s) {
         return std::make_pair(std::addressof(f), std::addressof(s));
 }
 }
+
+#endif // UTILITY_H

@@ -9,6 +9,7 @@ SysEpoll::SysEpoll() {
         efd_ = epoll_create1(0);
         if (efd_ == -1)
                 throw Error("Could not start polling");
+        debug("SysEpoll instance with fd = " + std::to_string(efd_));
 }
 
 void SysEpoll::Schedule(int file_descriptor, std::uint32_t flags) {

@@ -26,14 +26,13 @@ Socket::Socket(int port) : port_(port) {
 
 Socket::Socket(int fd, int port) : fd_(fd), port_(port), connection_(true) {}
 
-Socket *Socket::Duplicate() const {
-        auto *new_socket = new Socket(::dup(fd_), true);
-        new_socket->MakeNonBlocking();
+Socket Socket::Duplicate() const noexcept {
+        Socket new_socket(::dup(fd_), port_);
+        new_socket.MakeNonBlocking();
         return new_socket;
 }
 
 void Socket::Bind() const {
-        assert(port_ != 0);
         if (::bind(fd_, reinterpret_cast<const struct sockaddr *>(&address_),
                    sizeof(address_)) == -1) {
                 if (errno == EADDRINUSE)

@@ -8,7 +8,7 @@
 int main() {
         try {
                 Web::Server s(1234);
-                Web::Dispatcher::routes.insert(std::make_pair(
+                auto route1 = std::make_pair(
                     std::make_pair(Http::Components::Method::Get,
                                    "^\\/adsaf\\/json\\/(\\d+)$"),
                     [](Http::Request req) -> Http::Response {
@@ -37,9 +37,9 @@ int main() {
                             root.append(records);
 
                             return {req, root};
-                    }));
+                    });
 
-                Web::Dispatcher::routes.insert(std::make_pair(
+                auto route2 = std::make_pair(
                     std::make_pair(Http::Components::Method::Get,
                                    "^\\/adsaf\\/json\\/$"),
                     [](Http::Request req) -> Http::Response {
@@ -62,11 +62,13 @@ int main() {
                             root.append(records);
 
                             return {req, root};
-                    }));
+                    });
                 Settings settings;
                 settings.root_path = "/mnt/exthdd/server";
                 settings.max_connections = 1000;
                 s.setSettings(settings);
+                s.AddRoute(route1);
+                s.AddRoute(route2);
                 s.run();
         } catch (std::exception &ex) {
                 std::cerr << ex.what();
