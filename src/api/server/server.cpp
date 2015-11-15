@@ -42,7 +42,7 @@ void Server::run()
 		debug("Master socket has fd = " + std::to_string(master_socket.GetFD()));
 		using namespace std::placeholders;
 		auto dispatcher_callback = std::bind(&Dispatcher::Dispatch, &dispatcher_, _1);
-		IO::SocketWatcher<IO::Socket, decltype(dispatcher_callback)> watcher(std::move(master_socket),
+        IO::SocketWatcher<decltype(dispatcher_callback)> watcher(std::move(master_socket),
 										     dispatcher_callback);
 		while (true) {
 			watcher.Run();

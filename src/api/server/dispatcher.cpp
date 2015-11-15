@@ -3,7 +3,7 @@
 #include <sstream>
 
 Web::Dispatcher::Dispatcher()
-    : output_sched(), output_thread(&IO::Scheduler::Out<Connection, DataType>::Run, std::ref(output_sched))
+    : output_sched(), output_thread(&IO::Scheduler::Out<DataType>::Run, std::ref(output_sched))
 {
 	output_thread.detach();
 }
@@ -15,7 +15,7 @@ bool Web::Dispatcher::Dispatch(const Connection &connection)
 		auto request = parser();
 		using namespace std::placeholders;
 		Responder<std::function<void(Connection, const DataType &)>> responder(
-		    std::bind(&IO::Scheduler::Out<Connection, DataType>::Add, &output_sched, _1, _2));
+            std::bind(&IO::Scheduler::Out<DataType>::Add, &output_sched, _1, _2));
 		if (request.IsPassable()) {
 			if (!request.IsResource()) {
 				auto handler = RouteUtility::GetHandler(request, routes);

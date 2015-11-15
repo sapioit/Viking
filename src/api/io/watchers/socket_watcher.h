@@ -13,7 +13,7 @@
 
 namespace IO
 {
-template <class Sock, class Callback> class SocketWatcher : public FileWatcher<Sock>, public SysEpoll
+template <class Callback> class SocketWatcher : public FileWatcher, public SysEpoll
 {
 	Callback callback;
 
@@ -24,41 +24,41 @@ template <class Sock, class Callback> class SocketWatcher : public FileWatcher<S
 		return (static_cast<std::uint32_t>(SysEpoll::Description::Read) |
 			static_cast<std::uint32_t>(SysEpoll::Description::Termination));
 	}
-	SocketWatcher(Sock sock, Callback callback) : callback(callback)
+    SocketWatcher(Socket sock, Callback callback) : callback(callback)
 	{
 		try {
-			SocketWatcher<Sock, Callback>::Add(std::move(sock));
+            SocketWatcher<Callback>::Add(std::move(sock));
 		} catch (const SysEpoll::Error &) {
 			throw;
 		}
 	}
 	~SocketWatcher() = default;
 
-	void Add(Sock socket)
+    void Add(Socket socket)
 	{
 		try {
 			auto fd = socket.GetFD();
-			FileWatcher<Sock>::Add(std::move(socket));
+            FileWatcher::Add(std::move(socket));
 			SysEpoll::Schedule(fd, GetBasicFlags());
 		} catch (const SysEpoll::Error &) {
 			throw;
 		}
 	}
 
-	void Remove(const Sock &socket)
+    void Remove(const Socket &socket)
 	{
 		SysEpoll::Remove(socket.GetFD());
-		FileWatcher<Sock>::Remove(socket);
+        FileWatcher::Remove(socket);
 	}
 
 	virtual void Run() noexcept
 	{
-		if (FileWatcher<Sock>::watched_files_.size() == 0)
+        if (FileWatcher::watched_files_.size() == 0)
 			return;
 		try {
-			const auto events = std::move(SysEpoll::Wait(FileWatcher<Sock>::watched_files_.size()));
+            const auto events = std::move(SysEpoll::Wait(FileWatcher::watched_files_.size()));
 
-			std::vector<std::pair<const Sock *, const Event *>> active_sockets =
+            std::vector<std::pair<const Socket *, const Event *>> active_sockets =
 			    MatchEventsWithSockets(events);
 
 			for (const auto &event : active_sockets) {
@@ -94,24 +94,24 @@ template <class Sock, class Callback> class SocketWatcher : public FileWatcher<S
 		}
 	}
 
-	void AddNewConnections(const Sock &acceptor) noexcept
+    void AddNewConnections(const Socket &acceptor) noexcept
 	{
 		while (auto new_connection = acceptor.Accept()) {
 			new_connection.MakeNonBlocking();
 			debug("Will add a new connection with fd = " + std::to_string(new_connection.GetFD()));
-			SocketWatcher<Sock, Callback>::Add(std::move(new_connection));
+            SocketWatcher<Callback>::Add(std::move(new_connection));
 		}
 	}
 
       protected:
-	virtual std::vector<std::pair<const Sock *, const Event *>>
+    virtual std::vector<std::pair<const Socket *, const Event *>>
 	MatchEventsWithSockets(const std::set<SysEpoll::Event> &events)
 	{
-		std::vector<std::pair<const Sock *, const Event *>> intersection;
-		Utility::SetIntersection(FileWatcher<Sock>::watched_files_.begin(),
-					 FileWatcher<Sock>::watched_files_.end(), events.begin(), events.end(),
-					 std::back_inserter(intersection), SysEpoll::EventComparer<Sock>(),
-					 Utility::Merge<const IO::Socket, const Event>);
+        std::vector<std::pair<const Socket *, const Event *>> intersection;
+        Utility::SetIntersection(FileWatcher::watched_files_.begin(),
+                     FileWatcher::watched_files_.end(), events.begin(), events.end(),
+                     std::back_inserter(intersection), SysEpoll::EventComparer<Socket>(),
+                     Utility::Merge<const Socket, const Event>);
 		return intersection;
 	}
 };

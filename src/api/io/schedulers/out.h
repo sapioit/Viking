@@ -22,17 +22,17 @@ template <class Data> struct SchedItem {
 	}
 };
 
-template <class Sock, class Data> class Out : public SocketWatcher<Sock, std::function<bool(const Sock &)>>
+template <class Data> class Out : public SocketWatcher<std::function<bool(const Socket &)>>
 {
-	typedef std::function<bool(const Sock &)> Callback;
-	typedef SocketWatcher<Sock, Callback> Base;
+    typedef std::function<bool(const Socket &)> Callback;
+    typedef SocketWatcher<Callback> Base;
 
 	std::map<int, SchedItem<Data>> schedule_;
 	std::mutex sync_;
 	typedef std::lock_guard<std::mutex> Lock;
 	static std::unique_ptr<Out> instance_;
 	struct DataCorruption {
-		const Sock *sock;
+        const Socket *sock;
 	};
 
       public:
@@ -49,7 +49,7 @@ template <class Sock, class Data> class Out : public SocketWatcher<Sock, std::fu
 	Out(Out &&) = default;
 	Out &operator=(Out &&) = default;
 
-	virtual void Add(Sock sock, const Data &data)
+    virtual void Add(Socket sock, const Data &data)
 	{
 		try {
 			Lock lock(sync_);
@@ -60,7 +60,7 @@ template <class Sock, class Data> class Out : public SocketWatcher<Sock, std::fu
 		}
 	}
 
-	virtual void Remove(const Sock &sock)
+    virtual void Remove(const Socket &sock)
 	{
 		try {
 			schedule_.erase(sock.GetFD());
@@ -94,16 +94,16 @@ template <class Sock, class Data> class Out : public SocketWatcher<Sock, std::fu
 		} catch (const DataCorruption &e) {
 			debug("Data corruption occured! Did not trim the already written data properly.");
 			Remove(*e.sock);
-		} catch (const typename Sock::WriteError &e) {
+        } catch (const typename Socket::WriteError &e) {
 			debug("Write error on fd = " + std::to_string(e.fd));
 			Remove(*e.ptr);
-		} catch (const typename Sock::ConnectionClosedByPeer &e) {
+        } catch (const typename Socket::ConnectionClosedByPeer &e) {
 			debug("Connection closed by peer on fd = " + std::to_string(e.fd));
 			Remove(*e.ptr);
 		}
 	}
 
-	virtual void ProcessEvent(const Sock &sock, const SysEpoll::Event &event, SchedItem<Data> &sched_item) noexcept
+    virtual void ProcessEvent(const Socket &sock, const SysEpoll::Event &event, SchedItem<Data> &sched_item) noexcept
 	{
 
 		static constexpr auto flag_termination =

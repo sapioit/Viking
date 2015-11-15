@@ -24,7 +24,7 @@ class Dispatcher
 	using DataType = std::vector<char>;
 	using Connection = IO::Socket;
 	std::map<std::pair<Http::Components::Method, std::string>, std::function<Http::Response(Http::Request)>> routes;
-	IO::Scheduler::Out<Connection, DataType> output_sched;
+    IO::Scheduler::Out<DataType> output_sched;
 	std::thread output_thread;
 
       public:

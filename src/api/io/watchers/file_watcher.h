@@ -8,10 +8,10 @@
 
 namespace IO
 {
-template <class T> class FileWatcher
+class FileWatcher
 {
       protected:
-	std::set<T> watched_files_;
+    std::set<Socket> watched_files_;
 
       public:
 	struct FileNotFound {
@@ -20,9 +20,9 @@ template <class T> class FileWatcher
 	FileWatcher() = default;
 	virtual ~FileWatcher() = default;
 
-	void Add(T file) noexcept { watched_files_.emplace(std::move(file)); }
+    void Add(Socket file) noexcept { watched_files_.emplace(std::move(file)); }
 
-	void Remove(const T &file)
+    void Remove(const Socket &file)
 	{
 		auto elements_removed = watched_files_.erase(file);
 		if (elements_removed == 0) {
