@@ -64,9 +64,9 @@ void Socket::MakeNonBlocking() const
 }
 long Socket::AvailableToRead() const
 {
-    long count;
-    ioctl(fd_, FIONREAD, &count);
-    return count;
+	long count;
+	ioctl(fd_, FIONREAD, &count);
+	return count;
 }
 Socket Socket::Accept() const
 {
@@ -82,8 +82,8 @@ bool Socket::IsAcceptor() const { return (!connection_); }
 
 void Socket::Close()
 {
-    if (fd_ != -1) {
-        debug("Closing socket with fd = " + std::to_string(fd_));
+	if (fd_ != -1) {
+		debug("Closing socket with fd = " + std::to_string(fd_));
 		::close(fd_);
 		fd_ = -1;
 	}

@@ -17,30 +17,30 @@ namespace Http
 
 class Request
 {
-    std::vector<Components::ContentType> _accepted;
-    std::vector<std::string> _uri_components;
+	std::vector<Components::ContentType> _accepted;
+	std::vector<std::string> _uri_components;
 
-    public:
-    struct Version_ {
-        unsigned short v_major, v_minor;
-    };
+	public:
+	struct Version_ {
+		unsigned short v_major, v_minor;
+	};
 
-    Components::Method method;
-    Version_ version;
-    Header header;
-    std::string URI, body;
+	Components::Method method;
+	Version_ version;
+	Header header;
+	std::string URI, body;
 
-    Request() = default;
-    virtual ~Request() = default;
+	Request() = default;
+	virtual ~Request() = default;
 
-    bool IsPassable() const;
-    bool IsResource() const;
+	bool IsPassable() const;
+	bool IsResource() const;
 
-    const std::vector<Components::ContentType> &accepted() const;
-    void setAccepted(const std::vector<Components::ContentType> &accepted);
+	const std::vector<Components::ContentType> &accepted() const;
+	void setAccepted(const std::vector<Components::ContentType> &accepted);
 
-    std::vector<std::string> uri_components() const;
-    void setUri_components(const std::vector<std::string> &uri_components);
+	std::vector<std::string> uri_components() const;
+	void setUri_components(const std::vector<std::string> &uri_components);
 };
 }
 

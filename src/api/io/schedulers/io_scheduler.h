@@ -50,41 +50,40 @@ class Scheduler : public SocketContainer, public SysEpoll
 	public:
 	Scheduler() = default;
 
-    Scheduler(Socket sock, Callback callback);
+	Scheduler(Socket sock, Callback callback);
 	~Scheduler() = default;
 
-    void Add(Socket socket, std::uint32_t flags);
+	void Add(Socket socket, std::uint32_t flags);
 
-    void Remove(const Socket &socket);
+	void Remove(const Socket &socket);
 
-    virtual void Run();
+	virtual void Run();
 
 	protected:
-    void AddSchedItem(const SysEpoll::Event &ev, const SchedItem &item, bool append = true) noexcept;
+	void AddSchedItem(const SysEpoll::Event &ev, const SchedItem &item, bool append = true) noexcept;
 
 	void ScheduledItemFinished(const Socket &socket, SchedItem &sched_item)
 	{
 		if (sched_item.close_when_done) {
 			Scheduler::Remove(socket);
+		} else {
+			schedule_.erase(socket.GetFD());
 		}
-        else {
-            schedule_.erase(socket.GetFD());
-        }
 	}
 
-    void ProcessWrite(const Socket &socket, SchedItem &sched_item);
+	void ProcessWrite(const Socket &socket, SchedItem &sched_item);
 
-    inline bool CanWrite(const Event &event) const noexcept;
+	inline bool CanWrite(const Event &event) const noexcept;
 
-    inline bool CanRead(const Event &event) const noexcept;
+	inline bool CanRead(const Event &event) const noexcept;
 
-    inline bool IsScheduled(const Event &event) const noexcept;
+	inline bool IsScheduled(const Event &event) const noexcept;
 
-    inline bool CanTerminate(const Event &event) const noexcept;
+	inline bool CanTerminate(const Event &event) const noexcept;
 
-    void AddNewConnections(const Socket &acceptor) noexcept;
+	void AddNewConnections(const Socket &acceptor) noexcept;
 
-    const Socket &GetSocket(const SysEpoll::Event &event) const;
+	const Socket &GetSocket(const SysEpoll::Event &event) const;
 };
 }
 

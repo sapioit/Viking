@@ -36,7 +36,7 @@ void Server::setSettings(const Settings &s)
 }
 void Server::run()
 {
-    debug("Pid = " + std::to_string(getpid()));
+	debug("Pid = " + std::to_string(getpid()));
 	if (_port == -1)
 		throw std::runtime_error("Port number not set!");
 	try {

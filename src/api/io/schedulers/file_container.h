@@ -21,9 +21,9 @@ class SocketContainer
 	SocketContainer() = default;
 	virtual ~SocketContainer() = default;
 
-    void Add(Socket file) noexcept;
+	void Add(Socket file) noexcept;
 
-    void Remove(const Socket &file) noexcept;
+	void Remove(const Socket &file) noexcept;
 };
 }
 

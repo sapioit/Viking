@@ -9,6 +9,6 @@
 #define debug(x)
 #endif
 
-//void debug(const std::string &message) noexcept;
+// void debug(const std::string &message) noexcept;
 
 #endif // DEBUG_H

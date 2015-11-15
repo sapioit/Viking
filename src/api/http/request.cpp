@@ -17,29 +17,28 @@ std::vector<std::string> Request::uri_components() const { return _uri_component
 
 void Request::setUri_components(const std::vector<std::string> &uri_components) { _uri_components = uri_components; }
 
-
 bool Http::Request::IsPassable() const
 {
-    switch (method) {
-    case Components::Method::Get:
-        return true;
-    case Components::Method::Post:
-        return true;
-    case Components::Method::Put:
-        return true;
-    case Components::Method::Delete:
-        return true;
-    case Components::Method::Head:
-        return true;
-    default:
-        return false;
-    }
+	switch (method) {
+	case Components::Method::Get:
+		return true;
+	case Components::Method::Post:
+		return true;
+	case Components::Method::Put:
+		return true;
+	case Components::Method::Delete:
+		return true;
+	case Components::Method::Head:
+		return true;
+	default:
+		return false;
+	}
 }
 
 bool Http::Request::IsResource() const
 {
-    std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json)$",
-                  std::regex::ECMAScript | std::regex::icase);
-    bool match = std::regex_match(URI, extensions);
-    return match;
+	std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json)$",
+			      std::regex::ECMAScript | std::regex::icase);
+	bool match = std::regex_match(URI, extensions);
+	return match;
 }

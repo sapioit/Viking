@@ -15,28 +15,28 @@ namespace Http
 {
 class Engine
 {
-    const IO::Socket &socket_;
+	const IO::Socket &socket_;
 	http_parser_settings settings_;
 	http_parser parser_;
 	Request request_;
 
 	std::string header_field;
 
-    inline static Engine* GetMe(http_parser *parser);
+	inline static Engine *GetMe(http_parser *parser);
 
-    void AssignMethod(http_method method_numeric);
+	void AssignMethod(http_method method_numeric);
 
 	public:
-    Engine(const IO::Socket &socket);
+	Engine(const IO::Socket &socket);
 
-    Request operator()();
+	Request operator()();
 
-    static Components::ContentType GetMimeTypeByExtension(const std::string &URI);
-    static std::string StripRoute(const std::string &URI);
-    static std::vector<std::string> Split(std::string source, char delimiter);
-    //	// static std::string GetURI(const std::string& line);
-    Components::ContentType GetMimeType(const std::string &);
-    std::vector<Components::ContentType> GetAcceptedEncodings(const std::string &);
+	static Components::ContentType GetMimeTypeByExtension(const std::string &URI);
+	static std::string StripRoute(const std::string &URI);
+	static std::vector<std::string> Split(std::string source, char delimiter);
+	//	// static std::string GetURI(const std::string& line);
+	Components::ContentType GetMimeType(const std::string &);
+	std::vector<Components::ContentType> GetAcceptedEncodings(const std::string &);
 };
 };
 

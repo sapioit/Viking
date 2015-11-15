@@ -5,11 +5,10 @@
 
 Web::Dispatcher::RouteMap Web::Dispatcher::routes;
 
-
 Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &connection)
 {
-    auto parser = Http::Engine(connection);
-            //Http::Parser(connection);
+	auto parser = Http::Engine(connection);
+	// Http::Parser(connection);
 	auto request = parser();
 	if (request.IsPassable()) {
 		if (!request.IsResource()) {
