@@ -83,12 +83,14 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const
 
 	auto events_number = epoll_wait(efd_, &active_files.front(), chunk_size, -1);
 
-	if (-1 == events_number)
-		throw Error("Could not poll for events. errno = " + std::to_string(errno));
-	else
+	if (-1 == events_number) {
+		active_files.resize(0);
+		if (errno != EINTR)
+			throw Error("Could not poll for events. errno = " + std::to_string(errno));
+	} else {
 		debug("Waited for " + std::to_string(events_number) + " events");
-
-	active_files.resize(events_number);
+		active_files.resize(events_number);
+	}
 
 	return CreateEvents(active_files);
 }

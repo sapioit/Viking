@@ -100,7 +100,7 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, const IO::Scheduler:
 void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::SchedItem &sched_item)
 {
 	auto &data = sched_item.data;
-	auto written = socket.Write(data);
+	auto written = socket.WriteSome(data);
 
 	if (written == data.size()) {
 		ScheduledItemFinished(socket, sched_item);

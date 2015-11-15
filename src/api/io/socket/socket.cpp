@@ -27,11 +27,19 @@ Socket::Socket(int port) : port_(port)
 
 Socket::Socket(int fd, int port) : fd_(fd), port_(port), connection_(true) {}
 
-Socket Socket::Duplicate() const noexcept
+Socket::Socket(Socket &&other) : fd_(-1) { *this = std::move(other); }
+
+Socket &Socket::operator=(Socket &&other)
 {
-	Socket new_socket(::dup(fd_), port_);
-	new_socket.MakeNonBlocking();
-	return new_socket;
+	if (this != &other) {
+		Close();
+		fd_ = other.fd_;
+		port_ = other.port_;
+		address_ = other.address_;
+		connection_ = other.connection_;
+		other.fd_ = -1;
+	}
+	return *this;
 }
 
 void Socket::Bind() const
@@ -62,10 +70,11 @@ void Socket::MakeNonBlocking() const
 		throw std::runtime_error("Could not set the non-blocking flag "
 					 "for the file descriptor");
 }
-long Socket::AvailableToRead() const
+int Socket::AvailableToRead() const
 {
 	long count;
-	ioctl(fd_, FIONREAD, &count);
+	if (-1 == ioctl(fd_, FIONREAD, &count))
+		throw InternalSocketError{fd_, this};
 	return count;
 }
 Socket Socket::Accept() const
