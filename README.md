@@ -2,30 +2,32 @@
 HTTP proof-of-concept server written in C++
 (under development)
 
-This is a HTTP web server written in, just to prove that websites can be written in C++ too, without sacrificing productivity, or, performance :)
+This is a HTTP web server written in C++, just to prove that websites can be written in this too, without sacrificing anything.
 
-Goals:
-- Should be used as a library. One only has to provide the routes/methods, and a callback function
-- High performance on low-spec servers, should be able to handle a small website running on a Raspberry PI with no problem
-- Minimal use of threading, at least for now (as I'm writing this, everything is single threaded)
+Features:
+- Sendfile support. Transfers files from with no userspace copying
+- Single threaded architecture (soon multi-process)
+- High performance (can run on a Raspberry Pi with no problem)
+- Used as a library. One only has to provide the routes/methods, and a callback function
 - To be used as a backend for JS frameworks like Angular
 
-Plans for the future:
-- Implement support for using a MVC type architecture
+Goals:
+- MVC support
+- SSL support
 
 
+2015-11-15 siege log, running on an i5 processor with 50 concurrent users constantly requesting a 64MB file:
 
-2015-08-16 siege log, running on an i5 processor:
+Transactions:		         846 hits
+Availability:		      100.00 %
+Elapsed time:		       52.73 secs
+Data transferred:	    51987.66 MB
+Response time:		        2.54 secs
+Transaction rate:	       16.04 trans/sec
+Throughput:		      985.92 MB/sec
+Concurrency:		       40.74
+Successful transactions:         846
+Failed transactions:	           0
+Longest transaction:	        5.27
+Shortest transaction:	        1.00
 
-Transactions: 7539 hits  
-Availability:	100.00 %  
-Elapsed time:	63.54 secs  
-Data transferred:	3582.85 MB  
-Response time: 4.72 secs  
-Transaction rate:	118.65 trans/sec  
-Throughput: 56.39 MB/sec  
-Concurrency: 559.77  
-Successful transactions: 7539  
-Failed transactions: 0  
-Longest transaction: 34.69  
-Shortest transaction: 0.01  
