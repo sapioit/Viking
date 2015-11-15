@@ -1,5 +1,6 @@
 #include "routeutility.h"
 #include "parser.h"
+#include <http/engine.h>
 #include <algorithm>
 #include <regex>
 
@@ -8,7 +9,7 @@ RouteUtility::GetHandler(const Http::Request &request,
 			 const std::map<std::pair<Http::Components::Method, std::string>,
 					std::function<Http::Response(Http::Request)>> &routes)
 {
-	auto strippedRoute = Http::Parser::StripRoute(request.URI);
+    auto strippedRoute = Http::Engine::StripRoute(request.URI);
 	auto result = std::find_if(routes.begin(), routes.end(),
 				   [&](const std::pair<std::pair<Http::Components::Method, std::string>,
 						       std::function<Http::Response(Http::Request)>> &route) -> bool {

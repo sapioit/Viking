@@ -13,7 +13,7 @@ namespace Web
 {
 class Server
 {
-      public:
+	public:
 	Server(int);
 	void run();
 	void setSettings(const Settings &);
@@ -23,7 +23,7 @@ class Server
 
 	template <class T> void AddRoute(T route) { dispatcher_.AddRoute(route); }
 
-      private:
+	private:
 	typedef std::vector<char> DataType;
 	Dispatcher dispatcher_;
 	int _port = -1;

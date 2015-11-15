@@ -289,7 +289,7 @@ namespace Json
  */
 class JSON_API Features
 {
-      public:
+	public:
 	/** \brief A configuration that allows all features and assumes all
 	 * strings
 	 * are UTF-8.
@@ -380,12 +380,12 @@ namespace Json
  */
 class JSON_API Exception : public std::exception
 {
-      public:
+	public:
 	Exception(std::string const &msg);
 	virtual ~Exception() throw();
 	virtual char const *what() const throw();
 
-      protected:
+	protected:
 	std::string const msg_;
 };
 
@@ -397,7 +397,7 @@ class JSON_API Exception : public std::exception
  */
 class JSON_API RuntimeError : public Exception
 {
-      public:
+	public:
 	RuntimeError(std::string const &msg);
 };
 
@@ -409,7 +409,7 @@ class JSON_API RuntimeError : public Exception
  */
 class JSON_API LogicError : public Exception
 {
-      public:
+	public:
 	LogicError(std::string const &msg);
 };
 
@@ -462,14 +462,14 @@ enum CommentPlacement {
  */
 class JSON_API StaticString
 {
-      public:
+	public:
 	explicit StaticString(const char *czstring) : c_str_(czstring) {}
 
 	operator const char *() const { return c_str_; }
 
 	const char *c_str() const { return c_str_; }
 
-      private:
+	private:
 	const char *c_str_;
 };
 
@@ -511,7 +511,7 @@ class JSON_API Value
 {
 	friend class ValueIteratorBase;
 
-      public:
+	public:
 	typedef std::vector<std::string> Members;
 	typedef ValueIterator iterator;
 	typedef ValueConstIterator const_iterator;
@@ -554,11 +554,11 @@ class JSON_API Value
 	static const UInt64 maxUInt64;
 #endif // defined(JSON_HAS_INT64)
 
-      private:
+	private:
 #ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
 	class CZString
 	{
-	      public:
+		public:
 		enum DuplicationPolicy { noDuplication = 0, duplicate, duplicateOnCopy };
 		CZString(ArrayIndex index);
 		CZString(char const *str, unsigned length, DuplicationPolicy allocate);
@@ -573,7 +573,7 @@ class JSON_API Value
 		unsigned length() const;
 		bool isStaticString() const;
 
-	      private:
+		private:
 		void swap(CZString &other);
 
 		struct StringStorage {
@@ -589,7 +589,7 @@ class JSON_API Value
 		};
 	};
 
-      public:
+	public:
 #ifndef JSON_USE_CPPTL_SMALLMAP
 	typedef std::map<CZString, Value> ObjectValues;
 #else
@@ -597,7 +597,7 @@ class JSON_API Value
 #endif // ifndef JSON_USE_CPPTL_SMALLMAP
 #endif // ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
 
-      public:
+	public:
 	/** \brief Create a default Value of the given type.
 
 	  This is a very useful constructor.
@@ -922,7 +922,7 @@ class JSON_API Value
 	size_t getOffsetStart() const;
 	size_t getOffsetLimit() const;
 
-      private:
+	private:
 	void initBasic(ValueType type, bool allocated = false);
 
 	Value &resolveReference(const char *key);
@@ -973,7 +973,7 @@ class JSON_API Value
  */
 class JSON_API PathArgument
 {
-      public:
+	public:
 	friend class Path;
 
 	PathArgument();
@@ -981,7 +981,7 @@ class JSON_API PathArgument
 	PathArgument(const char *key);
 	PathArgument(const std::string &key);
 
-      private:
+	private:
 	enum Kind { kindNone = 0, kindIndex, kindKey };
 	std::string key_;
 	ArrayIndex index_;
@@ -1001,7 +1001,7 @@ class JSON_API PathArgument
  */
 class JSON_API Path
 {
-      public:
+	public:
 	Path(const std::string &path, const PathArgument &a1 = PathArgument(), const PathArgument &a2 = PathArgument(),
 	     const PathArgument &a3 = PathArgument(), const PathArgument &a4 = PathArgument(),
 	     const PathArgument &a5 = PathArgument());
@@ -1013,7 +1013,7 @@ class JSON_API Path
 	/// the node.
 	Value &make(Value &root) const;
 
-      private:
+	private:
 	typedef std::vector<const PathArgument *> InArgs;
 	typedef std::vector<PathArgument> Args;
 
@@ -1030,7 +1030,7 @@ class JSON_API Path
  */
 class JSON_API ValueIteratorBase
 {
-      public:
+	public:
 	typedef std::bidirectional_iterator_tag iterator_category;
 	typedef unsigned int size_t;
 	typedef int difference_type;
@@ -1070,7 +1070,7 @@ class JSON_API ValueIteratorBase
 	/// \note Better version than memberName(). Allows embedded nulls.
 	char const *memberName(char const **end) const;
 
-      protected:
+	protected:
 	Value &deref() const;
 
 	void increment();
@@ -1083,12 +1083,12 @@ class JSON_API ValueIteratorBase
 
 	void copy(const SelfType &other);
 
-      private:
+	private:
 	Value::ObjectValues::iterator current_;
 	// Indicates that iterator is for a null value.
 	bool isNull_;
 
-      public:
+	public:
 	// For some reason, BORLAND needs these at the end, rather
 	// than earlier. No idea why.
 	ValueIteratorBase();
@@ -1102,7 +1102,7 @@ class JSON_API ValueConstIterator : public ValueIteratorBase
 {
 	friend class Value;
 
-      public:
+	public:
 	typedef const Value value_type;
 	// typedef unsigned int size_t;
 	// typedef int difference_type;
@@ -1112,12 +1112,12 @@ class JSON_API ValueConstIterator : public ValueIteratorBase
 
 	ValueConstIterator();
 
-      private:
+	private:
 	/*! \internal Use by Value to create an iterator.
 	 */
 	explicit ValueConstIterator(const Value::ObjectValues::iterator &current);
 
-      public:
+	public:
 	SelfType &operator=(const ValueIteratorBase &other);
 
 	SelfType operator++(int)
@@ -1157,7 +1157,7 @@ class JSON_API ValueIterator : public ValueIteratorBase
 {
 	friend class Value;
 
-      public:
+	public:
 	typedef Value value_type;
 	typedef unsigned int size_t;
 	typedef int difference_type;
@@ -1169,12 +1169,12 @@ class JSON_API ValueIterator : public ValueIteratorBase
 	ValueIterator(const ValueConstIterator &other);
 	ValueIterator(const ValueIterator &other);
 
-      private:
+	private:
 	/*! \internal Use by Value to create an iterator.
 	 */
 	explicit ValueIterator(const Value::ObjectValues::iterator &current);
 
-      public:
+	public:
 	SelfType &operator=(const SelfType &other);
 
 	SelfType operator++(int)
@@ -1265,7 +1265,7 @@ namespace Json
  */
 class JSON_API Reader
 {
-      public:
+	public:
 	typedef char Char;
 	typedef const Char *Location;
 
@@ -1399,7 +1399,7 @@ class JSON_API Reader
 	 */
 	bool good() const;
 
-      private:
+	private:
 	enum TokenType {
 		tokenEndOfStream = 0,
 		tokenObjectBegin,
@@ -1419,7 +1419,7 @@ class JSON_API Reader
 
 	class Token
 	{
-	      public:
+		public:
 		TokenType type_;
 		Location start_;
 		Location end_;
@@ -1427,7 +1427,7 @@ class JSON_API Reader
 
 	class ErrorInfo
 	{
-	      public:
+		public:
 		Token token_;
 		std::string message_;
 		Location extra_;
@@ -1483,7 +1483,7 @@ class JSON_API Reader
  */
 class JSON_API CharReader
 {
-      public:
+	public:
 	virtual ~CharReader() {}
 	/** \brief Read a Value from a <a HREF="http://www.json.org">JSON</a>
 	 document.
@@ -1510,7 +1510,7 @@ class JSON_API CharReader
 
 	class Factory
 	{
-	      public:
+		public:
 		virtual ~Factory() {}
 		/** \brief Allocate a CharReader via operator new().
 		 * \throw std::exception if something goes wrong (e.g. invalid
@@ -1534,7 +1534,7 @@ Usage:
 */
 class JSON_API CharReaderBuilder : public CharReader::Factory
 {
-      public:
+	public:
 	// Note: We use a Json::Value so that we can add data-members to this
 	// class
 	// without a major version bump.
@@ -1695,9 +1695,9 @@ Usage:
 */
 class JSON_API StreamWriter
 {
-      protected:
+	protected:
 	std::ostream *sout_; // not owned; will not delete
-      public:
+	public:
 	StreamWriter();
 	virtual ~StreamWriter();
 	/** Write Value into document as configured in sub-class.
@@ -1715,7 +1715,7 @@ class JSON_API StreamWriter
 	 */
 	class JSON_API Factory
 	{
-	      public:
+		public:
 		virtual ~Factory();
 		/** \brief Allocate a CharReader via operator new().
 		 * \throw std::exception if something goes wrong (e.g. invalid
@@ -1747,7 +1747,7 @@ Usage:
 */
 class JSON_API StreamWriterBuilder : public StreamWriter::Factory
 {
-      public:
+	public:
 	// Note: We use a Json::Value so that we can add data-members to this
 	// class
 	// without a major version bump.
@@ -1800,7 +1800,7 @@ class JSON_API StreamWriterBuilder : public StreamWriter::Factory
  */
 class JSON_API Writer
 {
-      public:
+	public:
 	virtual ~Writer();
 
 	virtual std::string write(const Value &root) = 0;
@@ -1817,7 +1817,7 @@ class JSON_API Writer
  */
 class JSON_API FastWriter : public Writer
 {
-      public:
+	public:
 	FastWriter();
 	virtual ~FastWriter() {}
 
@@ -1834,10 +1834,10 @@ class JSON_API FastWriter : public Writer
 
 	void omitEndingLineFeed();
 
-      public: // overridden from Writer
+	public: // overridden from Writer
 	virtual std::string write(const Value &root);
 
-      private:
+	private:
 	void writeValue(const Value &value);
 
 	std::string document_;
@@ -1872,20 +1872,20 @@ class JSON_API FastWriter : public Writer
  */
 class JSON_API StyledWriter : public Writer
 {
-      public:
+	public:
 	StyledWriter();
 	virtual ~StyledWriter() {}
 
-      public: // overridden from Writer
-	      /** \brief Serialize a Value in <a HREF="http://www.json.org">JSON</a>
-	       * format.
-	       * \param root Value to serialize.
-	       * \return String containing the JSON document that represents the root
-	       * value.
-	       */
+	public: // overridden from Writer
+		/** \brief Serialize a Value in <a HREF="http://www.json.org">JSON</a>
+		 * format.
+		 * \param root Value to serialize.
+		 * \return String containing the JSON document that represents the root
+		 * value.
+		 */
 	virtual std::string write(const Value &root);
 
-      private:
+	private:
 	void writeValue(const Value &value);
 	void writeArrayValue(const Value &value);
 	bool isMultineArray(const Value &value);
@@ -1937,11 +1937,11 @@ class JSON_API StyledWriter : public Writer
  */
 class JSON_API StyledStreamWriter
 {
-      public:
+	public:
 	StyledStreamWriter(std::string indentation = "\t");
 	~StyledStreamWriter() {}
 
-      public:
+	public:
 	/** \brief Serialize a Value in <a HREF="http://www.json.org">JSON</a>
 	 * format.
 	 * \param out Stream to write to. (Can be ostringstream, e.g.)
@@ -1952,7 +1952,7 @@ class JSON_API StyledStreamWriter
 	 */
 	void write(std::ostream &out, const Value &root);
 
-      private:
+	private:
 	void writeValue(const Value &value);
 	void writeArrayValue(const Value &value);
 	bool isMultineArray(const Value &value);

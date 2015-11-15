@@ -1,4 +1,4 @@
-#include <io/watchers/sys_epoll.h>
+#include <io/schedulers/sys_epoll.h>
 #include <misc/debug.h>
 #include <cstring>
 #include <algorithm>
@@ -19,12 +19,29 @@ void SysEpoll::Schedule(int file_descriptor, std::uint32_t flags)
 	memset(&ev, 0, sizeof(struct epoll_event));
 	ev.data.fd = file_descriptor;
 	ev.events = flags | EPOLLET;
-	if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, ev.data.fd, &ev))
-		throw Error("Could not add the file with fd = " + std::to_string(file_descriptor) +
-			    " to the polling queue");
-	else
+	if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, ev.data.fd, &ev)) {
+		if (errno != EEXIST) {
+			throw Error("Could not add the file with fd = " + std::to_string(file_descriptor) +
+				    " to the polling queue");
+		} else {
+			Modify(file_descriptor, flags);
+		}
+	} else {
 		debug("Scheduled file descriptor " + std::to_string(file_descriptor));
+	}
 	events_.push_back(ev);
+}
+
+void SysEpoll::Modify(int file_descriptor, std::uint32_t flags)
+{
+	auto *event = FindEvent(file_descriptor);
+	if (event) {
+		event->events |= flags;
+		if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, event->data.fd, event)) {
+			debug("Could not modify the event with fd = " + std::to_string(file_descriptor) + " errno = " +
+			      std::to_string(errno));
+		}
+	}
 }
 
 void SysEpoll::Remove(int file_descriptor)
@@ -50,16 +67,16 @@ void SysEpoll::Remove(int file_descriptor)
 	}
 }
 
-static std::set<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept
+static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept
 {
-	std::set<SysEpoll::Event> epoll_events;
+	std::vector<SysEpoll::Event> epoll_events;
 	for (const auto &event : events) {
-		epoll_events.emplace(event.data.fd, event.events);
+		epoll_events.emplace_back(event.data.fd, event.events);
 		debug("Event with fd = " + std::to_string(event.data.fd) + " was reported to be active");
 	}
 	return epoll_events;
 }
-std::set<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const
+std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const
 {
 	std::vector<epoll_event> active_files;
 	active_files.resize(chunk_size);
@@ -74,6 +91,14 @@ std::set<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const
 	active_files.resize(events_number);
 
 	return CreateEvents(active_files);
+}
+
+epoll_event *SysEpoll::FindEvent(int file_descriptor)
+{
+	auto event_it = std::find_if(events_.begin(), events_.end(), [file_descriptor](const epoll_event &ev) {
+		return (file_descriptor == ev.data.fd);
+	});
+	return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }
 SysEpoll::Event::Event(int fd, int description) noexcept : file_descriptor(fd), description(description) {}
 

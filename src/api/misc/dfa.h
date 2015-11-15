@@ -16,7 +16,7 @@ template <class S, class M> class DFA
 
 	S _begin, _end;
 
-      public:
+	public:
 	DFA(const S &beginState, const S &endState) : _begin(beginState), _end(endState) { _currentState = beginState; }
 
 	void add(const std::pair<S, M> &pair, const S &state)

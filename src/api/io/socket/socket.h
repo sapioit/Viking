@@ -19,7 +19,7 @@ namespace IO
 {
 class Socket
 {
-      public:
+	public:
 	struct AcceptError {
 		int fd;
 		const Socket *ptr;
@@ -36,15 +36,16 @@ class Socket
 	Socket(int);
 	Socket(int port, int);
 	Socket(const Socket &) = delete;
-	Socket(Socket &&other) { operator=(std::move(other)); }
+	Socket(Socket &&other) : fd_(-1) { *this = std::move(other); }
 	Socket &operator=(Socket &&other)
 	{
 		if (this != &other) {
+			Close();
 			fd_ = other.fd_;
-			other.fd_ = -1;
 			port_ = other.port_;
 			address_ = other.address_;
 			connection_ = other.connection_;
+			other.fd_ = -1;
 		}
 		return *this;
 	}
@@ -150,7 +151,7 @@ class Socket
 		return written == -1 ? 0 : written;
 	}
 
-      private:
+	private:
 	int fd_ = -1;
 	int port_;
 	bool connection_ = false;

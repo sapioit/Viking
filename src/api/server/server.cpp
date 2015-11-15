@@ -1,10 +1,11 @@
 #include <server/server.h>
 #include <server/dispatcher.h>
-#include <io/schedulers/out.h>
-#include <io/watchers/socket_watcher.h>
+#include <io/schedulers/io_scheduler.h>
 #include <http/parser.h>
 #include <misc/storage.h>
 #include <misc/debug.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <utility>
 #include <algorithm>
@@ -35,15 +36,14 @@ void Server::setSettings(const Settings &s)
 }
 void Server::run()
 {
+    debug("Pid = " + std::to_string(getpid()));
 	if (_port == -1)
 		throw std::runtime_error("Port number not set!");
 	try {
 		auto master_socket = IO::Socket::start_socket(_port, _maxPending);
 		debug("Master socket has fd = " + std::to_string(master_socket.GetFD()));
-		using namespace std::placeholders;
-		auto dispatcher_callback = std::bind(&Dispatcher::Dispatch, &dispatcher_, _1);
-        IO::SocketWatcher<decltype(dispatcher_callback)> watcher(std::move(master_socket),
-										     dispatcher_callback);
+
+		IO::Scheduler watcher(std::move(master_socket), Dispatcher::Dispatch);
 		while (true) {
 			watcher.Run();
 		}

@@ -14,13 +14,14 @@ namespace Http
 using namespace Http::Components;
 class Response
 {
-      public:
+	public:
 	Response();
 	Response(const Request &);
 	Response(const Request &, int);
 	Response(const Request &, StatusCode);
 	Response(const Request &, const std::string &);
 	Response(const Request &, int, const std::string &);
+	Response(const Request &, Http::StatusCode, const std::string &);
 	Response(const Request &, const Resource &);
 	Response(const Request &, const Json::Value &);
 	Response(const Response &) = default;
@@ -50,7 +51,7 @@ class Response
 	std::string getText() const;
 	void setText(const std::string &text);
 
-      private:
+	private:
 	Request _request;
 	Resource _resource;
 	int _code;

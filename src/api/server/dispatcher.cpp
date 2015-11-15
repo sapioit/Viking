@@ -1,56 +1,41 @@
 #include <server/dispatcher.h>
 #include <thread>
 #include <sstream>
+#include <http/engine.h>
 
-Web::Dispatcher::Dispatcher()
-    : output_sched(), output_thread(&IO::Scheduler::Out<DataType>::Run, std::ref(output_sched))
-{
-	output_thread.detach();
-}
+Web::Dispatcher::RouteMap Web::Dispatcher::routes;
 
-bool Web::Dispatcher::Dispatch(const Connection &connection)
+
+Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &connection)
 {
-	try {
-		auto parser = Http::Parser(connection);
-		auto request = parser();
-		using namespace std::placeholders;
-		Responder<std::function<void(Connection, const DataType &)>> responder(
-            std::bind(&IO::Scheduler::Out<DataType>::Add, &output_sched, _1, _2));
-		if (request.IsPassable()) {
-			if (!request.IsResource()) {
-				auto handler = RouteUtility::GetHandler(request, routes);
-				if (handler) {
-					auto response = handler(request);
-					responder.Respond(response, connection);
-					return response.should_close();
-				} else {
-					// no user-defined handler,
-					// return not
-					// found
-					responder.Respond({request, 404}, connection);
-					return true;
-				}
+    auto parser = Http::Engine(connection);
+            //Http::Parser(connection);
+	auto request = parser();
+	if (request.IsPassable()) {
+		if (!request.IsResource()) {
+			auto handler = RouteUtility::GetHandler(request, routes);
+			if (handler) {
+				auto response = handler(request);
+				return {ResponseSerializer::Serialize(response), response.should_close()};
 			} else {
-				// it's a resource
-				try {
-					auto resource = CacheManager::GetResource(request.URI);
-					responder.Respond(request, resource, connection);
-					return true;
-				} catch (Http::StatusCode code) {
-					responder.Respond({request, code}, connection);
-					return false;
-				}
+				/* No user-defined handler, return not found */
+				return {ResponseSerializer::Serialize({request, Http::StatusCode::NotFound})};
 			}
 		} else {
-			// The request is not passable to the user and
-			// it is not
-			// a resource either
-			// TODO see what the standards says about this?
+			/* It's a resource */
+			try {
+				auto resource = CacheManager::GetResource(request.URI);
+				// TODO decide if you should really close the connection
+				return {ResponseSerializer::Serialize(request, resource)};
+			} catch (Http::StatusCode code) {
+				return {ResponseSerializer::Serialize({request, code})};
+			}
 		}
-	} catch (std::runtime_error &ex) {
-		Log::e(ex.what());
-	} catch (IO::Socket::ConnectionClosedByPeer) {
-		return true;
+	} else {
+		/* The request is not passable to the user and
+		* it is not a resource either
+		* TODO see what the standards says about this?
+		*/
 	}
-	return true;
+	return {};
 }

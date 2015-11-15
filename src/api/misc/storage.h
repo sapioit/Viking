@@ -7,7 +7,7 @@ class Storage
 {
 	static Settings _settings;
 
-      public:
+	public:
 	static const Settings &settings();
 	static void setSettings(const Settings &settings);
 };

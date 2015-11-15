@@ -16,7 +16,7 @@ class Resource
 	std::vector<char> _hash;
 	std::uint64_t _hits = 0;
 
-      public:
+	public:
 	Resource() = default;
 	Resource(const std::string &, const std::vector<char> &, const struct stat &);
 	Resource(const std::string &);

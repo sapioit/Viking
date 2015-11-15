@@ -21,36 +21,39 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 #HTTP
 SOURCES += \
     http/cachemanager.cpp \
-    http/parser.cpp \
     http/request.cpp \
     http/response.cpp \
     http/responder.cpp \
     http/routeutility.cpp \
+    http/engine.cpp \
+    http/parser.c
 
 HEADERS += \
     http/cachemanager.h \
     http/components.h \
     http/header.h \
     http/parser.h \
+    http/engine.h \
     http/request.h \
     http/response.h \
     http/responder.h \
-    http/routeutility.h
+    http/routeutility.h \
 #HTTP-END
 
 #IO
 SOURCES += \
     io/filesystem.cpp \
+    io/schedulers/file_container.cpp \
+    io/schedulers/io_scheduler.cpp \
     io/socket/socket.cpp \
-    io/watchers/sys_epoll.cpp \
+    io/schedulers/sys_epoll.cpp \
 
 HEADERS += \
     io/filesystem.h \
     io/socket/socket.h \
-    io/watchers/file_watcher.h \
-    io/watchers/socket_watcher.h \
-    io/watchers/sys_epoll.h \
-    io/schedulers/out.h \
+    io/schedulers/sys_epoll.h \
+    io/schedulers/file_container.h \
+    io/schedulers/io_scheduler.h
 
 #IO-END
 
@@ -69,7 +72,6 @@ SOURCES += \
     misc/resource.cpp \
     misc/settings.cpp \
     misc/storage.cpp \
-    misc/debug.cpp \
 
 HEADERS += \
     misc/date.h \

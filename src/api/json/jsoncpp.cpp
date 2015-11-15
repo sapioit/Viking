@@ -1067,7 +1067,7 @@ bool Reader::good() const { return !errors_.size(); }
 // exact copy of Features
 class OurFeatures
 {
-      public:
+	public:
 	static OurFeatures all();
 	OurFeatures();
 	bool allowComments_;
@@ -1097,7 +1097,7 @@ OurFeatures OurFeatures::all() { return OurFeatures(); }
 // exact copy of Reader, renamed to OurReader
 class OurReader
 {
-      public:
+	public:
 	typedef char Char;
 	typedef const Char *Location;
 	struct StructuredError {
@@ -1114,7 +1114,7 @@ class OurReader
 	bool pushError(const Value &value, const std::string &message, const Value &extra);
 	bool good() const;
 
-      private:
+	private:
 	OurReader(OurReader const &);      // no impl
 	void operator=(OurReader const &); // no impl
 
@@ -1137,7 +1137,7 @@ class OurReader
 
 	class Token
 	{
-	      public:
+		public:
 		TokenType type_;
 		Location start_;
 		Location end_;
@@ -1145,7 +1145,7 @@ class OurReader
 
 	class ErrorInfo
 	{
-	      public:
+		public:
 		Token token_;
 		std::string message_;
 		Location extra_;
@@ -2014,7 +2014,7 @@ class OurCharReader : public CharReader
 	bool const collectComments_;
 	OurReader reader_;
 
-      public:
+	public:
 	OurCharReader(bool collectComments, OurFeatures const &features)
 	    : collectComments_(collectComments), reader_(features)
 	{
@@ -4702,7 +4702,7 @@ struct BuiltStyledStreamWriter : public StreamWriter {
 				std::string const &nullSymbol, std::string const &endingLineFeedSymbol);
 	virtual int write(Value const &root, std::ostream *sout);
 
-      private:
+	private:
 	void writeValue(Value const &value);
 	void writeArrayValue(Value const &value);
 	bool isMultineArray(Value const &value);

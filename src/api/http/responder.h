@@ -3,34 +3,28 @@
 
 #include <http/response.h>
 #include <http/request.h>
-#include <http/parser.h>
-#include <io/socket/socket.h>
-#include <io/schedulers/out.h>
+#include <http/engine.h>
 
-template <typename Stream> class Responder
+class ResponseSerializer
 {
-	Stream stream;
-
-      public:
-	Responder(Stream stream) : stream(stream){};
-	void Respond(Http::Response response, const IO::Socket &socket)
+	public:
+	typedef std::vector<char> DataType;
+	static DataType Serialize(Http::Response response)
 	{
 		try {
 			auto raw_response = response.str();
-			auto raw_resp_vec = std::vector<char>(raw_response.begin(), raw_response.end());
-			/*IO::OutputScheduler::get().ScheduleWrite(socket,
-								 raw_response);*/
-			stream(std::move(socket.Duplicate()), raw_resp_vec);
+			auto raw_resp_vec = DataType(raw_response.begin(), raw_response.end());
 
-		} catch (std::exception &ex) {
-			Respond({response.getRequest(), Http::StatusCode::InternalServerError}, socket);
+			return raw_resp_vec;
+		} catch (...) {
+			return Serialize({response.getRequest(), Http::StatusCode::InternalServerError});
 		}
 	}
-	void Respond(const Http::Request &request, const Resource &res, const IO::Socket &socket)
+	static DataType Serialize(const Http::Request &request, const Resource &res)
 	{
 		Http::Response response{request, res};
-		response.setContent_type(Http::Parser::GetMimeTypeByExtension(request.URI));
-		Respond(response, socket);
+        response.setContent_type(Http::Engine::GetMimeTypeByExtension(request.URI));
+		return Serialize(response);
 	}
 };
 
