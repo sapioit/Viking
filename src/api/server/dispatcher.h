@@ -9,7 +9,7 @@
 #include <http/parser.h>
 #include <http/components.h>
 #include <http/cachemanager.h>
-#include <http/responder.h>
+#include <http/response_serializer.h>
 #include <misc/log.h>
 #include <misc/storage.h>
 #include <map>

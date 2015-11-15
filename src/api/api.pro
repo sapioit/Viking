@@ -23,7 +23,6 @@ SOURCES += \
     http/cachemanager.cpp \
     http/request.cpp \
     http/response.cpp \
-    http/responder.cpp \
     http/routeutility.cpp \
     http/engine.cpp \
     http/parser.c
@@ -36,9 +35,9 @@ HEADERS += \
     http/engine.h \
     http/request.h \
     http/response.h \
-    http/responder.h \
     http/routeutility.h \
 #HTTP-END
+    http/response_serializer.h
 
 #IO
 SOURCES += \
@@ -67,7 +66,6 @@ HEADERS += \
 
 #MISC
 SOURCES += \
-    misc/dfa.cpp \
     misc/log.cpp \
     misc/resource.cpp \
     misc/settings.cpp \
