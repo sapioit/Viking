@@ -19,6 +19,14 @@ const Components::ContentType &Response::getContent_type() const { return _conte
 
 void Response::setContent_type(const Components::ContentType &value) { _content_type = value; }
 
+std::size_t Response::ContentLength() const
+{
+	if (file_ != nullptr) {
+		return file_->size;
+	}
+	return 0;
+}
+
 enum class states { StatusLine, GeneralHeader, ResponseHeader, Body, CRLFHeader, CRLFBody, End };
 enum class transitions { EndStatusLine, EndGeneralHeader, EndResponseHeader, EndBody, CRLFEnd, Error };
 
@@ -36,6 +44,92 @@ DFA<states, transitions> make_machine()
 	machine.add(std::make_pair(states::Body, transitions::EndBody), states::CRLFBody);
 	machine.add(std::make_pair(states::CRLFBody, transitions::CRLFEnd), states::End);
 	return machine;
+}
+
+std::string Response::header_str() const
+{
+	// TODO rewrite this whole thing
+	std::ostringstream stream;
+
+	auto machine = make_machine();
+	constexpr auto crlf = "\r\n";
+	const decltype(Components::content_types) &mime_types = Components::content_types;
+
+	while (machine.currentState() != end) {
+		switch (machine.currentState()) {
+		case states::StatusLine: {
+			stream << "HTTP/" << std::setprecision(2) << 1.1;
+			stream << " " << code() << " ";
+			stream << Components::status_codes.at(static_cast<Components::StatusCode>(code())) << crlf;
+			machine.transition(transitions::EndStatusLine);
+			break;
+		}
+		case states::GeneralHeader: {
+			stream << "Date:"
+			       << " " << Date::Now()() << crlf;
+			stream << "Connection: " << (should_close() ? "Close" : "Keep-Alive") << crlf;
+			//            if(is_error())
+			//                machine.transition(transitions::Error);
+			//            else
+			machine.transition(transitions::EndGeneralHeader);
+			break;
+		}
+		case states::ResponseHeader: {
+			auto type_str_it = mime_types.find(getContent_type());
+			if (type_str_it == mime_types.end())
+				throw static_cast<int>(StatusCode::UnsupportedMediaType);
+			std::string type_str(type_str_it->second);
+			stream << Http::Header::Fields::Content_Type << ": " << type_str << crlf;
+			stream << Http::Header::Fields::Content_Length << ": ";
+			if (has_resource())
+
+				stream << ContentLength(); //_resource.content().size();
+			else
+				stream << _text.size();
+			stream << crlf;
+			stream << Http::Header::Fields::Cache_Control << ": "
+			       << (should_cache() ? "max-age=" + std::to_string(get_expiry()) : "no-cache") << crlf;
+			if (has_resource()) {
+				if (getContent_type() == Components::ContentType::TextHtml ||
+				    getContent_type() == Components::ContentType::TextPlain) {
+					// stream <<
+					// Http::Header::Fields::Transfer_Encoding
+					// << ": " <<
+					// "8bit";
+				} else {
+					stream << Http::Header::Fields::Transfer_Encoding << ": "
+					       << "binary" << crlf;
+				}
+			} else {
+				// TODO
+			}
+			machine.transition(transitions::EndResponseHeader);
+			break;
+		}
+		case states::CRLFHeader: {
+			stream << crlf;
+			machine.transition(transitions::CRLFEnd);
+			break;
+		}
+		case states::Body: {
+			return stream.str();
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+	}
+
+	return stream.str();
+}
+
+std::string Response::end_str() const
+{
+	constexpr auto crlf = "\r\n";
+	std::string result(crlf);
+	result.append(crlf);
+	return result;
 }
 
 std::string Response::str() const
@@ -108,12 +202,11 @@ std::string Response::str() const
 			} else {
 				stream << _text;
 			}
-			stream << crlf;
 			machine.transition(transitions::EndBody);
 			break;
 		}
 		case states::CRLFBody: {
-			stream << crlf;
+			stream << crlf << crlf;
 			machine.transition(transitions::CRLFEnd);
 			break;
 		}
@@ -154,7 +247,7 @@ bool Response::should_close() const
 
 bool Response::has_body() const { return _text.size() || _resource.content().size(); }
 
-bool Response::has_resource() const { return _resource.content().size(); }
+bool Response::has_resource() const { return _resource.content().size() || (file_ != nullptr); }
 
 bool Response::is_error() const
 {
@@ -172,7 +265,7 @@ void Response::setResource(const Resource &resource) { _resource = resource; }
 
 Response::Response() {}
 
-Response::Response(const Request &request) : _request(request) {}
+Response::Response(const Request &request, const UnixFile *file) : _request(request), _code(200), file_(file) {}
 
 Response::Response(const Request &request, int code) : _request(request), _code(code) {}
 

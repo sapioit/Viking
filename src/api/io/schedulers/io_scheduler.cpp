@@ -1,4 +1,5 @@
 #include <io/schedulers/io_scheduler.h>
+#include <io/buffers/utils.h>
 
 IO::Scheduler::Scheduler(IO::Socket sock, IO::Scheduler::Callback callback) : callback(callback)
 {
@@ -71,7 +72,7 @@ void IO::Scheduler::Run()
 					     */
 					Modify(associated_event.file_descriptor,
 					       static_cast<std::uint32_t>(SysEpoll::Description::Write));
-					AddSchedItem(associated_event, callback_response);
+					AddSchedItem(associated_event, std::move(callback_response));
 				}
 				continue;
 			}
@@ -81,35 +82,88 @@ void IO::Scheduler::Run()
 	}
 }
 
-void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, const IO::Scheduler::SchedItem &item, bool append) noexcept
+void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, IO::Scheduler::ScheduleItem item, bool append) noexcept
 {
 	auto item_it = schedule_.find(ev.file_descriptor);
 	if (item_it == schedule_.end()) {
-		schedule_.emplace(std::make_pair(ev.file_descriptor, item.data));
+		schedule_.emplace(std::make_pair(ev.file_descriptor, std::move(item)));
 	} else {
-		auto &sched_item_data = item_it->second.data;
-		if (append) {
-			sched_item_data.reserve(sched_item_data.size() + item.data.size());
-			sched_item_data.insert(sched_item_data.end(), item.data.begin(), item.data.end());
+		if (!append) {
+			/* Unlikely */
 		} else {
-			sched_item_data = std::move(item.data);
+			item_it->second.AddData(std::move(item));
 		}
 	}
 }
 
-void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::SchedItem &sched_item)
+void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, SchedItem &sched_item)
 {
-	auto &data = sched_item.data;
-	auto written = socket.WriteSome(data);
-
-	if (written == data.size()) {
-		ScheduledItemFinished(socket, sched_item);
+	if (sched_item.CloseWhenDone()) {
+		Scheduler::Remove(socket);
 	} else {
-		auto old_data_size = data.size();
-		DataType(data.begin() + written, data.end()).swap(data);
-		if (old_data_size - written != data.size())
-			throw DataCorruption{std::addressof(socket)};
+		schedule_.erase(socket.GetFD());
 	}
+}
+
+void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::ScheduleItem &sched_item)
+{
+	auto stop = false;
+	do {
+		DataSource *sched_item_front = sched_item.Front();
+
+		if (typeid(*sched_item_front) == typeid(MemoryBuffer)) {
+			MemoryBuffer *mem_buffer = dynamic_cast<MemoryBuffer *>(sched_item_front);
+			if (mem_buffer != nullptr) {
+				auto &data = mem_buffer->data;
+				const auto written = socket.WriteSome(data);
+				if (written == 0) {
+					stop = true;
+				}
+				if (written == data.size()) {
+					sched_item.RemoveFront();
+				} else {
+					auto old_data_size = data.size();
+					DataType(data.begin() + written, data.end()).swap(data);
+					if (old_data_size - written != data.size())
+						throw DataCorruption{std::addressof(socket)};
+				}
+			}
+		} else if (typeid(*sched_item_front) == typeid(UnixFile)) {
+			UnixFile *unix_file = dynamic_cast<UnixFile *>(sched_item_front);
+			if (unix_file != nullptr) {
+				try {
+					stop = !(unix_file->SendTo(socket.GetFD()));
+					if (!(*unix_file))
+						sched_item.RemoveFront();
+				} catch (const UnixFile::BadFile &) {
+					/* The file has been somehow removed or it cannot be read from anymore.
+					 * We need to remove the whole scheduled item, since everything has
+					 * been corrupted.
+					 * TODO in the future, maybe pass this decision to a callback function.
+					 */
+					Scheduler::Remove(socket);
+				} catch (const UnixFile::DIY &e) {
+					/* This is how Linux tells you that you'd better do it yourself in userspace.
+					 * We need to replace this item with a MemoryBuffer version of this data, at
+					 * the right offset.
+					 */
+					try {
+						auto buffer = From(*e.ptr);
+						sched_item.ReplaceFront(std::move(buffer));
+					} catch (const UnixFile::BadFile &) {
+						/* For some reason, we could not generate a MemoryBuffer out of this, so
+						 * we'll remove the whole scheduled item.
+						 */
+						Scheduler::Remove(socket);
+					}
+				}
+			}
+		}
+		if (!sched_item) {
+			ScheduledItemFinished(socket, sched_item);
+			stop = true;
+		}
+	} while (!stop);
 }
 
 bool IO::Scheduler::CanWrite(const SysEpoll::Event &event) const noexcept

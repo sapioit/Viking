@@ -5,6 +5,8 @@
 
 Web::Dispatcher::RouteMap Web::Dispatcher::routes;
 
+bool ShouldCopyInMemory(/* File path */) { return false; }
+
 Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &connection)
 {
 	auto parser = Http::Engine(connection);
@@ -23,9 +25,35 @@ Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &c
 		} else {
 			/* It's a resource */
 			try {
-				auto resource = CacheManager::GetResource(request.URI);
-				// TODO decide if you should really close the connection
-				return {ResponseSerializer::Serialize(request, resource)};
+				if (ShouldCopyInMemory()) {
+					auto resource = CacheManager::GetResource(request.URI);
+					// TODO decide if you should really close the connection
+					return {ResponseSerializer::Serialize(request, resource)};
+				} else {
+					try {
+						std::string uri = request.URI;
+						auto unix_file =
+						    std::make_unique<UnixFile>(Storage::settings().root_path + uri);
+						SchedulerResponse response;
+
+						Http::Response http_response{request, unix_file.get()};
+						http_response.setContent_type(
+						    Http::Engine::GetMimeTypeByExtension(request.URI));
+
+						auto header_str = http_response.header_str();
+						response.AddData(
+						    std::vector<char>(header_str.begin(), header_str.end()));
+						response.AddData(std::move(unix_file));
+						auto header_end = http_response.end_str();
+						response.AddData(
+						    std::vector<char>(header_end.begin(), header_end.end()));
+
+						return response;
+					} catch (const UnixFile::Error &) {
+						return {ResponseSerializer::Serialize(
+						    {request, Http::Components::StatusCode::NotFound})};
+					}
+				}
 			} catch (Http::StatusCode code) {
 				return {ResponseSerializer::Serialize({request, code})};
 			}

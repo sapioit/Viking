@@ -9,7 +9,7 @@ class ResponseSerializer
 {
 	public:
 	typedef std::vector<char> DataType;
-	static DataType Serialize(Http::Response response)
+	static DataType Serialize(const Http::Response &response)
 	{
 		try {
 			auto raw_response = response.str();

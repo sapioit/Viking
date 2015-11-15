@@ -3,8 +3,8 @@
 
 #include <io/schedulers/file_container.h>
 #include <io/schedulers/sys_epoll.h>
+#include <io/schedulers/sched_item.h>
 #include <io/socket/socket.h>
-#include <util/set.h>
 
 #include <misc/debug.h>
 #include <stdexcept>
@@ -18,20 +18,7 @@ namespace IO
 class Scheduler : public SocketContainer, public SysEpoll
 {
 	public:
-	typedef std::vector<char> DataType;
-
 	private:
-	struct SchedItem {
-		DataType data;
-		bool close_when_done = true;
-		SchedItem() = default;
-		SchedItem(const DataType &data, bool close_when_done = true) try : data(data),
-										   close_when_done(close_when_done) {
-		} catch (...) {
-			throw;
-		}
-		operator bool() { return data.size(); }
-	};
 	struct DataCorruption {
 		const Socket *sock;
 	};
@@ -41,6 +28,8 @@ class Scheduler : public SocketContainer, public SysEpoll
 
 	public:
 	typedef SchedItem CallbackResponse;
+	typedef SchedItem ScheduleItem;
+	typedef std::vector<char> DataType;
 	typedef std::function<CallbackResponse(const Socket &)> Callback;
 
 	private:
@@ -60,16 +49,9 @@ class Scheduler : public SocketContainer, public SysEpoll
 	virtual void Run();
 
 	protected:
-	void AddSchedItem(const SysEpoll::Event &ev, const SchedItem &item, bool append = true) noexcept;
+	void AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append = true) noexcept;
 
-	void ScheduledItemFinished(const Socket &socket, SchedItem &sched_item)
-	{
-		if (sched_item.close_when_done) {
-			Scheduler::Remove(socket);
-		} else {
-			schedule_.erase(socket.GetFD());
-		}
-	}
+	void ScheduledItemFinished(const Socket &socket, SchedItem &sched_item);
 
 	void ProcessWrite(const Socket &socket, SchedItem &sched_item);
 

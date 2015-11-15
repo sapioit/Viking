@@ -5,6 +5,7 @@
 #include <http/request.h>
 #include <json/json.h>
 #include <misc/resource.h>
+#include <io/buffers/unix_file.h>
 
 #include <string>
 #include <iostream>
@@ -16,7 +17,7 @@ class Response
 {
 	public:
 	Response();
-	Response(const Request &);
+	Response(const Request &, const UnixFile *);
 	Response(const Request &, int);
 	Response(const Request &, StatusCode);
 	Response(const Request &, const std::string &);
@@ -42,9 +43,12 @@ class Response
 	const Components::ContentType &getContent_type() const;
 	void setContent_type(const Components::ContentType &value);
 
+	std::size_t ContentLength() const;
 	const Resource &getResource() const;
 	void setResource(const Resource &resource);
 
+	std::string end_str() const;
+	std::string header_str() const;
 	std::string str() const;
 	const Request &getRequest() const;
 
@@ -56,6 +60,7 @@ class Response
 	Resource _resource;
 	int _code;
 	std::string _text;
+	const UnixFile *file_ = nullptr;
 	Components::ContentType _content_type = Components::ContentType::TextPlain;
 };
 };

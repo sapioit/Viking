@@ -25,7 +25,10 @@ SOURCES += \
     http/response.cpp \
     http/routeutility.cpp \
     http/engine.cpp \
-    http/parser.c
+    http/parser.cpp \
+    io/buffers/unix_file.cpp \
+    io/schedulers/sched_item.cpp \
+    io/buffers/utils.cpp
 
 HEADERS += \
     http/cachemanager.h \
@@ -37,7 +40,11 @@ HEADERS += \
     http/response.h \
     http/routeutility.h \
 #HTTP-END
-    http/response_serializer.h
+    http/response_serializer.h \
+    io/buffers/datasource.h \
+    io/buffers/unix_file.h \
+    io/schedulers/sched_item.h \
+    io/buffers/utils.h
 
 #IO
 SOURCES += \
@@ -45,14 +52,15 @@ SOURCES += \
     io/schedulers/file_container.cpp \
     io/schedulers/io_scheduler.cpp \
     io/socket/socket.cpp \
-    io/schedulers/sys_epoll.cpp \
+    io/schedulers/sys_epoll.cpp
 
 HEADERS += \
     io/filesystem.h \
     io/socket/socket.h \
     io/schedulers/sys_epoll.h \
     io/schedulers/file_container.h \
-    io/schedulers/io_scheduler.h
+    io/schedulers/io_scheduler.h \
+    io/buffers/mem_buffer.h
 
 #IO-END
 

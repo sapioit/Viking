@@ -12,6 +12,7 @@ class Resource
 {
 	std::string _path;
 	std::vector<char> _content;
+	// TODO Modify to use the stat64 version
 	struct stat _stat;
 	std::vector<char> _hash;
 	std::uint64_t _hits = 0;
