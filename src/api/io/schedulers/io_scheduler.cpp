@@ -115,17 +115,27 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::Schedu
 			MemoryBuffer *mem_buffer = dynamic_cast<MemoryBuffer *>(sched_item_front);
 			if (mem_buffer != nullptr) {
 				auto &data = mem_buffer->data;
-				const auto written = socket.WriteSome(data);
-				if (written == 0) {
-					stop = true;
-				}
-				if (written == data.size()) {
-					sched_item.RemoveFront();
-				} else {
-					auto old_data_size = data.size();
-					DataType(data.begin() + written, data.end()).swap(data);
-					if (old_data_size - written != data.size())
-						throw DataCorruption{std::addressof(socket)};
+				try {
+					const auto written = socket.WriteSome(data);
+					if (written == 0) {
+						stop = true;
+					}
+					if (written == data.size()) {
+						sched_item.RemoveFront();
+					} else {
+						auto old_data_size = data.size();
+						DataType(data.begin() + written, data.end()).swap(data);
+						if (old_data_size - written != data.size())
+							throw DataCorruption{std::addressof(socket)};
+					}
+				} catch (const Socket::WriteError &e) {
+					debug("Write error on socket with sockfd = " + std::to_string(e.fd) +
+					      " errno = " + std::to_string(errno));
+					Scheduler::Remove(socket);
+					break;
+				} catch (const Socket::ConnectionClosedByPeer &) {
+					Scheduler::Remove(socket);
+					break;
 				}
 			}
 		} else if (typeid(*sched_item_front) == typeid(UnixFile)) {
@@ -135,6 +145,10 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::Schedu
 					stop = !(unix_file->SendTo(socket.GetFD()));
 					if (!(*unix_file))
 						sched_item.RemoveFront();
+				} catch (const UnixFile::BrokenPipe &) {
+					/* Received EPIPE. Remove the scheduled item */
+					Scheduler::Remove(socket);
+					break;
 				} catch (const UnixFile::BadFile &) {
 					/* The file has been somehow removed or it cannot be read from anymore.
 					 * We need to remove the whole scheduled item, since everything has
@@ -142,6 +156,7 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::Schedu
 					 * TODO in the future, maybe pass this decision to a callback function.
 					 */
 					Scheduler::Remove(socket);
+					break;
 				} catch (const UnixFile::DIY &e) {
 					/* This is how Linux tells you that you'd better do it yourself in userspace.
 					 * We need to replace this item with a MemoryBuffer version of this data, at
@@ -155,6 +170,7 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::Schedu
 						 * we'll remove the whole scheduled item.
 						 */
 						Scheduler::Remove(socket);
+						break;
 					}
 				}
 			}

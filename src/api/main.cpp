@@ -3,12 +3,14 @@
 #include <http/response.h>
 #include <http/request.h>
 #include <json/json.h>
-
+#include <signal.h>
 #include <iostream>
+
 int main()
 {
+	signal(SIGPIPE, SIG_IGN);
 	try {
-        Web::Server s(1234);
+		Web::Server s(1234);
 		auto route1 =
 		    std::make_pair(std::make_pair(Http::Components::Method::Get, "^\\/adsaf\\/json\\/(\\d+)$"),
 				   [](Http::Request req) -> Http::Response {

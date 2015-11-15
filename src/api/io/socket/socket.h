@@ -76,7 +76,7 @@ class Socket
 	{
 		auto written = ::send(fd_, static_cast<const void *>(data.data()), data.size(), MSG_NOSIGNAL);
 		if (written <= 0) {
-			if (!(errno == EAGAIN || errno == EWOULDBLOCK))
+			if (!((errno == EAGAIN) || (errno == EWOULDBLOCK)))
 				throw WriteError{fd_, this};
 			if (errno == ECONNRESET)
 				throw ConnectionClosedByPeer{fd_, this};

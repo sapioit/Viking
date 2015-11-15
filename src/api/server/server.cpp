@@ -24,9 +24,11 @@ std::string Log::_fn;
 
 Server::Server(int port) : _port(port)
 {
+#ifdef DEBUG
 	Log::Init("log_file.txt");
 	Log::SetEnabled(false);
 	Log::i("Started logging");
+#endif
 }
 
 void Server::setSettings(const Settings &s)

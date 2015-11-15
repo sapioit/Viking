@@ -43,9 +43,9 @@ UnixFile::UnixFile(const std::string &path)
 
 bool UnixFile::SendTo(int other_file)
 {
-    auto size_left = static_cast<std::size_t>(size - offset);
-    const int ret = ::sendfile64(other_file, fd, std::addressof(offset), size_left);
-    if(ret == -1){
+	auto size_left = static_cast<std::size_t>(size - offset);
+	const int ret = ::sendfile64(other_file, fd, std::addressof(offset), size_left);
+	if (ret == -1) {
 		switch (errno) {
 		case EAGAIN:
 			return false;
@@ -58,18 +58,14 @@ bool UnixFile::SendTo(int other_file)
 		case EIO:
 			throw BadFile{this};
 			break;
-        case EFAULT:
-            //WTF
-            break;
+		case EFAULT:
+			// WTF
+			break;
+		case EPIPE:
+			throw BrokenPipe{this};
 		default:
-        {
-            auto err = errno;
-            if(err) {
-                //TODO
-            }
-        }
 			break;
 		}
-    }
+	}
 	return true;
 }

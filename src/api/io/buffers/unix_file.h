@@ -9,8 +9,8 @@
 
 struct UnixFile : public DataSource {
 	int fd = -1;
-    off64_t offset = 0;
-    off64_t size = 0;
+	off64_t offset = 0;
+	off64_t size = 0;
 
 	private:
 	void Close();
@@ -27,6 +27,9 @@ struct UnixFile : public DataSource {
 	};
 
 	struct DIY {
+		const UnixFile *ptr;
+	};
+	struct BrokenPipe {
 		const UnixFile *ptr;
 	};
 

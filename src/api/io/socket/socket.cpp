@@ -17,7 +17,7 @@ Socket::Socket(int port) : port_(port)
 {
 	if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw std::runtime_error("Could not create socket");
-	int opt;
+	int opt = 1;
 	if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
 		throw std::runtime_error("Setsockopt error");
 	address_.sin_family = AF_INET;
