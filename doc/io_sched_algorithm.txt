@@ -1,0 +1,77 @@
+I/O Scheduler algorithm
+Last revised 2015-11-16
+
+LOOP:
+
+IF no files to watch
+	IF parent process
+		return
+	ELSE
+		exit process
+ELSE
+	GET events
+	FOREACH event in events
+		Queue = empty
+		GET the associated socket [1]
+		If socket is acceptor
+			Add new connections
+			CONTINUE
+		If can terminate
+			Remove from scheduler (SysEpoll might return an error, that's okay)
+			CONTINUE
+		If can write
+			Process write
+			CONTINUE
+		If can read
+			If socket is not IPC communicator
+				If no write is scheduled for this socket already 
+					/* We suppose the upper level holds a state and we will only add it to the queue
+					 * if the "state" is final, aka it scheduled something for it already
+					 */
+					Add to queue
+			Else
+				Communicate with the other process [2]
+			CONTINUE
+		Pass queue to callback, fetch Resolution
+		If parent process
+			FOREACH Descriptor in Resolutions : Descriptor
+				Mark descriptor as HANDLED_OUTSIDE
+		Else
+			Clear Schedule
+			FOREACH socket in watched sockets
+			Remove socket (ONLY FROM THE SCHEDULER, NOT FROM SYSEPOLL)
+			/* Should investigate the possibility of recreating the SysEpoll instance and scheduling
+			 * all the sockets, so that we don't mess with the same SYSEPOLL instance
+			 */
+		FOREACH ScheduleItem in Resolution : ScheduleItem
+			Schedule ScheduleItem
+	END FOREACH
+
+
+Resolution {
+	ScheduleItem[];
+	Descriptor[]; // Descriptors that will be handled in another thread
+	Pair<Socket,Pid>[]; // Descriptor/Pid for the other processes
+}
+
+
+
+
+[1] Is socket associated?
+	If descriptors match AND i'm the parent process
+		If socket flag HANDLED_OUTSIDE is NOT set
+			YES
+	If file descriptors match AND i'm a parent process
+		YES
+
+[2] Communicate with child process
+	If parent process
+		N = Read 1 character
+		IF N is not 0
+			CHARS = Read N characters
+			FD = CHARS as int
+			Mark descriptor FD as NOT HANDLED_OUTSIDE
+		Else
+			Terminate child process socket// the child process is exiting
+			Write 0
+			Wait for child process // it will close upon reading 0

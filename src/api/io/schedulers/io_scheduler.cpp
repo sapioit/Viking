@@ -62,7 +62,7 @@ void IO::Scheduler::Run()
 				continue;
 			}
 
-			if (CanRead(associated_event)) {
+			if (CanRead(associated_event) && (!IsScheduled(associated_event))) {
 				debug("Socket with fd = " + std::to_string(associated_socket.GetFD()) +
 				      " can be read from, and there is no write scheduled for it");
 				CallbackResponse callback_response = callback(associated_socket);
