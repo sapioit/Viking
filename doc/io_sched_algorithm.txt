@@ -61,8 +61,9 @@ Resolution {
 	If descriptors match AND i'm the parent process
 		If socket flag HANDLED_OUTSIDE is NOT set
 			YES
-	If file descriptors match AND i'm a parent process
+	If file descriptors match AND i'm not a parent process
 		YES
+	
 
 [2] Communicate with child process
 	If parent process
