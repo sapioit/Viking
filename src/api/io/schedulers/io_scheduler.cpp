@@ -62,7 +62,7 @@ void IO::Scheduler::Run()
 				continue;
 			}
 
-			if (CanRead(associated_event) && (!IsScheduled(associated_event))) {
+            if (CanRead(associated_event) && (!IsScheduled(associated_event.file_descriptor))) {
 				debug("Socket with fd = " + std::to_string(associated_socket.GetFD()) +
 				      " can be read from, and there is no write scheduled for it");
 				CallbackResponse callback_response = callback(associated_socket);
@@ -192,9 +192,9 @@ bool IO::Scheduler::CanRead(const SysEpoll::Event &event) const noexcept
 	return (event.description & static_cast<std::uint32_t>(SysEpoll::Description::Read));
 }
 
-bool IO::Scheduler::IsScheduled(const SysEpoll::Event &event) const noexcept
+bool IO::Scheduler::IsScheduled(int file_descriptor) const noexcept
 {
-	auto item = schedule_.find(event.file_descriptor);
+    auto item = schedule_.find(file_descriptor);
 	return (item != schedule_.end());
 }
 
