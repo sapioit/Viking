@@ -59,7 +59,7 @@ class Scheduler : public SocketContainer, public SysEpoll
 
 	inline bool CanRead(const Event &event) const noexcept;
 
-    inline bool IsScheduled(int) const noexcept;
+	inline bool IsScheduled(int) const noexcept;
 
 	inline bool CanTerminate(const Event &event) const noexcept;
 
