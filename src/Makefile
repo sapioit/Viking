@@ -3,7 +3,7 @@ CXX = clang++
 CC = clang
 CXX_OPTS = -fPIC -std=c++14 -O3 -Wall -Werror
 C_OPTS = -fPIC -O3 -Wall -Werror
-DEBUG_OPTS = 
+DEBUG_OPTS =
 INCLUDEDIRS = -I.
 
 # Project name
@@ -15,6 +15,7 @@ LDFLAGS = -shared
 TESTAPP_LDFLAGS = -L../bin
 LIBNAME = libcppweb.so
 LIBNAME_ABBREVIATED = -lcppweb
+BINFOLDER = ../bin
 
 SUBDIR_ROOTS := .
 DIRS := . $(shell find $(SUBDIR_ROOTS) -type d)
@@ -33,19 +34,22 @@ OBJS += $(patsubst ./%.c, ./%.o, $(C_FILES))
 
 lib: $(OBJS)
 	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LIBS) $(LDFLAGS) $^ -o $(LIBNAME)
-	mkdir -p ../bin
-	mv $(LIBNAME) ../bin
+	mkdir -p $(BINFOLDER)
+	mv $(LIBNAME) $(BINFOLDER)
 
 testapp: test.o
 	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(TESTAPP_LDFLAGS) $(LIBS) $(LIBNAME_ABBREVIATED) $^ -o $(PROJECT)
+	mv $(PROJECT) $(BINFOLDER)
 
 clean: 
 	rm -rf $(GARBAGE)
-	rm *.o *.d $(PROJECT) $(LIBNAME) -Rf
+	rm *.o *.d -Rf
+	rm $(BINFOLDER)/$(LIBNAME)
+	rm $(BINFOLDER)/$(PROJECT)
 # TODO install the required headers also
 
 install: 
-	cp ../bin/$(LIBNAME) /usr/lib
+	cp $(BINFOLDER)/$(LIBNAME) /usr/lib
 
 %.o : %.cpp
 	$(CXX) -c $(CXX_OPTS) $(DEBUG_OPTS) $(INCLUDEDIRS) $< -o $@
