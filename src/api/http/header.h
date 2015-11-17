@@ -20,8 +20,8 @@ struct Header {
 	Header &operator=(const Header &) = default;
 	~Header() = default;
 
-	Components::ContentType mime_type;
-	std::vector<Components::ContentType> accepted;
+	Http::ContentType mime_type;
+	std::vector<Http::ContentType> accepted;
 
 	std::map<std::string, std::string> fields;
 

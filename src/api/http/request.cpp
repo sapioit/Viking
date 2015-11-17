@@ -2,33 +2,32 @@
 // Created by vladimir on 08.08.2015.
 //
 
-#include <ostream>
-#include "request.h"
-#include "components.h"
+#include <http/engine.h>
+#include <http/request.h>
 #include <regex>
 
 using namespace Http;
 
-const std::vector<Components::ContentType> &Request::accepted() const { return _accepted; }
+const std::vector<Http::ContentType> Request::Accepts() const
+{
+	// TODO
+	return {};
+}
 
-void Request::setAccepted(const std::vector<Components::ContentType> &accepted) { _accepted = accepted; }
-
-std::vector<std::string> Request::uri_components() const { return _uri_components; }
-
-void Request::setUri_components(const std::vector<std::string> &uri_components) { _uri_components = uri_components; }
+std::vector<std::string> Request::SplitURL() const { return Http::Engine::Split(url, '/'); }
 
 bool Http::Request::IsPassable() const
 {
 	switch (method) {
-	case Components::Method::Get:
+	case Http::Method::Get:
 		return true;
-	case Components::Method::Post:
+	case Http::Method::Post:
 		return true;
-	case Components::Method::Put:
+	case Http::Method::Put:
 		return true;
-	case Components::Method::Delete:
+	case Http::Method::Delete:
 		return true;
-	case Components::Method::Head:
+	case Http::Method::Head:
 		return true;
 	default:
 		return false;
@@ -39,6 +38,6 @@ bool Http::Request::IsResource() const
 {
 	std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json)$",
 			      std::regex::ECMAScript | std::regex::icase);
-	bool match = std::regex_match(URI, extensions);
+	bool match = std::regex_match(url, extensions);
 	return match;
 }

@@ -25,7 +25,7 @@ SOURCES += \
     http/response.cpp \
     http/routeutility.cpp \
     http/engine.cpp \
-    http/parser.cpp \
+    http/parser.c \
     io/buffers/unix_file.cpp \
     io/schedulers/sched_item.cpp \
     io/buffers/utils.cpp
@@ -108,7 +108,7 @@ HEADERS += \
 #SERVER-END
 
 SOURCES += \
-    main.cpp
+    test.cpp
 
 unix {
     target.path = /mnt/exthdd/debugg

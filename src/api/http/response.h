@@ -12,7 +12,7 @@
 
 namespace Http
 {
-using namespace Http::Components;
+using namespace Http;
 class Response
 {
 	public:
@@ -37,11 +37,11 @@ class Response
 	bool has_resource() const;
 	bool is_error() const;
 
-	int code() const;
-	void setCode(int code);
+	int GetCode() const;
+	void SetCode(int GetCode);
 
-	const Components::ContentType &getContent_type() const;
-	void setContent_type(const Components::ContentType &value);
+	const Http::ContentType &GetContentType() const;
+	void SetContentType(const Http::ContentType &value);
 
 	std::size_t ContentLength() const;
 	const Resource &getResource() const;
@@ -61,7 +61,7 @@ class Response
 	int _code;
 	std::string _text;
 	const UnixFile *file_ = nullptr;
-	Components::ContentType _content_type = Components::ContentType::TextPlain;
+	Http::ContentType _content_type = Http::ContentType::TextPlain;
 };
 };
 

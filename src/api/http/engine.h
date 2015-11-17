@@ -31,12 +31,12 @@ class Engine
 
 	Request operator()();
 
-	static Components::ContentType GetMimeTypeByExtension(const std::string &URI);
+	static Http::ContentType GetMimeTypeByExtension(const std::string &URI);
 	static std::string StripRoute(const std::string &URI);
 	static std::vector<std::string> Split(std::string source, char delimiter);
 	//	// static std::string GetURI(const std::string& line);
-	Components::ContentType GetMimeType(const std::string &);
-	std::vector<Components::ContentType> GetAcceptedEncodings(const std::string &);
+	Http::ContentType GetMimeType(const std::string &);
+	std::vector<Http::ContentType> GetAcceptedEncodings(const std::string &);
 };
 };
 

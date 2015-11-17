@@ -3,9 +3,6 @@
 #include <map>
 namespace Http
 {
-namespace Components
-{
-
 enum class Method {
 	Delete,
 	Get,
@@ -79,6 +76,5 @@ const std::map<const StatusCode, const std::string> status_codes{
     std::make_pair(StatusCode::NotFound, "Not Found"),
     std::make_pair(StatusCode::UnsupportedMediaType, "Unsupported Media Type"),
     std::make_pair(StatusCode::InternalServerError, "Internal Server Error")};
-}
 }
 #endif // COMPONENTS

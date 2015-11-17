@@ -10,14 +10,12 @@
 #include <iterator>
 
 using namespace Http;
-using namespace Http::Components;
 
-int Response::code() const { return _code; }
+int Response::GetCode() const { return _code; }
+void Response::SetCode(int code) { _code = code; }
 
-void Response::setCode(int code) { _code = code; }
-const Components::ContentType &Response::getContent_type() const { return _content_type; }
-
-void Response::setContent_type(const Components::ContentType &value) { _content_type = value; }
+const Http::ContentType &Response::GetContentType() const { return _content_type; }
+void Response::SetContentType(const Http::ContentType &value) { _content_type = value; }
 
 std::size_t Response::ContentLength() const
 {
@@ -53,14 +51,14 @@ std::string Response::header_str() const
 
 	auto machine = make_machine();
 	constexpr auto crlf = "\r\n";
-	const decltype(Components::content_types) &mime_types = Components::content_types;
+	const decltype(Http::content_types) &mime_types = Http::content_types;
 
 	while (machine.currentState() != end) {
 		switch (machine.currentState()) {
 		case states::StatusLine: {
 			stream << "HTTP/" << std::setprecision(2) << 1.1;
-			stream << " " << code() << " ";
-			stream << Components::status_codes.at(static_cast<Components::StatusCode>(code())) << crlf;
+			stream << " " << GetCode() << " ";
+			stream << Http::status_codes.at(static_cast<Http::StatusCode>(GetCode())) << crlf;
 			machine.transition(transitions::EndStatusLine);
 			break;
 		}
@@ -75,7 +73,7 @@ std::string Response::header_str() const
 			break;
 		}
 		case states::ResponseHeader: {
-			auto type_str_it = mime_types.find(getContent_type());
+			auto type_str_it = mime_types.find(GetContentType());
 			if (type_str_it == mime_types.end())
 				throw static_cast<int>(StatusCode::UnsupportedMediaType);
 			std::string type_str(type_str_it->second);
@@ -90,8 +88,8 @@ std::string Response::header_str() const
 			stream << Http::Header::Fields::Cache_Control << ": "
 			       << (should_cache() ? "max-age=" + std::to_string(get_expiry()) : "no-cache") << crlf;
 			if (has_resource()) {
-				if (getContent_type() == Components::ContentType::TextHtml ||
-				    getContent_type() == Components::ContentType::TextPlain) {
+				if (GetContentType() == Http::ContentType::TextHtml ||
+				    GetContentType() == Http::ContentType::TextPlain) {
 					// stream <<
 					// Http::Header::Fields::Transfer_Encoding
 					// << ": " <<
@@ -138,14 +136,14 @@ std::string Response::str() const
 
 	auto machine = make_machine();
 	constexpr auto crlf = "\r\n";
-	const decltype(Components::content_types) &mime_types = Components::content_types;
+	const decltype(Http::content_types) &mime_types = Http::content_types;
 
 	while (machine.currentState() != end) {
 		switch (machine.currentState()) {
 		case states::StatusLine: {
 			stream << "HTTP/" << std::setprecision(2) << 1.1;
-			stream << " " << code() << " ";
-			stream << Components::status_codes.at(static_cast<Components::StatusCode>(code())) << crlf;
+			stream << " " << GetCode() << " ";
+			stream << Http::status_codes.at(static_cast<Http::StatusCode>(GetCode())) << crlf;
 			machine.transition(transitions::EndStatusLine);
 			break;
 		}
@@ -160,7 +158,7 @@ std::string Response::str() const
 			break;
 		}
 		case states::ResponseHeader: {
-			auto type_str_it = mime_types.find(getContent_type());
+			auto type_str_it = mime_types.find(GetContentType());
 			if (type_str_it == mime_types.end())
 				throw static_cast<int>(StatusCode::UnsupportedMediaType);
 			std::string type_str(type_str_it->second);
@@ -174,8 +172,8 @@ std::string Response::str() const
 			stream << Http::Header::Fields::Cache_Control << ": "
 			       << (should_cache() ? "max-age=" + std::to_string(get_expiry()) : "no-cache") << crlf;
 			if (has_resource()) {
-				if (getContent_type() == Components::ContentType::TextHtml ||
-				    getContent_type() == Components::ContentType::TextPlain) {
+				if (GetContentType() == Http::ContentType::TextHtml ||
+				    GetContentType() == Http::ContentType::TextPlain) {
 					// stream <<
 					// Http::Header::Fields::Transfer_Encoding
 					// << ": " <<
@@ -251,9 +249,9 @@ bool Response::has_resource() const { return _resource.content().size() || (file
 
 bool Response::is_error() const
 {
-	Components::StatusCode s_code = static_cast<Components::StatusCode>(code());
-	if (s_code == Components::StatusCode::BadRequest || s_code == Components::StatusCode::InternalServerError ||
-	    s_code == Components::StatusCode::NotFound || s_code == Components::StatusCode::UnsupportedMediaType)
+	Http::StatusCode s_code = static_cast<Http::StatusCode>(GetCode());
+	if (s_code == Http::StatusCode::BadRequest || s_code == Http::StatusCode::InternalServerError ||
+	    s_code == Http::StatusCode::NotFound || s_code == Http::StatusCode::UnsupportedMediaType)
 		return true;
 
 	return false;
@@ -288,6 +286,6 @@ Response::Response(const Request &request, const Resource &resource)
 
 Response::Response(const Request &request, const Json::Value &json)
     : _request(request), _code(static_cast<int>(StatusCode::OK)), _text(json.toStyledString()),
-      _content_type(Components::ContentType::ApplicationJson)
+      _content_type(Http::ContentType::ApplicationJson)
 {
 }

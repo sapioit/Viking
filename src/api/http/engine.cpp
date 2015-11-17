@@ -11,8 +11,8 @@ Http::Engine *Http::Engine::GetMe(http_parser *parser) { return reinterpret_cast
 void Http::Engine::AssignMethod(http_method method_numeric)
 {
 	auto *method_str = http_method_str(method_numeric);
-	auto method = Http::Components::MethodMap.find(method_str);
-	if (method != Http::Components::MethodMap.end())
+	auto method = Http::MethodMap.find(method_str);
+	if (method != Http::MethodMap.end())
 		request_.method = method->second;
 }
 
@@ -25,14 +25,14 @@ Http::Engine::Engine(const IO::Socket &socket) : socket_(socket)
 	};
 	settings_.on_headers_complete = [](http_parser *parser) -> int {
 		auto *me = GetMe(parser);
-		me->request_.version.v_major = parser->http_major;
-		me->request_.version.v_minor = parser->http_minor;
+		me->request_.version.major = parser->http_major;
+		me->request_.version.minor = parser->http_minor;
 		me->AssignMethod(static_cast<http_method>(parser->method));
 		return 0;
 	};
 	settings_.on_url = [](http_parser *parser, const char *at, size_t length) -> int {
 		auto *me = GetMe(parser);
-		me->request_.URI = {at, at + length};
+		me->request_.url = {at, at + length};
 		return 0;
 
 	};
@@ -77,12 +77,10 @@ Http::Request Http::Engine::operator()()
 	return {};
 }
 
-Http::Components::ContentType Http::Engine::GetMimeTypeByExtension(const std::string &URI)
+Http::ContentType Http::Engine::GetMimeTypeByExtension(const std::string &URI)
 {
 	auto dot = URI.find_last_of('.');
 	std::string ext(URI.begin() + dot + 1, URI.end());
-
-	using namespace Components;
 
 	if (ext == "png")
 		return ContentType::ImagePng;
@@ -116,15 +114,15 @@ std::vector<std::string> Http::Engine::Split(std::string source, char delimiter)
 	}
 	return result;
 }
-std::vector<Http::Components::ContentType> Http::Engine::GetAcceptedEncodings(const std::string &)
+std::vector<Http::ContentType> Http::Engine::GetAcceptedEncodings(const std::string &)
 {
-	return std::vector<Components::ContentType>();
+	return std::vector<Http::ContentType>();
 }
 
-Http::Components::ContentType Http::Engine::GetMimeType(const std::string &)
+Http::ContentType Http::Engine::GetMimeType(const std::string &)
 {
 	// TODO parse line and get it
-	return Components::ContentType::ApplicationJson;
+	return Http::ContentType::ApplicationJson;
 }
 
 #endif

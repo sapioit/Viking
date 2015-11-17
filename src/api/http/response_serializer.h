@@ -23,7 +23,7 @@ class ResponseSerializer
 	static DataType Serialize(const Http::Request &request, const Resource &res)
 	{
 		Http::Response response{request, res};
-		response.setContent_type(Http::Engine::GetMimeTypeByExtension(request.URI));
+		response.SetContentType(Http::Engine::GetMimeTypeByExtension(request.url));
 		return Serialize(response);
 	}
 };

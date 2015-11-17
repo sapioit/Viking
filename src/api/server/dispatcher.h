@@ -10,6 +10,7 @@
 #include <http/components.h>
 #include <http/cachemanager.h>
 #include <http/response_serializer.h>
+#include <http/routeutility.h>
 #include <misc/log.h>
 #include <misc/storage.h>
 #include <map>
@@ -22,8 +23,6 @@ class Dispatcher
 {
 	using DataType = IO::Scheduler::DataType;
 	using Connection = IO::Socket;
-	typedef std::map<std::pair<Http::Components::Method, std::string>, std::function<Http::Response(Http::Request)>>
-	    RouteMap;
 	static RouteMap routes;
 	typedef IO::Scheduler::CallbackResponse SchedulerResponse;
 

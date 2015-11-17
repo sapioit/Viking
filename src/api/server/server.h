@@ -15,16 +15,14 @@ class Server
 {
 	public:
 	Server(int);
-	void run();
-	void setSettings(const Settings &);
-
-	int maxPending() const;
-	void setMaxPending(int maxPending);
-
 	template <class T> void AddRoute(T route) { dispatcher_.AddRoute(route); }
+	void Run();
+	void SetSettings(const Settings &);
+
+	int GetMaxPending() const;
+	void SetMaxPending(int);
 
 	private:
-	typedef std::vector<char> DataType;
 	Dispatcher dispatcher_;
 	int _port = -1;
 	int _maxPending;

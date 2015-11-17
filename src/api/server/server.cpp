@@ -15,29 +15,23 @@
 #include <regex>
 #include <map>
 #include <functional>
-#include <cassert>
+#include <signal.h>
 
 using namespace Web;
 
 std::mutex Log::mLock;
 std::string Log::_fn;
 
-Server::Server(int port) : _port(port)
-{
-#ifdef DEBUG
-	Log::Init("log_file.txt");
-	Log::SetEnabled(false);
-	Log::i("Started logging");
-#endif
-}
+Server::Server(int port) : _port(port) {}
 
-void Server::setSettings(const Settings &s)
+void Server::SetSettings(const Settings &s)
 {
 	Storage::setSettings(s);
 	_maxPending = s.max_connections;
 }
-void Server::run()
+void Server::Run()
 {
+	signal(SIGPIPE, SIG_IGN);
 	debug("Pid = " + std::to_string(getpid()));
 	if (_port == -1)
 		throw std::runtime_error("Port number not set!");
@@ -58,6 +52,6 @@ void Server::run()
 		throw std::runtime_error(msg);
 	}
 }
-int Server::maxPending() const { return _maxPending; }
+int Server::GetMaxPending() const { return _maxPending; }
 
-void Server::setMaxPending(int maxPending) { _maxPending = maxPending; }
+void Server::SetMaxPending(int maxPending) { _maxPending = maxPending; }

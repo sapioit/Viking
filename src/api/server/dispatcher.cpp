@@ -3,7 +3,7 @@
 #include <sstream>
 #include <http/engine.h>
 
-Web::Dispatcher::RouteMap Web::Dispatcher::routes;
+RouteMap Web::Dispatcher::routes;
 
 bool ShouldCopyInMemory(/* File path */) { return false; }
 
@@ -26,19 +26,19 @@ Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &c
 			/* It's a resource */
 			try {
 				if (ShouldCopyInMemory()) {
-					auto resource = CacheManager::GetResource(request.URI);
+					auto resource = CacheManager::GetResource(request.url);
 					// TODO decide if you should really close the connection
 					return {ResponseSerializer::Serialize(request, resource)};
 				} else {
 					try {
-						std::string uri = request.URI;
+						std::string uri = request.url;
 						auto unix_file =
 						    std::make_unique<UnixFile>(Storage::settings().root_path + uri);
 						SchedulerResponse response;
 
 						Http::Response http_response{request, unix_file.get()};
-						http_response.setContent_type(
-						    Http::Engine::GetMimeTypeByExtension(request.URI));
+						http_response.SetContentType(
+						    Http::Engine::GetMimeTypeByExtension(request.url));
 
 						auto header_str = http_response.header_str();
 						response.AddData(
@@ -51,7 +51,7 @@ Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &c
 						return response;
 					} catch (const UnixFile::Error &) {
 						return {ResponseSerializer::Serialize(
-						    {request, Http::Components::StatusCode::NotFound})};
+						    {request, Http::StatusCode::NotFound})};
 					}
 				}
 			} catch (Http::StatusCode code) {
@@ -60,9 +60,9 @@ Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &c
 		}
 	} else {
 		/* The request is not passable to the user and
-		* it is not a resource either
-		* TODO see what the standards says about this?
+	* it is not a resource either
 		*/
+		return {ResponseSerializer::Serialize({request, Http::StatusCode::NotFound})};
 	}
 	return {};
 }

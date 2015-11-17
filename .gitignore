@@ -2,6 +2,7 @@
 *.slo
 *.lo
 *.o
+*.d
 *.obj
 
 # Precompiled Headers
@@ -27,6 +28,7 @@
 *.out
 *.app
 
-bin/*
+*/bin/*
 build-*
-srv
+*.user
+cppweb_test

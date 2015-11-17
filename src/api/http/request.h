@@ -7,28 +7,22 @@
 
 #include <http/components.h>
 #include <http/header.h>
-#include <io/socket/socket.h>
-
 #include <string>
-#include <map>
 
 namespace Http
 {
 
 class Request
 {
-	std::vector<Components::ContentType> _accepted;
-	std::vector<std::string> _uri_components;
-
 	public:
-	struct Version_ {
-		unsigned short v_major, v_minor;
+	struct Version {
+		unsigned short major, minor;
 	};
 
-	Components::Method method;
-	Version_ version;
+	Http::Method method;
+	Version version;
 	Header header;
-	std::string URI, body;
+	std::string url, body;
 
 	Request() = default;
 	virtual ~Request() = default;
@@ -36,11 +30,9 @@ class Request
 	bool IsPassable() const;
 	bool IsResource() const;
 
-	const std::vector<Components::ContentType> &accepted() const;
-	void setAccepted(const std::vector<Components::ContentType> &accepted);
+	const std::vector<Http::ContentType> Accepts() const;
 
-	std::vector<std::string> uri_components() const;
-	void setUri_components(const std::vector<std::string> &uri_components);
+	std::vector<std::string> SplitURL() const;
 };
 }
 
