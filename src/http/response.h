@@ -3,6 +3,7 @@
 
 #include <http/header.h>
 #include <http/request.h>
+#include <http/cache_policy.h>
 #include <json/json.h>
 #include <misc/resource.h>
 #include <io/buffers/unix_file.h>
@@ -13,7 +14,10 @@
 namespace Http {
 using namespace Http;
 class Response {
+    void Init();
+
     public:
+    enum class BodyType { Resource, File, Text };
     Response();
     Response(const UnixFile *);
     Response(StatusCode);
@@ -23,37 +27,40 @@ class Response {
     Response(const Json::Value &);
     virtual ~Response() = default;
 
-    bool should_cache() const;
-    std::uint32_t get_expiry() const;
-    bool should_close() const;
-    bool has_body() const;
-    bool has_resource() const;
-    bool is_error() const;
+    CachePolicy GetCachePolicy() const;
+    void SetCachePolicy(CachePolicy);
 
-    int GetCode() const;
-    void SetCode(int GetCode);
+    bool GetKeepAlive() const;
+    void SetKeepAlive(bool);
+
+    Version GetVersion() const;
+    void SetVersion(Version);
+
+    StatusCode GetCode() const;
+    void SetCode(StatusCode GetCode);
 
     const Http::ContentType &GetContentType() const;
     void SetContentType(const Http::ContentType &value);
 
     std::size_t ContentLength() const;
-    const Resource &getResource() const;
-    void setResource(const Resource &resource);
+    BodyType GetBodyType() const;
 
-    std::string end_str() const;
-    std::string header_str() const;
-    std::string str() const;
-    const Request &getRequest() const;
+    const Resource &GetResource() const;
+    void SetResource(const Resource &text);
 
-    std::string getText() const;
-    void setText(const std::string &text);
+    const std::string &GetText() const;
+    void SetText(const std::string &);
 
     private:
-    Resource _resource;
-    int _code;
-    std::string _text;
+    Version version_;
+    StatusCode code_;
+    BodyType body_type_;
+    Resource resource_;
+    std::string text_;
     const UnixFile *file_ = nullptr;
     Http::ContentType _content_type = Http::ContentType::TextPlain;
+    bool keep_alive_;
+    CachePolicy cache_policy_;
 };
 };
 

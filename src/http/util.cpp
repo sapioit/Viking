@@ -26,8 +26,7 @@ bool Util::ExtensionAllowed(const std::string &url) noexcept {
     return std::regex_match(url, extensions);
 }
 
-Http::ContentType Util::GetMimeType(const std::string &url) noexcept
-{
+Http::ContentType Util::GetMimeType(const std::string &url) noexcept {
 
     auto dot = url.find_last_of('.');
     std::string ext(url.begin() + dot + 1, url.end());

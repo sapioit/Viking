@@ -9,7 +9,7 @@
 RouteMap Web::Dispatcher::routes;
 using namespace Web;
 
-static ResponseSerializer serialize;
+static ResponseSerializer serializer;
 
 bool ShouldCopyInMemory(const std::string &resource_path) {
     try {
@@ -23,7 +23,7 @@ bool ShouldCopyInMemory(const std::string &resource_path) {
 
 Dispatcher::SchedulerResponse Dispatcher::PassRequest(const Http::Request &request, Handler handler) noexcept {
     auto response = handler(request);
-    return {serialize(response), response.should_close()};
+    return {serializer(response), response.GetKeepAlive()};
 }
 
 Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &request) noexcept {
@@ -34,22 +34,22 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
             auto resource = CacheManager::GetResource(request.url);
             Http::Response response{resource};
             response.SetContentType(content_type);
-            return {serialize(response)};
+            response.SetCachePolicy({Storage::GetSettings().default_max_age});
+            return {serializer(response)};
         } else {
             auto unix_file =
                 std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
             SchedulerResponse response;
             Http::Response http_response{unix_file.get()};
             http_response.SetContentType(content_type);
-            auto header_str = http_response.header_str();
-            response.AddData(std::vector<char>(header_str.begin(), header_str.end()));
+            http_response.SetCachePolicy({Storage::GetSettings().default_max_age});
+            response.AddData(serializer.MakeHeader(http_response));
             response.AddData(std::move(unix_file));
-            auto header_end = http_response.end_str();
-            response.AddData(std::vector<char>(header_end.begin(), header_end.end()));
+            response.AddData(serializer.MakeEnding(http_response));
             return response;
         }
     } catch (...) {
-        return {serialize({Http::StatusCode::NotFound})};
+        return {serializer({Http::StatusCode::NotFound})};
     }
 }
 
@@ -66,7 +66,7 @@ Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection &con
             return PassRequest(request, handler);
         else
             /* No handler */
-            return {serialize({Http::StatusCode::NotFound})};
+            return {serializer({Http::StatusCode::NotFound})};
     }
-    return {serialize({Http::StatusCode::NotFound})};
+    return {serializer({Http::StatusCode::NotFound})};
 }

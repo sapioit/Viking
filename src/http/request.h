@@ -7,16 +7,13 @@
 
 #include <http/components.h>
 #include <http/header.h>
+#include <http/version.h>
 #include <string>
 
 namespace Http {
 
 class Request {
     public:
-    struct Version {
-        unsigned short major, minor;
-    };
-
     Http::Method method;
     Version version;
     Header header;
@@ -25,10 +22,7 @@ class Request {
     Request() = default;
     virtual ~Request() = default;
 
-    bool IsResource() const;
-
-    const std::vector<Http::ContentType> Accepts() const;
-
+    /* For convenience */
     std::vector<std::string> SplitURL() const;
 };
 }

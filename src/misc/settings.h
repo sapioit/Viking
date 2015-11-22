@@ -11,6 +11,7 @@ struct Settings {
 
     std::string root_path;
     std::uint32_t max_connections;
+    std::uint32_t default_max_age;
     bool allow_directory_listing;
 };
 

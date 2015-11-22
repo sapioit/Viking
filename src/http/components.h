@@ -54,7 +54,7 @@ const std::map<const std::string, const Method> MethodMap{std::make_pair("GET", 
 
 enum class ContentType { ApplicationJson, TextPlain, TextHtml, ImageJpeg, ImagePng, MovieMp4, Zip };
 
-const std::map<const ContentType, const std::string> content_types{
+const std::map<const ContentType, const std::string> ContentTypes{
     std::make_pair(ContentType::ApplicationJson, "application/json"),
     std::make_pair(ContentType::TextPlain, "text/plain"),
     std::make_pair(ContentType::TextHtml, "text/html; charset=utf-8"),
@@ -62,15 +62,9 @@ const std::map<const ContentType, const std::string> content_types{
     std::make_pair(ContentType::ImagePng, "image/png"),
     std::make_pair(ContentType::MovieMp4, "video/mp4")};
 
-enum class StatusCode {
-    OK = 200,
-    BadRequest = 400,
-    NotFound = 404,
-    UnsupportedMediaType = 415,
-    InternalServerError = 500
-};
+enum StatusCode { OK = 200, BadRequest = 400, NotFound = 404, UnsupportedMediaType = 415, InternalServerError = 500 };
 
-const std::map<const StatusCode, const std::string> status_codes{
+const std::map<const StatusCode, const std::string> StatusCodes{
     std::make_pair(StatusCode::OK, "OK"), std::make_pair(StatusCode::BadRequest, "Bad Request"),
     std::make_pair(StatusCode::NotFound, "Not Found"),
     std::make_pair(StatusCode::UnsupportedMediaType, "Unsupported Media Type"),

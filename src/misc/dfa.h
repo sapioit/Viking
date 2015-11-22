@@ -18,17 +18,18 @@ template <class S, class M> class DFA {
     public:
     DFA(const S &beginState, const S &endState) : _begin(beginState), _end(endState) { _currentState = beginState; }
 
-    void add(const std::pair<S, M> &pair, const S &state) {
+    void Add(const std::pair<S, M> &pair, const S &state) {
         _table.insert(std::make_pair(pair, state)); // = state;
     }
-    void transition(const M &token) {
+    void Transition(const M &token) {
         auto nextState = _table.find(std::make_pair(_currentState, token));
         if (nextState == _table.end())
             throw std::runtime_error("transition does not exist");
         _currentState = nextState->second;
     }
 
-    const S &currentState() const { return _currentState; }
+    const S &State() const { return _currentState; }
+    std::size_t StateNumber() const { return _table.size(); }
 };
 
 #endif // SOCKET_DFA_H

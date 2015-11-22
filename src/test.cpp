@@ -49,6 +49,7 @@ int main() {
         Settings settings;
         settings.root_path = "/mnt/exthdd/server";
         settings.max_connections = 1000;
+        settings.default_max_age = 500;
         server.SetSettings(settings);
         server.AddRoute(route1);
         server.AddRoute(route2);

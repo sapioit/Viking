@@ -74,7 +74,6 @@ Http::Request Http::Engine::operator()() {
     return {};
 }
 
-
 std::string Http::Engine::StripRoute(const std::string &URI) {
     auto firstSlash = URI.find_first_of('/');
     return {URI.begin() + firstSlash, URI.end()};

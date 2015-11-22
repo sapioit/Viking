@@ -11,249 +11,77 @@
 
 using namespace Http;
 
-int Response::GetCode() const { return _code; }
-void Response::SetCode(int code) { _code = code; }
+StatusCode Response::GetCode() const { return code_; }
+void Response::SetCode(StatusCode code) { code_ = code; }
 
 const Http::ContentType &Response::GetContentType() const { return _content_type; }
 void Response::SetContentType(const Http::ContentType &value) { _content_type = value; }
 
 std::size_t Response::ContentLength() const {
-    if (file_ != nullptr) {
+    if (GetBodyType() == BodyType::File)
         return file_->size;
-    }
+    if (GetBodyType() == BodyType::Resource)
+        return resource_.content().size();
+    if (GetBodyType() == BodyType::Text)
+        return text_.size();
     return 0;
 }
 
-enum class states { StatusLine, GeneralHeader, ResponseHeader, Body, CRLFHeader, CRLFBody, End };
-enum class transitions { EndStatusLine, EndGeneralHeader, EndResponseHeader, EndBody, CRLFEnd, Error };
+Response::BodyType Response::GetBodyType() const { return body_type_; }
 
-constexpr auto start = states::StatusLine;
-constexpr auto end = states::End;
+const Resource &Response::GetResource() const { return resource_; }
 
-DFA<states, transitions> make_machine() {
-    DFA<states, transitions> machine(start, end);
-    machine.add(std::make_pair(states::StatusLine, transitions::EndStatusLine), states::GeneralHeader);
-    machine.add(std::make_pair(states::GeneralHeader, transitions::Error), states::CRLFBody);
-    machine.add(std::make_pair(states::GeneralHeader, transitions::EndGeneralHeader), states::ResponseHeader);
-    machine.add(std::make_pair(states::ResponseHeader, transitions::EndResponseHeader), states::CRLFHeader);
-    machine.add(std::make_pair(states::CRLFHeader, transitions::CRLFEnd), states::Body);
-    machine.add(std::make_pair(states::Body, transitions::EndBody), states::CRLFBody);
-    machine.add(std::make_pair(states::CRLFBody, transitions::CRLFEnd), states::End);
-    return machine;
+void Response::SetResource(const Resource &resource) {
+    resource_ = resource;
+    body_type_ = BodyType::Resource;
 }
 
-std::string Response::header_str() const {
-    // TODO rewrite this whole thing
-    std::ostringstream stream;
+const std::string &Response::GetText() const { return text_; }
 
-    auto machine = make_machine();
-    constexpr auto crlf = "\r\n";
-    const decltype(Http::content_types) &mime_types = Http::content_types;
-
-    while (machine.currentState() != end) {
-        switch (machine.currentState()) {
-        case states::StatusLine: {
-            stream << "HTTP/" << std::setprecision(2) << 1.1;
-            stream << " " << GetCode() << " ";
-            stream << Http::status_codes.at(static_cast<Http::StatusCode>(GetCode())) << crlf;
-            machine.transition(transitions::EndStatusLine);
-            break;
-        }
-        case states::GeneralHeader: {
-            stream << "Date:"
-                   << " " << Date::Now()() << crlf;
-            stream << "Connection: " << (should_close() ? "Close" : "Keep-Alive") << crlf;
-            //            if(is_error())
-            //                machine.transition(transitions::Error);
-            //            else
-            machine.transition(transitions::EndGeneralHeader);
-            break;
-        }
-        case states::ResponseHeader: {
-            auto type_str_it = mime_types.find(GetContentType());
-            if (type_str_it == mime_types.end())
-                throw static_cast<int>(StatusCode::UnsupportedMediaType);
-            std::string type_str(type_str_it->second);
-            stream << Http::Header::Fields::Content_Type << ": " << type_str << crlf;
-            stream << Http::Header::Fields::Content_Length << ": ";
-            if (has_resource())
-
-                stream << ContentLength(); //_resource.content().size();
-            else
-                stream << _text.size();
-            stream << crlf;
-            stream << Http::Header::Fields::Cache_Control << ": "
-                   << (should_cache() ? "max-age=" + std::to_string(get_expiry()) : "no-cache") << crlf;
-            if (has_resource()) {
-                if (GetContentType() == Http::ContentType::TextHtml ||
-                    GetContentType() == Http::ContentType::TextPlain) {
-                    // stream <<
-                    // Http::Header::Fields::Transfer_Encoding
-                    // << ": " <<
-                    // "8bit";
-                } else {
-                    stream << Http::Header::Fields::Transfer_Encoding << ": "
-                           << "binary" << crlf;
-                }
-            } else {
-                // TODO
-            }
-            machine.transition(transitions::EndResponseHeader);
-            break;
-        }
-        case states::CRLFHeader: {
-            stream << crlf;
-            machine.transition(transitions::CRLFEnd);
-            break;
-        }
-        case states::Body: {
-            return stream.str();
-            break;
-        }
-        default: { break; }
-        }
-    }
-
-    return stream.str();
+void Response::SetText(const std::string &text) {
+    text_ = text;
+    body_type_ = BodyType::Text;
 }
 
-std::string Response::end_str() const {
-    constexpr auto crlf = "\r\n";
-    std::string result(crlf);
-    result.append(crlf);
-    return result;
+CachePolicy Response::GetCachePolicy() const { return cache_policy_; }
+
+void Response::SetCachePolicy(CachePolicy cache_policy) { cache_policy_ = cache_policy; }
+
+bool Response::GetKeepAlive() const { return keep_alive_; }
+
+void Response::SetKeepAlive(bool keep_alive) { keep_alive_ = keep_alive; }
+
+Version Response::GetVersion() const { return version_; }
+
+void Response::SetVersion(Version version) { version_ = version; }
+
+void Response::Init() {
+    version_ = {1, 1};
+    keep_alive_ = true;
+    body_type_ = BodyType::Text;
 }
 
-std::string Response::str() const {
-    std::ostringstream stream;
+Response::Response() { Init(); }
 
-    auto machine = make_machine();
-    constexpr auto crlf = "\r\n";
-    const decltype(Http::content_types) &mime_types = Http::content_types;
-
-    while (machine.currentState() != end) {
-        switch (machine.currentState()) {
-        case states::StatusLine: {
-            stream << "HTTP/" << std::setprecision(2) << 1.1;
-            stream << " " << GetCode() << " ";
-            stream << Http::status_codes.at(static_cast<Http::StatusCode>(GetCode())) << crlf;
-            machine.transition(transitions::EndStatusLine);
-            break;
-        }
-        case states::GeneralHeader: {
-            stream << "Date:"
-                   << " " << Date::Now()() << crlf;
-            stream << "Connection: " << (should_close() ? "Close" : "Keep-Alive") << crlf;
-            //            if(is_error())
-            //                machine.transition(transitions::Error);
-            //            else
-            machine.transition(transitions::EndGeneralHeader);
-            break;
-        }
-        case states::ResponseHeader: {
-            auto type_str_it = mime_types.find(GetContentType());
-            if (type_str_it == mime_types.end())
-                throw static_cast<int>(StatusCode::UnsupportedMediaType);
-            std::string type_str(type_str_it->second);
-            stream << Http::Header::Fields::Content_Type << ": " << type_str << crlf;
-            stream << Http::Header::Fields::Content_Length << ": ";
-            if (has_resource())
-                stream << _resource.content().size();
-            else
-                stream << _text.size();
-            stream << crlf;
-            stream << Http::Header::Fields::Cache_Control << ": "
-                   << (should_cache() ? "max-age=" + std::to_string(get_expiry()) : "no-cache") << crlf;
-            if (has_resource()) {
-                if (GetContentType() == Http::ContentType::TextHtml ||
-                    GetContentType() == Http::ContentType::TextPlain) {
-                    // stream <<
-                    // Http::Header::Fields::Transfer_Encoding
-                    // << ": " <<
-                    // "8bit";
-                } else {
-                    stream << Http::Header::Fields::Transfer_Encoding << ": "
-                           << "binary" << crlf;
-                }
-            } else {
-                // TODO
-            }
-            machine.transition(transitions::EndResponseHeader);
-            break;
-        }
-        case states::CRLFHeader: {
-            stream << crlf;
-            machine.transition(transitions::CRLFEnd);
-            break;
-        }
-        case states::Body: {
-            if (has_resource()) {
-                std::copy(_resource.content().begin(), _resource.content().end(), std::ostream_iterator<char>(stream));
-            } else {
-                stream << _text;
-            }
-            machine.transition(transitions::EndBody);
-            break;
-        }
-        case states::CRLFBody: {
-            stream << crlf << crlf;
-            machine.transition(transitions::CRLFEnd);
-            break;
-        }
-        default: { break; }
-        }
-    }
-
-    return stream.str();
+Response::Response(const UnixFile *file) : code_(Http::StatusCode::OK), file_(file) {
+    Init();
+    body_type_ = BodyType::File;
 }
 
-std::string Response::getText() const { return _text; }
+Response::Response(StatusCode code) : code_(code) { Init(); }
 
-void Response::setText(const std::string &text) { _text = text; }
-
-bool Response::should_cache() const {
-    if (has_resource())
-        return true;
-    return false;
+Response::Response(const std::string &text) : code_(StatusCode::OK), resource_({text.begin(), text.end()}) {
+    Init();
+    body_type_ = BodyType::Text;
 }
 
-uint32_t Response::get_expiry() const { return 60; }
-
-bool Response::should_close() const {
-    //TODO rewrite this somewhere else and delete this
-    return true;
+Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
+    Init();
+    body_type_ = BodyType::Resource;
 }
-
-bool Response::has_body() const { return _text.size() || _resource.content().size(); }
-
-bool Response::has_resource() const { return _resource.content().size() || (file_ != nullptr); }
-
-bool Response::is_error() const {
-    Http::StatusCode s_code = static_cast<Http::StatusCode>(GetCode());
-    if (s_code == Http::StatusCode::BadRequest || s_code == Http::StatusCode::InternalServerError ||
-        s_code == Http::StatusCode::NotFound || s_code == Http::StatusCode::UnsupportedMediaType)
-        return true;
-
-    return false;
-}
-
-const Resource &Response::getResource() const { return _resource; }
-
-void Response::setResource(const Resource &resource) { _resource = resource; }
-
-Response::Response() {}
-
-Response::Response(const UnixFile *file) : _code(200), file_(file) {}
-
-Response::Response(StatusCode code) : _code(static_cast<int>(code)) {}
-
-Response::Response(const std::string &text)
-    : _code(static_cast<int>(StatusCode::OK)), _text(text) {}
-
-
-Response::Response(const Resource &resource)
-    : _resource(resource), _code(static_cast<int>(StatusCode::OK)) {}
 
 Response::Response(const Json::Value &json)
-    : _code(static_cast<int>(StatusCode::OK)), _text(json.toStyledString()),
-      _content_type(Http::ContentType::ApplicationJson) {}
+    : code_(StatusCode::OK), text_(json.toStyledString()), _content_type(Http::ContentType::ApplicationJson) {
+    Init();
+    body_type_ = BodyType::Text;
+}

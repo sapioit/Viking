@@ -13,17 +13,12 @@ class Resource {
     std::vector<char> _content;
     // TODO Modify to use the stat64 version
     struct stat _stat;
-    std::vector<char> _hash;
-    std::uint64_t _hits = 0;
 
     public:
     Resource() = default;
     Resource(const std::string &, const std::vector<char> &, const struct stat &);
     Resource(const std::string &);
-    Resource(const Resource &) = default;
-    Resource(Resource &&) = default;
-    Resource &operator=(const Resource &) = default;
-    ~Resource() = default;
+    virtual ~Resource() = default;
     operator bool();
     bool operator<(const Resource &);
 

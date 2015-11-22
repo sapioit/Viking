@@ -29,7 +29,6 @@ class Engine {
 
     Request operator()();
 
-
     static std::string StripRoute(const std::string &URI);
     //	// static std::string GetURI(const std::string& line);
     Http::ContentType GetMimeType(const std::string &);

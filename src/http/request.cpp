@@ -8,9 +8,4 @@
 #include <regex>
 using namespace Http;
 
-const std::vector<Http::ContentType> Request::Accepts() const {
-    // TODO
-    return {};
-}
-
 std::vector<std::string> Request::SplitURL() const { return StringUtil::Split(url, '/'); }
