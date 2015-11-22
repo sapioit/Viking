@@ -71,11 +71,11 @@ int Socket::AvailableToRead() const {
         throw InternalSocketError{fd_, this};
     return count;
 }
-Socket Socket::Accept() const {
+std::unique_ptr<Socket> Socket::Accept() const {
     struct sockaddr in_addr;
     socklen_t in_len;
     in_len = sizeof(in_addr);
-    return Socket(::accept(fd_, &in_addr, &in_len), port_);
+    return std::make_unique<Socket>(::accept(fd_, &in_addr, &in_len), port_);
 }
 
 int Socket::GetFD() const { return fd_; }

@@ -45,7 +45,7 @@ class Socket {
     bool operator==(const Socket &) const;
     operator bool() const;
     virtual ~Socket();
-    Socket Accept() const;
+    std::unique_ptr<Socket> Accept() const;
     int GetFD() const;
     bool IsAcceptor() const;
     void Bind() const;

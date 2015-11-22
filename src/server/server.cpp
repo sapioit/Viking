@@ -28,14 +28,22 @@ void Server::SetSettings(const Settings &s) {
     Storage::setSettings(s);
     _maxPending = s.max_connections;
 }
+
+IO::Socket* make_socket(int port, int max_pending, bool=false) {
+    auto sock = new IO::Socket(port);
+    sock->Bind();
+    sock->MakeNonBlocking();
+    sock->Listen(max_pending);
+    return sock;
+}
+
 void Server::Run() {
     signal(SIGPIPE, SIG_IGN);
     debug("Pid = " + std::to_string(getpid()));
     if (_port == -1)
         throw std::runtime_error("Port number not set!");
     try {
-        auto master_socket = IO::Socket::start_socket(_port, _maxPending);
-        debug("Master socket has fd = " + std::to_string(master_socket.GetFD()));
+        auto master_socket = std::unique_ptr<IO::Socket>(make_socket(_port, _maxPending));
 
         IO::Scheduler watcher(std::move(master_socket), Dispatcher::Dispatch);
         while (true) {

@@ -30,17 +30,17 @@ class Scheduler {
 
     private:
     std::map<int, ScheduleItem> schedule_;
-    std::vector<Socket> sockets_;
+    std::vector<std::unique_ptr<Socket>> sockets_;
     SysEpoll poller_;
     Callback callback;
 
     public:
     Scheduler() = default;
 
-    Scheduler(Socket sock, Callback callback);
+    Scheduler(std::unique_ptr<Socket> sock, Callback callback);
     ~Scheduler() = default;
 
-    void Add(Socket socket, std::uint32_t flags);
+    void Add(std::unique_ptr<Socket> socket, std::uint32_t flags);
 
     void Remove(const Socket &socket);
 

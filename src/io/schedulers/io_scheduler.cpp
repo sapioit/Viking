@@ -1,7 +1,7 @@
 #include <io/schedulers/io_scheduler.h>
 #include <io/buffers/utils.h>
 
-IO::Scheduler::Scheduler(IO::Socket sock, IO::Scheduler::Callback callback) : callback(callback) {
+IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::Callback callback) : callback(callback) {
     try {
         Scheduler::Add(std::move(sock), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
                                             static_cast<std::uint32_t>(SysEpoll::Description::Termination));
@@ -10,9 +10,9 @@ IO::Scheduler::Scheduler(IO::Socket sock, IO::Scheduler::Callback callback) : ca
     }
 }
 
-void IO::Scheduler::Add(IO::Socket socket, uint32_t flags) {
+void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
-        auto fd = socket.GetFD();
+        auto fd = socket->GetFD();
         sockets_.emplace_back(std::move(socket));
         poller_.Schedule(fd, flags);
     } catch (const SysEpoll::Error &) {
@@ -23,7 +23,7 @@ void IO::Scheduler::Add(IO::Socket socket, uint32_t flags) {
 void IO::Scheduler::Remove(const IO::Socket &socket) {
     schedule_.erase(socket.GetFD());
     poller_.Remove(socket.GetFD());
-    sockets_.erase(std::remove(sockets_.begin(), sockets_.end(), socket), sockets_.end());
+    sockets_.erase(std::remove_if(sockets_.begin(), sockets_.end(), [&socket](auto& sockptr) { return sockptr->GetFD() == socket.GetFD(); }), sockets_.end());
 }
 
 void IO::Scheduler::Run() {
@@ -196,17 +196,21 @@ bool IO::Scheduler::CanTerminate(const SysEpoll::Event &event) const noexcept {
 }
 
 void IO::Scheduler::AddNewConnections(const IO::Socket &acceptor) noexcept {
-    while (auto new_connection = acceptor.Accept()) {
-        new_connection.MakeNonBlocking();
-        Scheduler::Add(std::move(new_connection), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
-                                                      static_cast<std::uint32_t>(SysEpoll::Description::Termination));
-    }
+    do {
+        auto new_connection = acceptor.Accept();
+        if(*new_connection) {
+            new_connection->MakeNonBlocking();
+            Scheduler::Add(std::move(new_connection), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+                                                          static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+        }
+        else break;
+    } while(true);
 }
 
 const IO::Socket &IO::Scheduler::GetSocket(const SysEpoll::Event &event) const {
     for (const auto &socket : sockets_) {
-        if (socket.GetFD() == event.file_descriptor)
-            return socket;
+        if (socket->GetFD() == event.file_descriptor)
+            return *socket;
     }
     throw SocketNotFound{std::addressof(event)};
 }
