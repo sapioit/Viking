@@ -17,18 +17,16 @@
 #include <memory>
 #include <functional>
 
-namespace Web
-{
-class Dispatcher
-{
-	using DataType = IO::Scheduler::DataType;
-	using Connection = IO::Socket;
-	static RouteMap routes;
-	typedef IO::Scheduler::CallbackResponse SchedulerResponse;
+namespace Web {
+class Dispatcher {
+    using DataType = IO::Scheduler::DataType;
+    using Connection = IO::Socket;
+    static RouteMap routes;
+    typedef IO::Scheduler::CallbackResponse SchedulerResponse;
 
-	public:
-	template <typename T> static void AddRoute(T route) { routes.insert(route); }
-	static IO::Scheduler::CallbackResponse Dispatch(const Connection &Connection);
+    public:
+    template <typename T> static void AddRoute(T route) { routes.insert(route); }
+    static IO::Scheduler::CallbackResponse Dispatch(const Connection &Connection);
 };
 }
 

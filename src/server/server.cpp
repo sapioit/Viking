@@ -24,33 +24,31 @@ std::string Log::_fn;
 
 Server::Server(int port) : _port(port) {}
 
-void Server::SetSettings(const Settings &s)
-{
-	Storage::setSettings(s);
-	_maxPending = s.max_connections;
+void Server::SetSettings(const Settings &s) {
+    Storage::setSettings(s);
+    _maxPending = s.max_connections;
 }
-void Server::Run()
-{
-	signal(SIGPIPE, SIG_IGN);
-	debug("Pid = " + std::to_string(getpid()));
-	if (_port == -1)
-		throw std::runtime_error("Port number not set!");
-	try {
-		auto master_socket = IO::Socket::start_socket(_port, _maxPending);
-		debug("Master socket has fd = " + std::to_string(master_socket.GetFD()));
+void Server::Run() {
+    signal(SIGPIPE, SIG_IGN);
+    debug("Pid = " + std::to_string(getpid()));
+    if (_port == -1)
+        throw std::runtime_error("Port number not set!");
+    try {
+        auto master_socket = IO::Socket::start_socket(_port, _maxPending);
+        debug("Master socket has fd = " + std::to_string(master_socket.GetFD()));
 
-		IO::Scheduler watcher(std::move(master_socket), Dispatcher::Dispatch);
-		while (true) {
-			watcher.Run();
-		}
+        IO::Scheduler watcher(std::move(master_socket), Dispatcher::Dispatch);
+        while (true) {
+            watcher.Run();
+        }
 
-	} catch (std::exception &ex) {
-		Log::e(std::string("Server error: ").append(ex.what()));
-		auto msg = std::string("Server error. Please see the log file. Last exception: ");
-		msg += ex.what();
-		msg += "\n";
-		throw std::runtime_error(msg);
-	}
+    } catch (std::exception &ex) {
+        Log::e(std::string("Server error: ").append(ex.what()));
+        auto msg = std::string("Server error. Please see the log file. Last exception: ");
+        msg += ex.what();
+        msg += "\n";
+        throw std::runtime_error(msg);
+    }
 }
 int Server::GetMaxPending() const { return _maxPending; }
 

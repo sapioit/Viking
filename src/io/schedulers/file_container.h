@@ -1,30 +1,32 @@
 #ifndef FILEWATCHER_H
 #define FILEWATCHER_H
 
-#include <set>
-#include <io/socket/socket.h>
-#include <memory>
-#include <algorithm>
-#include <misc/debug.h>
+//#include <set>
+//#include <io/socket/socket.h>
+//#include <memory>
+//#include <algorithm>
+//#include <misc/debug.h>
 
-namespace IO
-{
-class SocketContainer
-{
-	protected:
-	std::vector<Socket> watched_files_;
+// namespace IO
+//{
+// class SocketContainer
+//{
+//    protected:
 
-	public:
-	struct FileNotFound {
-		int fd;
-	};
-	SocketContainer() = default;
-	virtual ~SocketContainer() = default;
+//	public:
+//	struct FileNotFound {
+//		int fd;
+//	};
 
-	void Add(Socket file) noexcept;
+//	SocketContainer() = default;
+//    virtual ~SocketContainer() = default;
 
-	void Remove(const Socket &file) noexcept;
-};
-}
+//	void Add(Socket file) noexcept;
+
+//	void Remove(const Socket &file) noexcept;
+
+//    const std::vector<Socket> &Get() const noexcept;
+//};
+//}
 
 #endif

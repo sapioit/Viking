@@ -9,30 +9,28 @@
 #include <http/header.h>
 #include <string>
 
-namespace Http
-{
+namespace Http {
 
-class Request
-{
-	public:
-	struct Version {
-		unsigned short major, minor;
-	};
+class Request {
+    public:
+    struct Version {
+        unsigned short major, minor;
+    };
 
-	Http::Method method;
-	Version version;
-	Header header;
-	std::string url, body;
+    Http::Method method;
+    Version version;
+    Header header;
+    std::string url, body;
 
-	Request() = default;
-	virtual ~Request() = default;
+    Request() = default;
+    virtual ~Request() = default;
 
-	bool IsPassable() const;
-	bool IsResource() const;
+    bool IsPassable() const;
+    bool IsResource() const;
 
-	const std::vector<Http::ContentType> Accepts() const;
+    const std::vector<Http::ContentType> Accepts() const;
 
-	std::vector<std::string> SplitURL() const;
+    std::vector<std::string> SplitURL() const;
 };
 }
 

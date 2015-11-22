@@ -9,23 +9,21 @@
 #include <vector>
 #include <memory>
 #include <fstream>
-namespace Web
-{
-class Server
-{
-	public:
-	Server(int);
-	template <class T> void AddRoute(T route) { dispatcher_.AddRoute(route); }
-	void Run();
-	void SetSettings(const Settings &);
+namespace Web {
+class Server {
+    public:
+    Server(int);
+    template <class T> void AddRoute(T route) { dispatcher_.AddRoute(route); }
+    void Run();
+    void SetSettings(const Settings &);
 
-	int GetMaxPending() const;
-	void SetMaxPending(int);
+    int GetMaxPending() const;
+    void SetMaxPending(int);
 
-	private:
-	Dispatcher dispatcher_;
-	int _port = -1;
-	int _maxPending;
+    private:
+    Dispatcher dispatcher_;
+    int _port = -1;
+    int _maxPending;
 };
 };
 

@@ -13,42 +13,41 @@
 #include <map>
 #include <functional>
 
-namespace IO
-{
-class Scheduler : public SocketContainer
-{
-	private:
-	struct DataCorruption {
-		const Socket *sock;
-	};
-	struct SocketNotFound {
-		const SysEpoll::Event *event;
-	};
+namespace IO {
+class Scheduler {
+    private:
+    struct DataCorruption {
+        const Socket *sock;
+    };
+    struct SocketNotFound {
+        const SysEpoll::Event *event;
+    };
 
-	public:
+    public:
     typedef ScheduleItem CallbackResponse;
     typedef std::vector<char> DataType;
-	typedef std::function<CallbackResponse(const Socket &)> Callback;
+    typedef std::function<CallbackResponse(const Socket &)> Callback;
 
-	private:
+    private:
     std::map<int, ScheduleItem> schedule_;
-	Callback callback;
+    std::vector<Socket> sockets_;
     SysEpoll poller_;
+    Callback callback;
 
-	public:
-	Scheduler() = default;
+    public:
+    Scheduler() = default;
 
-	Scheduler(Socket sock, Callback callback);
-	~Scheduler() = default;
+    Scheduler(Socket sock, Callback callback);
+    ~Scheduler() = default;
 
-	void Add(Socket socket, std::uint32_t flags);
+    void Add(Socket socket, std::uint32_t flags);
 
-	void Remove(const Socket &socket);
+    void Remove(const Socket &socket);
 
-	virtual void Run();
+    virtual void Run();
 
-	protected:
-	void AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append = true) noexcept;
+    protected:
+    void AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append = true) noexcept;
 
     void ScheduledItemFinished(const Socket &socket, ScheduleItem &sched_item);
 
@@ -58,13 +57,13 @@ class Scheduler : public SocketContainer
 
     inline bool CanRead(const SysEpoll::Event &event) const noexcept;
 
-	inline bool IsScheduled(int) const noexcept;
+    inline bool IsScheduled(int) const noexcept;
 
     inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 
-	void AddNewConnections(const Socket &acceptor) noexcept;
+    void AddNewConnections(const Socket &acceptor) noexcept;
 
-	const Socket &GetSocket(const SysEpoll::Event &event) const;
+    const Socket &GetSocket(const SysEpoll::Event &event) const;
 };
 }
 

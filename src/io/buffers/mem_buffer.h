@@ -6,11 +6,11 @@
 #include <vector>
 
 struct MemoryBuffer : public DataSource {
-	std::vector<char> data;
+    std::vector<char> data;
 
-	MemoryBuffer() = default;
-	MemoryBuffer(const std::vector<char> &data) : data(data) {}
-	virtual operator bool() const noexcept { return data.size() != 0; }
+    MemoryBuffer() = default;
+    MemoryBuffer(const std::vector<char> &data) : data(data) {}
+    virtual operator bool() const noexcept { return data.size() != 0; }
 };
 
 #endif // MEMBUFFER_H
