@@ -12,9 +12,8 @@ IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::Callback c
 
 void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
-        auto fd = socket->GetFD();
+        poller_.Schedule(socket.get(), flags);
         sockets_.emplace_back(std::move(socket));
-        poller_.Schedule(fd, flags);
     } catch (const SysEpoll::Error &) {
         throw;
     }
@@ -22,7 +21,7 @@ void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
 
 void IO::Scheduler::Remove(const IO::Socket &socket) {
     schedule_.erase(socket.GetFD());
-    poller_.Remove(socket.GetFD());
+    poller_.Remove(&socket);
     sockets_.erase(std::remove_if(sockets_.begin(), sockets_.end(), [&socket](auto &sockptr) {
                        return sockptr->GetFD() == socket.GetFD();
                    }), sockets_.end());
@@ -34,7 +33,7 @@ void IO::Scheduler::Run() {
     try {
         const auto events = poller_.Wait(sockets_.size());
         for (const auto &associated_event : events) {
-            const auto &associated_socket = GetSocket(associated_event);
+            const auto &associated_socket = *associated_event.socket;//GetSocket(associated_event);
 
             if (associated_socket.IsAcceptor()) {
                 debug("The master socket is active");
@@ -44,14 +43,14 @@ void IO::Scheduler::Run() {
 
             if (CanTerminate(associated_event)) {
                 debug("Event with fd = " + std::to_string(associated_event.file_descriptor) + " must be closed");
-                Scheduler::Remove(associated_socket);
+                Remove(associated_socket);
                 continue;
             }
             if (CanWrite(associated_event)) {
                 try {
                     ProcessWrite(associated_socket, schedule_.at(associated_socket.GetFD()));
                 } catch (const DataCorruption &e) {
-                    Scheduler::Remove(*e.sock);
+                    Remove(*e.sock);
                     debug("Data corruption occured!");
                 } catch (const std::out_of_range &) {
                     debug("Could not find scheduled item!");
@@ -59,7 +58,7 @@ void IO::Scheduler::Run() {
                 continue;
             }
 
-            if (CanRead(associated_event) && (!IsScheduled(associated_event.file_descriptor))) {
+            if (CanRead(associated_event) && (!IsScheduled(associated_event.socket->GetFD()))) {
                 debug("Socket with fd = " + std::to_string(associated_socket.GetFD()) +
                       " can be read from, and there is no write "
                       "scheduled for it");
@@ -68,7 +67,7 @@ void IO::Scheduler::Run() {
                     /* Schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others
                      */
-                    poller_.Modify(associated_event.file_descriptor,
+                    poller_.Modify(&associated_socket,
                                    static_cast<std::uint32_t>(SysEpoll::Description::Write));
                     AddSchedItem(associated_event, std::move(callback_response));
                 }
@@ -81,9 +80,9 @@ void IO::Scheduler::Run() {
 }
 
 void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append) noexcept {
-    auto item_it = schedule_.find(ev.file_descriptor);
+    auto item_it = schedule_.find(ev.socket->GetFD());
     if (item_it == schedule_.end()) {
-        schedule_.emplace(std::make_pair(ev.file_descriptor, std::move(item)));
+        schedule_.emplace(std::make_pair(ev.socket->GetFD(), std::move(item)));
     } else {
         if (!append) {
             /* Unlikely */
@@ -95,7 +94,7 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
 
 void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, ScheduleItem &sched_item) {
     if (sched_item.CloseWhenDone()) {
-        Scheduler::Remove(socket);
+        Remove(socket);
     } else {
         schedule_.erase(socket.GetFD());
     }
@@ -127,10 +126,10 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_i
                     debug("Write error on socket with "
                           "sockfd = " +
                           std::to_string(e.fd) + " errno = " + std::to_string(errno));
-                    Scheduler::Remove(socket);
+                    Remove(socket);
                     break;
                 } catch (const Socket::ConnectionClosedByPeer &) {
-                    Scheduler::Remove(socket);
+                    Remove(socket);
                     break;
                 }
             }
@@ -179,6 +178,19 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_i
     } while (!stop);
 }
 
+void IO::Scheduler::AddNewConnections(const IO::Socket &acceptor) noexcept {
+    do {
+        auto new_connection = acceptor.Accept();
+        if (*new_connection) {
+            new_connection->MakeNonBlocking();
+            Scheduler::Add(std::move(new_connection),
+                           static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+                               static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+        } else
+            break;
+    } while (true);
+}
+
 bool IO::Scheduler::CanWrite(const SysEpoll::Event &event) const noexcept {
     return (event.description & static_cast<std::uint32_t>(SysEpoll::Description::Write));
 }
@@ -197,23 +209,4 @@ bool IO::Scheduler::CanTerminate(const SysEpoll::Event &event) const noexcept {
             event.description & static_cast<std::uint32_t>(SysEpoll::Description::Error));
 }
 
-void IO::Scheduler::AddNewConnections(const IO::Socket &acceptor) noexcept {
-    do {
-        auto new_connection = acceptor.Accept();
-        if (*new_connection) {
-            new_connection->MakeNonBlocking();
-            Scheduler::Add(std::move(new_connection),
-                           static_cast<std::uint32_t>(SysEpoll::Description::Read) |
-                               static_cast<std::uint32_t>(SysEpoll::Description::Termination));
-        } else
-            break;
-    } while (true);
-}
 
-const IO::Socket &IO::Scheduler::GetSocket(const SysEpoll::Event &event) const {
-    for (const auto &socket : sockets_) {
-        if (socket->GetFD() == event.file_descriptor)
-            return *socket;
-    }
-    throw SocketNotFound{std::addressof(event)};
-}

@@ -62,8 +62,6 @@ class Scheduler {
     inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 
     void AddNewConnections(const Socket &acceptor) noexcept;
-
-    const Socket &GetSocket(const SysEpoll::Event &event) const;
 };
 }
 
