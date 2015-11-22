@@ -8,10 +8,8 @@
 #include <unistd.h>
 
 std::map<std::string, Resource> CacheManager::_resources;
-std::mutex CacheManager::_cacheLock;
 
 Resource CacheManager::GetItem(const std::string &path) {
-    std::lock_guard<std::mutex> lock(_cacheLock);
     auto item = CacheManager::_resources.find(path);
     if (item != CacheManager::_resources.end())
         return item->second;
@@ -20,12 +18,10 @@ Resource CacheManager::GetItem(const std::string &path) {
 }
 
 void CacheManager::PutItem(const std::pair<std::string, Resource> &&item) {
-    std::lock_guard<std::mutex> lock(_cacheLock);
     CacheManager::_resources.insert(item);
 }
 
 void CacheManager::ReplaceItem(const std::string &path, const Resource &res) {
-    std::lock_guard<std::mutex> lock(_cacheLock);
     _resources[path] = res;
 }
 Resource CacheManager::GetResource(const std::string &path) {

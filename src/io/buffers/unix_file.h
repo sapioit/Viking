@@ -5,17 +5,22 @@
 
 #include <sys/sendfile.h>
 #include <sys/types.h>
+#include <functional>
 #include <string>
 
 struct UnixFile : public DataSource {
     int fd = -1;
     off64_t offset = 0;
     off64_t size = 0;
-
-    private:
+public:
+    typedef std::function<int(const std::string&)> AquireFunction;
+    typedef std::function<void(int)> ReleaseFunction;
+private:
+    std::function<int(const std::string&)> aquire_func_;
+    std::function<void(int)> release_func_;
     void Close();
+public:
 
-    public:
     struct Error {
         std::string path;
         Error() = default;
@@ -35,7 +40,7 @@ struct UnixFile : public DataSource {
 
     UnixFile() = default;
     virtual ~UnixFile();
-    UnixFile(const std::string &);
+    UnixFile(const std::string &,AquireFunction a,ReleaseFunction r);
     UnixFile(UnixFile &&);
     UnixFile &operator=(UnixFile &&);
     UnixFile(const UnixFile &) = delete;

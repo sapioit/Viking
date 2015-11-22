@@ -2,6 +2,7 @@
 #include <thread>
 #include <sstream>
 #include <http/engine.h>
+#include <cache/file_descriptor.h>
 
 RouteMap Web::Dispatcher::routes;
 
@@ -32,7 +33,7 @@ Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &c
                 } else {
                     try {
                         std::string uri = request.url;
-                        auto unix_file = std::make_unique<UnixFile>(Storage::settings().root_path + uri);
+                        auto unix_file = std::make_unique<UnixFile>(Storage::settings().root_path + uri, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
                         SchedulerResponse response;
 
                         Http::Response http_response{request, unix_file.get()};

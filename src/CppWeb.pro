@@ -18,14 +18,13 @@ QMAKE_CXXFLAGS_DEBUG += -O0 -g
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 
-#IPC
+#CACHE
 SOURCES += \
-    ipc/fork.cpp \
+    cache/file_descriptor.cpp \
 
 HEADERS += \
-    ipc/fork.h \
-#IPC-END
-    ipc/ipc.h
+    cache/file_descriptor.h \
+#CACHE-END
 
 #HTTP
 SOURCES += \

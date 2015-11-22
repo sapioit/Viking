@@ -33,7 +33,7 @@ bool Http::Request::IsPassable() const {
 }
 
 bool Http::Request::IsResource() const {
-    std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json)$", std::regex::ECMAScript | std::regex::icase);
+    static std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json|mkv)$", std::regex::ECMAScript | std::regex::icase);
     bool match = std::regex_match(url, extensions);
     return match;
 }

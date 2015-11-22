@@ -29,7 +29,7 @@ void Server::SetSettings(const Settings &s) {
     _maxPending = s.max_connections;
 }
 
-IO::Socket* make_socket(int port, int max_pending, bool=false) {
+IO::Socket *make_socket(int port, int max_pending, bool = false) {
     auto sock = new IO::Socket(port);
     sock->Bind();
     sock->MakeNonBlocking();

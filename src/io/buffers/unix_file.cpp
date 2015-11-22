@@ -4,9 +4,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <io/filesystem.h>
+#include <misc/storage.h>
+
 void UnixFile::Close() {
     if (-1 != fd) {
-        ::close(fd);
+        release_func_(fd);
     }
 }
 
@@ -27,8 +30,8 @@ UnixFile &UnixFile::operator=(UnixFile &&other) {
 
 UnixFile::operator bool() const noexcept { return !(offset == size); }
 
-UnixFile::UnixFile(const std::string &path) {
-    fd = ::open(path.c_str(), O_RDONLY);
+UnixFile::UnixFile(const std::string &path,AquireFunction a,ReleaseFunction r) : aquire_func_(a), release_func_(r) {
+    fd = aquire_func_(path);
     if (-1 == fd)
         throw Error{path};
     struct stat64 stat;
