@@ -18,6 +18,7 @@ class FileSystem {
     public:
     static std::vector<char> ReadFile(const std::string &path);
     static std::string GetCurrentDirectory();
+    static std::size_t GetFileSize(const std::string &file_path);
 };
 };
 

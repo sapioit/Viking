@@ -17,13 +17,9 @@ Resource CacheManager::GetItem(const std::string &path) {
     return {};
 }
 
-void CacheManager::PutItem(const std::pair<std::string, Resource> &&item) {
-    CacheManager::_resources.insert(item);
-}
+void CacheManager::PutItem(const std::pair<std::string, Resource> &&item) { CacheManager::_resources.insert(item); }
 
-void CacheManager::ReplaceItem(const std::string &path, const Resource &res) {
-    _resources[path] = res;
-}
+void CacheManager::ReplaceItem(const std::string &path, const Resource &res) { _resources[path] = res; }
 Resource CacheManager::GetResource(const std::string &path) {
     std::string fpath(Storage::settings().root_path + path);
 

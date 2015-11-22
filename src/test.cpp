@@ -48,7 +48,6 @@ int main() {
                                      });
         Settings settings;
         settings.root_path = "/mnt/exthdd/server";
-        //settings.root_path = "/mnt/exthdd/Movies/Man.Up.2015.720p.BluRay.DD5.1.x264.RoSubbed-playHD";
         settings.max_connections = 1000;
         server.SetSettings(settings);
         server.AddRoute(route1);

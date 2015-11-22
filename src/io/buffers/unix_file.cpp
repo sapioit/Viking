@@ -30,7 +30,7 @@ UnixFile &UnixFile::operator=(UnixFile &&other) {
 
 UnixFile::operator bool() const noexcept { return !(offset == size); }
 
-UnixFile::UnixFile(const std::string &path,AquireFunction a,ReleaseFunction r) : aquire_func_(a), release_func_(r) {
+UnixFile::UnixFile(const std::string &path, AquireFunction a, ReleaseFunction r) : aquire_func_(a), release_func_(r) {
     fd = aquire_func_(path);
     if (-1 == fd)
         throw Error{path};

@@ -1,16 +1,22 @@
 #include <server/dispatcher.h>
-#include <thread>
-#include <sstream>
 #include <http/engine.h>
 #include <cache/file_descriptor.h>
+#include <io/filesystem.h>
 
 RouteMap Web::Dispatcher::routes;
 
-bool ShouldCopyInMemory(/* File path */) { return false; }
+bool ShouldCopyInMemory(const std::string &resource_path) {
+    try {
+        auto page_size = static_cast<std::size_t>(getpagesize());
+        auto file_size = IO::FileSystem::GetFileSize(resource_path.c_str());
+        return file_size <= page_size;
+    } catch (...) {
+        throw Http::StatusCode::NotFound;
+    }
+}
 
 Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &connection) {
     auto parser = Http::Engine(connection);
-    // Http::Parser(connection);
     auto request = parser();
     if (request.IsPassable()) {
         if (!request.IsResource()) {
@@ -25,15 +31,16 @@ Web::Dispatcher::SchedulerResponse Web::Dispatcher::Dispatch(const Connection &c
         } else {
             /* It's a resource */
             try {
-                if (ShouldCopyInMemory()) {
+                auto full_path = Storage::settings().root_path + request.url;
+                if (ShouldCopyInMemory(full_path)) {
                     auto resource = CacheManager::GetResource(request.url);
                     // TODO decide if you should really
                     // close the connection
                     return {ResponseSerializer::Serialize(request, resource)};
                 } else {
                     try {
-                        std::string uri = request.url;
-                        auto unix_file = std::make_unique<UnixFile>(Storage::settings().root_path + uri, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
+                        auto unix_file = std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire,
+                                                                    Cache::FileDescriptor::Release);
                         SchedulerResponse response;
 
                         Http::Response http_response{request, unix_file.get()};

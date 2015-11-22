@@ -1,5 +1,6 @@
 #include <io/filesystem.h>
 #include <misc/debug.h>
+#include <sys/stat.h>
 #include <fstream>
 #include <unistd.h>
 using namespace IO;
@@ -20,4 +21,12 @@ std::string FileSystem::GetCurrentDirectory() {
     free(cwd);
 
     return cur_dir;
+}
+
+std::size_t FileSystem::GetFileSize(const std::string &file_path) {
+    struct stat64 st;
+    if (-1 == ::stat64(file_path.c_str(), &st))
+        throw fs_error{"not found"};
+    else
+        return st.st_size;
 }
