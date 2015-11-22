@@ -25,7 +25,6 @@ class Request {
     Request() = default;
     virtual ~Request() = default;
 
-    bool IsPassable() const;
     bool IsResource() const;
 
     const std::vector<Http::ContentType> Accepts() const;

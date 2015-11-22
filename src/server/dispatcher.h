@@ -3,16 +3,9 @@
 
 #include <io/socket/socket.h>
 #include <io/schedulers/io_scheduler.h>
-#include <http/routeutility.h>
 #include <http/parser.h>
-#include <http/routeutility.h>
-#include <http/parser.h>
-#include <http/components.h>
 #include <http/cachemanager.h>
-#include <http/response_serializer.h>
 #include <http/routeutility.h>
-#include <misc/log.h>
-#include <misc/storage.h>
 #include <map>
 #include <memory>
 #include <functional>
@@ -23,10 +16,14 @@ class Dispatcher {
     using Connection = IO::Socket;
     static RouteMap routes;
     typedef IO::Scheduler::CallbackResponse SchedulerResponse;
+    typedef std::function<Http::Response(Http::Request)> Handler;
+
+    static SchedulerResponse TakeResource(const Http::Request &) noexcept;
+    static SchedulerResponse PassRequest(const Http::Request &, Handler) noexcept;
 
     public:
     template <typename T> static void AddRoute(T route) { routes.insert(route); }
-    static IO::Scheduler::CallbackResponse Dispatch(const Connection &Connection);
+    static SchedulerResponse HandleConnection(const Connection &Connection);
 };
 }
 

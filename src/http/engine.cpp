@@ -97,17 +97,6 @@ std::string Http::Engine::StripRoute(const std::string &URI) {
     return {URI.begin() + firstSlash, URI.end()};
 }
 
-std::vector<std::string> Http::Engine::Split(std::string source, char delimiter) {
-    std::vector<std::string> result;
-    std::istringstream ss(source); // Turn the string into a stream.
-    std::string tok;
-
-    while (std::getline(ss, tok, delimiter)) {
-        if (!tok.empty())
-            result.push_back(tok);
-    }
-    return result;
-}
 std::vector<Http::ContentType> Http::Engine::GetAcceptedEncodings(const std::string &) {
     return std::vector<Http::ContentType>();
 }

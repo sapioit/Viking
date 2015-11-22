@@ -21,7 +21,7 @@ void CacheManager::PutItem(const std::pair<std::string, Resource> &&item) { Cach
 
 void CacheManager::ReplaceItem(const std::string &path, const Resource &res) { _resources[path] = res; }
 Resource CacheManager::GetResource(const std::string &path) {
-    std::string fpath(Storage::settings().root_path + path);
+    std::string fpath(Storage::GetSettings().root_path + path);
 
     auto item = CacheManager::GetItem(fpath);
 

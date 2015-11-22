@@ -4,11 +4,11 @@
 #include "settings.h"
 
 class Storage {
-    static Settings _settings;
+    static Settings settings_;
 
     public:
-    static const Settings &settings();
-    static void setSettings(const Settings &settings);
+    static const Settings &GetSettings();
+    static void SetSettings(const Settings &);
 };
 
 #endif // STORAGE_H

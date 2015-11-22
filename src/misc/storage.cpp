@@ -6,8 +6,8 @@
 #include <utility>
 #include <thread>
 
-Settings Storage::_settings;
+Settings Storage::settings_;
 
-const Settings &Storage::settings() { return Storage::_settings; }
+const Settings &Storage::GetSettings() { return Storage::settings_; }
 
-void Storage::setSettings(const Settings &settings) { Storage::_settings = settings; }
+void Storage::SetSettings(const Settings &settings) { Storage::settings_ = settings; }

@@ -22,7 +22,7 @@ SysEpoll::~SysEpoll() {
 void SysEpoll::Schedule(IO::Socket *socket, std::uint32_t flags) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
-   // ev.data.fd = file_descriptor;
+    // ev.data.fd = file_descriptor;
     ev.data.ptr = socket;
     ev.events = flags | EPOLLET;
     if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, socket->GetFD(), &ev)) {
@@ -31,7 +31,7 @@ void SysEpoll::Schedule(IO::Socket *socket, std::uint32_t flags) {
             Modify(socket, flags);
         }
     } else
-    events_.push_back(ev);
+        events_.push_back(ev);
 }
 
 void SysEpoll::Modify(const IO::Socket *socket, std::uint32_t flags) {
@@ -47,8 +47,8 @@ void SysEpoll::Modify(const IO::Socket *socket, std::uint32_t flags) {
 
 void SysEpoll::Remove(const IO::Socket *socket) {
     // FIXME
-    auto event_it = std::find_if(events_.begin(), events_.end(),
-                                 [socket](epoll_event &ev) { return (socket == ev.data.ptr); });
+    auto event_it =
+        std::find_if(events_.begin(), events_.end(), [socket](epoll_event &ev) { return (socket == ev.data.ptr); });
 
     if (event_it != events_.end()) {
         auto *event = std::addressof(*event_it);
@@ -67,7 +67,7 @@ void SysEpoll::Remove(const IO::Socket *socket) {
 static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
     std::vector<SysEpoll::Event> epoll_events;
     for (const auto &event : events) {
-        epoll_events.emplace_back(static_cast<IO::Socket*>(event.data.ptr), event.events);
+        epoll_events.emplace_back(static_cast<IO::Socket *>(event.data.ptr), event.events);
         debug("Event with fd = " + std::to_string(event.data.ptr->GetFD()) + " was reported to be active");
     }
     return epoll_events;
@@ -90,11 +90,11 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
     return CreateEvents(active_files);
 }
 
-epoll_event *SysEpoll::FindEvent(const IO::Socket* socket) {
+epoll_event *SysEpoll::FindEvent(const IO::Socket *socket) {
     auto event_it = std::find_if(events_.begin(), events_.end(),
                                  [socket](const epoll_event &ev) { return (socket == ev.data.ptr); });
     return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }
-SysEpoll::Event::Event(IO::Socket* sock, int description) noexcept : socket(sock), description(description) {}
+SysEpoll::Event::Event(IO::Socket *sock, int description) noexcept : socket(sock), description(description) {}
 
 SysEpoll::Error::Error(const std::string &err) : std::runtime_error(err) {}

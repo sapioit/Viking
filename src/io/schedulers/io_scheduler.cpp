@@ -33,7 +33,7 @@ void IO::Scheduler::Run() {
     try {
         const auto events = poller_.Wait(sockets_.size());
         for (const auto &associated_event : events) {
-            const auto &associated_socket = *associated_event.socket;//GetSocket(associated_event);
+            const auto &associated_socket = *associated_event.socket; // GetSocket(associated_event);
 
             if (associated_socket.IsAcceptor()) {
                 debug("The master socket is active");
@@ -67,8 +67,7 @@ void IO::Scheduler::Run() {
                     /* Schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others
                      */
-                    poller_.Modify(&associated_socket,
-                                   static_cast<std::uint32_t>(SysEpoll::Description::Write));
+                    poller_.Modify(&associated_socket, static_cast<std::uint32_t>(SysEpoll::Description::Write));
                     AddSchedItem(associated_event, std::move(callback_response));
                 }
                 continue;
@@ -208,5 +207,3 @@ bool IO::Scheduler::CanTerminate(const SysEpoll::Event &event) const noexcept {
     return (event.description & static_cast<std::uint32_t>(SysEpoll::Description::Termination) ||
             event.description & static_cast<std::uint32_t>(SysEpoll::Description::Error));
 }
-
-

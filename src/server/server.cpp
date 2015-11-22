@@ -25,7 +25,7 @@ std::string Log::_fn;
 Server::Server(int port) : _port(port) {}
 
 void Server::SetSettings(const Settings &s) {
-    Storage::setSettings(s);
+    Storage::SetSettings(s);
     _maxPending = s.max_connections;
 }
 
@@ -45,7 +45,7 @@ void Server::Run() {
     try {
         auto master_socket = std::unique_ptr<IO::Socket>(make_socket(_port, _maxPending));
 
-        IO::Scheduler watcher(std::move(master_socket), Dispatcher::Dispatch);
+        IO::Scheduler watcher(std::move(master_socket), Dispatcher::HandleConnection);
         while (true) {
             watcher.Run();
         }

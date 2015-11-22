@@ -21,10 +21,14 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 #CACHE
 SOURCES += \
     cache/file_descriptor.cpp \
+    http/util.cpp \
+    misc/string_util.cpp
 
 HEADERS += \
     cache/file_descriptor.h \
 #CACHE-END
+    http/util.h \
+    misc/string_util.h
 
 #HTTP
 SOURCES += \
