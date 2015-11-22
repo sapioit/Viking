@@ -3,14 +3,20 @@
 #include <cstring>
 #include <algorithm>
 #include <errno.h>
-#include <cassert>
+#include <unistd.h>
 
 SysEpoll::SysEpoll()
 {
 	efd_ = epoll_create1(0);
 	if (efd_ == -1)
 		throw Error("Could not start polling");
-	debug("SysEpoll instance with fd = " + std::to_string(efd_));
+    debug("SysEpoll instance with fd = " + std::to_string(efd_));
+}
+
+SysEpoll::~SysEpoll()
+{
+    /* We only close the epoll file descriptor, because epoll is aware of sockets that get closed */
+    ::close(efd_);
 }
 
 void SysEpoll::Schedule(int file_descriptor, std::uint32_t flags)

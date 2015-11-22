@@ -16,7 +16,7 @@ void IO::Scheduler::Add(IO::Socket socket, uint32_t flags)
 	try {
 		auto fd = socket.GetFD();
 		SocketContainer::Add(std::move(socket));
-		SysEpoll::Schedule(fd, flags);
+        poller_.Schedule(fd, flags);
 	} catch (const SysEpoll::Error &) {
 		throw;
 	}
@@ -25,7 +25,7 @@ void IO::Scheduler::Add(IO::Socket socket, uint32_t flags)
 void IO::Scheduler::Remove(const IO::Socket &socket)
 {
 	schedule_.erase(socket.GetFD());
-	SysEpoll::Remove(socket.GetFD());
+    poller_.Remove(socket.GetFD());
 	SocketContainer::Remove(socket);
 }
 
@@ -34,7 +34,7 @@ void IO::Scheduler::Run()
 	if (SocketContainer::watched_files_.size() == 0)
 		return;
 	try {
-		const auto events = SysEpoll::Wait(SocketContainer::watched_files_.size());
+        const auto events = poller_.Wait(SocketContainer::watched_files_.size());
 		for (const auto &associated_event : events) {
 			const auto &associated_socket = GetSocket(associated_event);
 
@@ -70,7 +70,7 @@ void IO::Scheduler::Run()
 					/* Schedule the item in the epoll instance with just the Write flag,
 					     * since it already has the others
 					     */
-					Modify(associated_event.file_descriptor,
+                    poller_.Modify(associated_event.file_descriptor,
 					       static_cast<std::uint32_t>(SysEpoll::Description::Write));
 					AddSchedItem(associated_event, std::move(callback_response));
 				}
@@ -82,7 +82,7 @@ void IO::Scheduler::Run()
 	}
 }
 
-void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, IO::Scheduler::ScheduleItem item, bool append) noexcept
+void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append) noexcept
 {
 	auto item_it = schedule_.find(ev.file_descriptor);
 	if (item_it == schedule_.end()) {
@@ -96,7 +96,7 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, IO::Scheduler::Sched
 	}
 }
 
-void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, SchedItem &sched_item)
+void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, ScheduleItem &sched_item)
 {
 	if (sched_item.CloseWhenDone()) {
 		Scheduler::Remove(socket);
@@ -105,7 +105,7 @@ void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, SchedItem &s
 	}
 }
 
-void IO::Scheduler::ProcessWrite(const IO::Socket &socket, IO::Scheduler::ScheduleItem &sched_item)
+void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_item)
 {
 	auto stop = false;
 	do {

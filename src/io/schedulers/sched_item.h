@@ -6,24 +6,24 @@
 #include <io/buffers/unix_file.h>
 #include <io/buffers/mem_buffer.h>
 
-class SchedItem
+class ScheduleItem
 {
 	std::vector<std::unique_ptr<DataSource>> buffers;
 	bool close_when_done = true;
 
 	public:
-	SchedItem() = default;
-	virtual ~SchedItem() = default;
-	SchedItem(const SchedItem &) = delete;
-	SchedItem &operator=(const SchedItem &) = delete;
-	SchedItem(SchedItem &&) = default;
-	SchedItem &operator=(SchedItem &&) = delete;
-	SchedItem(bool close_when_done);
-	SchedItem(const std::vector<char> &data, bool close_when_done = true);
+    ScheduleItem() = default;
+    virtual ~ScheduleItem() = default;
+    ScheduleItem(const ScheduleItem &) = delete;
+    ScheduleItem &operator=(const ScheduleItem &) = delete;
+    ScheduleItem(ScheduleItem &&) = default;
+    ScheduleItem &operator=(ScheduleItem &&) = delete;
+    ScheduleItem(bool close_when_done);
+    ScheduleItem(const std::vector<char> &data, bool close_when_done = true);
 
 	void AddData(std::unique_ptr<MemoryBuffer> data);
 	void AddData(std::unique_ptr<UnixFile> file);
-	void AddData(SchedItem);
+    void AddData(ScheduleItem);
 	void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
 	inline DataSource *Front() noexcept { return buffers.front().get(); }
 	inline void RemoveFront() noexcept { buffers.erase(buffers.begin()); }

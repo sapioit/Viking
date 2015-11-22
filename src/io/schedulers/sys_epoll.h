@@ -34,7 +34,7 @@ class SysEpoll
 	std::vector<Event> Wait(std::uint32_t = 1000) const;
 
 	SysEpoll();
-	virtual ~SysEpoll() = default;
+    virtual ~SysEpoll();
 };
 
 #endif

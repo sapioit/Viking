@@ -15,9 +15,8 @@
 
 namespace IO
 {
-class Scheduler : public SocketContainer, public SysEpoll
+class Scheduler : public SocketContainer
 {
-	public:
 	private:
 	struct DataCorruption {
 		const Socket *sock;
@@ -27,14 +26,14 @@ class Scheduler : public SocketContainer, public SysEpoll
 	};
 
 	public:
-	typedef SchedItem CallbackResponse;
-	typedef SchedItem ScheduleItem;
-	typedef std::vector<char> DataType;
+    typedef ScheduleItem CallbackResponse;
+    typedef std::vector<char> DataType;
 	typedef std::function<CallbackResponse(const Socket &)> Callback;
 
 	private:
-	std::map<int, SchedItem> schedule_;
+    std::map<int, ScheduleItem> schedule_;
 	Callback callback;
+    SysEpoll poller_;
 
 	public:
 	Scheduler() = default;
@@ -51,17 +50,17 @@ class Scheduler : public SocketContainer, public SysEpoll
 	protected:
 	void AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append = true) noexcept;
 
-	void ScheduledItemFinished(const Socket &socket, SchedItem &sched_item);
+    void ScheduledItemFinished(const Socket &socket, ScheduleItem &sched_item);
 
-	void ProcessWrite(const Socket &socket, SchedItem &sched_item);
+    void ProcessWrite(const Socket &socket, ScheduleItem &sched_item);
 
-	inline bool CanWrite(const Event &event) const noexcept;
+    inline bool CanWrite(const SysEpoll::Event &event) const noexcept;
 
-	inline bool CanRead(const Event &event) const noexcept;
+    inline bool CanRead(const SysEpoll::Event &event) const noexcept;
 
 	inline bool IsScheduled(int) const noexcept;
 
-	inline bool CanTerminate(const Event &event) const noexcept;
+    inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 
 	void AddNewConnections(const Socket &acceptor) noexcept;
 
