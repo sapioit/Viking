@@ -7,6 +7,7 @@ class Util {
     public:
     static bool IsPassable(const Request &) noexcept;
     static bool ExtensionAllowed(const std::string &) noexcept;
+    static ContentType GetMimeType(const std::string&) noexcept;
 };
 }
 

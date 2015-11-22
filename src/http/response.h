@@ -15,18 +15,13 @@ using namespace Http;
 class Response {
     public:
     Response();
-    Response(const Request &, const UnixFile *);
-    Response(const Request &, int);
-    Response(const Request &, StatusCode);
-    Response(const Request &, const std::string &);
-    Response(const Request &, int, const std::string &);
-    Response(const Request &, Http::StatusCode, const std::string &);
-    Response(const Request &, const Resource &);
-    Response(const Request &, const Json::Value &);
-    Response(const Response &) = default;
-    Response(Response &&) = default;
-    Response &operator=(const Response &) = default;
-    ~Response() = default;
+    Response(const UnixFile *);
+    Response(StatusCode);
+    Response(const std::string &);
+    Response(Http::StatusCode, const std::string &);
+    Response(const Resource &);
+    Response(const Json::Value &);
+    virtual ~Response() = default;
 
     bool should_cache() const;
     std::uint32_t get_expiry() const;
@@ -54,7 +49,6 @@ class Response {
     void setText(const std::string &text);
 
     private:
-    Request _request;
     Resource _resource;
     int _code;
     std::string _text;

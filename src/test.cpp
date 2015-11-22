@@ -26,11 +26,11 @@ int main() {
                                          records.append(a1);
                                          records.append(a2);
                                          root.append(records);
-                                         return {req, root};
+                                         return {root};
                                      });
 
         auto route2 = std::make_pair(std::make_pair(Http::Method::Get, "^\\/adsaf\\/json\\/$"),
-                                     [](Http::Request req) -> Http::Response {
+                                     [](Http::Request) -> Http::Response {
                                          // /adsaf/json/
 
                                          Json::Value root(Json::arrayValue);
@@ -44,7 +44,7 @@ int main() {
                                          records.append(a1);
                                          records.append(a2);
                                          root.append(records);
-                                         return {req, root};
+                                         return {root};
                                      });
         Settings settings;
         settings.root_path = "/mnt/exthdd/server";

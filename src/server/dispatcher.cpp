@@ -9,6 +9,8 @@
 RouteMap Web::Dispatcher::routes;
 using namespace Web;
 
+static ResponseSerializer serialize;
+
 bool ShouldCopyInMemory(const std::string &resource_path) {
     try {
         auto page_size = static_cast<std::size_t>(getpagesize());
@@ -21,21 +23,24 @@ bool ShouldCopyInMemory(const std::string &resource_path) {
 
 Dispatcher::SchedulerResponse Dispatcher::PassRequest(const Http::Request &request, Handler handler) noexcept {
     auto response = handler(request);
-    return {ResponseSerializer::Serialize(response), response.should_close()};
+    return {serialize(response), response.should_close()};
 }
 
 Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &request) noexcept {
     try {
         auto full_path = Storage::GetSettings().root_path + request.url;
+        auto content_type = Http::Util::GetMimeType(request.url);
         if (ShouldCopyInMemory(full_path)) {
             auto resource = CacheManager::GetResource(request.url);
-            return {ResponseSerializer::Serialize(request, resource)};
+            Http::Response response{resource};
+            response.SetContentType(content_type);
+            return {serialize(response)};
         } else {
             auto unix_file =
                 std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
             SchedulerResponse response;
-            Http::Response http_response{request, unix_file.get()};
-            http_response.SetContentType(Http::Engine::GetMimeTypeByExtension(request.url));
+            Http::Response http_response{unix_file.get()};
+            http_response.SetContentType(content_type);
             auto header_str = http_response.header_str();
             response.AddData(std::vector<char>(header_str.begin(), header_str.end()));
             response.AddData(std::move(unix_file));
@@ -44,7 +49,7 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
             return response;
         }
     } catch (...) {
-        return {ResponseSerializer::Serialize({request, Http::StatusCode::NotFound})};
+        return {serialize({Http::StatusCode::NotFound})};
     }
 }
 
@@ -61,7 +66,7 @@ Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection &con
             return PassRequest(request, handler);
         else
             /* No handler */
-            return {ResponseSerializer::Serialize({request, Http::StatusCode::NotFound})};
+            return {serialize({Http::StatusCode::NotFound})};
     }
-    return {ResponseSerializer::Serialize({request, Http::StatusCode::NotFound})};
+    return {serialize({Http::StatusCode::NotFound})};
 }

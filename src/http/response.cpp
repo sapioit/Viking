@@ -207,7 +207,6 @@ std::string Response::str() const {
     return stream.str();
 }
 
-const Request &Response::getRequest() const { return _request; }
 std::string Response::getText() const { return _text; }
 
 void Response::setText(const std::string &text) { _text = text; }
@@ -221,13 +220,7 @@ bool Response::should_cache() const {
 uint32_t Response::get_expiry() const { return 60; }
 
 bool Response::should_close() const {
-    auto connection = _request.header.fields.find(Header::Fields::Connection);
-    if (connection == _request.header.fields.end())
-        return true;
-
-    if (connection->second == "Keep-Alive")
-        return false;
-
+    //TODO rewrite this somewhere else and delete this
     return true;
 }
 
@@ -250,21 +243,17 @@ void Response::setResource(const Resource &resource) { _resource = resource; }
 
 Response::Response() {}
 
-Response::Response(const Request &request, const UnixFile *file) : _request(request), _code(200), file_(file) {}
+Response::Response(const UnixFile *file) : _code(200), file_(file) {}
 
-Response::Response(const Request &request, int code) : _request(request), _code(code) {}
+Response::Response(StatusCode code) : _code(static_cast<int>(code)) {}
 
-Response::Response(const Request &request, StatusCode code) : _request(request), _code(static_cast<int>(code)) {}
+Response::Response(const std::string &text)
+    : _code(static_cast<int>(StatusCode::OK)), _text(text) {}
 
-Response::Response(const Request &request, const std::string &text)
-    : _request(request), _code(static_cast<int>(StatusCode::OK)), _text(text) {}
 
-Response::Response(const Request &request, int code, const std::string &text)
-    : _request(request), _code(code), _text(text) {}
+Response::Response(const Resource &resource)
+    : _resource(resource), _code(static_cast<int>(StatusCode::OK)) {}
 
-Response::Response(const Request &request, const Resource &resource)
-    : _request(request), _resource(resource), _code(static_cast<int>(StatusCode::OK)) {}
-
-Response::Response(const Request &request, const Json::Value &json)
-    : _request(request), _code(static_cast<int>(StatusCode::OK)), _text(json.toStyledString()),
+Response::Response(const Json::Value &json)
+    : _code(static_cast<int>(StatusCode::OK)), _text(json.toStyledString()),
       _content_type(Http::ContentType::ApplicationJson) {}

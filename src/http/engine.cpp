@@ -74,23 +74,6 @@ Http::Request Http::Engine::operator()() {
     return {};
 }
 
-Http::ContentType Http::Engine::GetMimeTypeByExtension(const std::string &URI) {
-    auto dot = URI.find_last_of('.');
-    std::string ext(URI.begin() + dot + 1, URI.end());
-
-    if (ext == "png")
-        return ContentType::ImagePng;
-    if (ext == "jpg")
-        return ContentType::ImageJpeg;
-    if (ext == "mp4")
-        return ContentType::MovieMp4;
-    if (ext == "html" || ext == "htm")
-        return ContentType::TextHtml;
-    if (ext == "json")
-        return ContentType::ApplicationJson;
-
-    return ContentType::TextPlain;
-}
 
 std::string Http::Engine::StripRoute(const std::string &URI) {
     auto firstSlash = URI.find_first_of('/');
