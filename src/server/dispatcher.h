@@ -15,7 +15,7 @@ class Dispatcher {
     using DataType = IO::Scheduler::DataType;
     using Connection = IO::Socket;
     static RouteMap routes;
-    typedef IO::Scheduler::CallbackResponse SchedulerResponse;
+    typedef IO::Scheduler::Resolution SchedulerResponse;
     typedef std::function<Http::Response(Http::Request)> Handler;
 
     static SchedulerResponse TakeResource(const Http::Request &) noexcept;

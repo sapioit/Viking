@@ -62,7 +62,7 @@ void IO::Scheduler::Run() {
                 debug("Socket with fd = " + std::to_string(associated_socket.GetFD()) +
                       " can be read from, and there is no write "
                       "scheduled for it");
-                CallbackResponse callback_response = callback(associated_socket);
+                Resolution callback_response = callback(associated_socket);
                 if (callback_response) {
                     /* Schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others

@@ -24,9 +24,9 @@ class Scheduler {
     };
 
     public:
-    typedef ScheduleItem CallbackResponse;
+    typedef ScheduleItem Resolution;
     typedef std::vector<char> DataType;
-    typedef std::function<CallbackResponse(const Socket *)> Callback;
+    typedef std::function<Resolution(const Socket *)> Callback;
 
     private:
     std::map<int, ScheduleItem> schedule_;
