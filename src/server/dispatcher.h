@@ -23,7 +23,7 @@ class Dispatcher {
 
     public:
     template <typename T> static void AddRoute(T route) { routes.insert(route); }
-    static SchedulerResponse HandleConnection(const Connection &Connection);
+    static SchedulerResponse HandleConnection(const Connection *Connection);
 };
 }
 

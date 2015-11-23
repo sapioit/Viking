@@ -15,7 +15,7 @@ void Http::Engine::AssignMethod(http_method method_numeric) {
         request_.method = method->second;
 }
 
-Http::Engine::Engine(const IO::Socket &socket) : socket_(socket) {
+Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
     settings_.on_message_begin = [](http_parser *) -> int { return 0; };
     settings_.on_message_complete = [](http_parser *) -> int {
         return 0;
@@ -62,7 +62,7 @@ Http::Engine::Engine(const IO::Socket &socket) : socket_(socket) {
 
 Http::Request Http::Engine::operator()() {
     try {
-        auto data = socket_.ReadSome<std::string>();
+        auto data = socket_->ReadSome<std::string>();
         http_parser_execute(&parser_, &settings_, &data.front(), data.size());
         return request_;
         /* TODO in the future, take the state into account, because we

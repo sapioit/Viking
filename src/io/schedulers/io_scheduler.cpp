@@ -19,11 +19,11 @@ void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     }
 }
 
-void IO::Scheduler::Remove(const IO::Socket &socket) {
-    schedule_.erase(socket.GetFD());
-    poller_.Remove(&socket);
+void IO::Scheduler::Remove(const IO::Socket *socket) {
+    schedule_.erase(socket->GetFD());
+    poller_.Remove(socket);
     sockets_.erase(std::remove_if(sockets_.begin(), sockets_.end(), [&socket](auto &sockptr) {
-                       return sockptr->GetFD() == socket.GetFD();
+                       return sockptr->GetFD() == socket->GetFD();
                    }), sockets_.end());
 }
 
@@ -33,9 +33,9 @@ void IO::Scheduler::Run() {
     try {
         const auto events = poller_.Wait(sockets_.size());
         for (const auto &associated_event : events) {
-            const auto &associated_socket = *associated_event.socket; // GetSocket(associated_event);
+            const auto associated_socket = associated_event.socket; // GetSocket(associated_event);
 
-            if (associated_socket.IsAcceptor()) {
+            if (associated_socket->IsAcceptor()) {
                 debug("The master socket is active");
                 AddNewConnections(associated_socket);
                 continue;
@@ -48,9 +48,9 @@ void IO::Scheduler::Run() {
             }
             if (CanWrite(associated_event)) {
                 try {
-                    ProcessWrite(associated_socket, schedule_.at(associated_socket.GetFD()));
+                    ProcessWrite(associated_socket, schedule_.at(associated_socket->GetFD()));
                 } catch (const DataCorruption &e) {
-                    Remove(*e.sock);
+                    Remove(e.sock);
                     debug("Data corruption occured!");
                 } catch (const std::out_of_range &) {
                     debug("Could not find scheduled item!");
@@ -67,7 +67,7 @@ void IO::Scheduler::Run() {
                     /* Schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others
                      */
-                    poller_.Modify(&associated_socket, static_cast<std::uint32_t>(SysEpoll::Description::Write));
+                    poller_.Modify(associated_socket, static_cast<std::uint32_t>(SysEpoll::Description::Write));
                     AddSchedItem(associated_event, std::move(callback_response));
                 }
                 continue;
@@ -91,15 +91,18 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
     }
 }
 
-void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, ScheduleItem &sched_item) {
+void IO::Scheduler::ScheduledItemFinished(const IO::Socket *socket, ScheduleItem &sched_item) {
     if (!sched_item.KeepFileOpen()) {
         Remove(socket);
     } else {
-        schedule_.erase(socket.GetFD());
+        schedule_.erase(socket->GetFD());
+        /* Also, if we don't close the socket, we might want to switch back to level-triggered
+         * mode, or else the client might keep sending requests and we won't get anything.
+         */
     }
 }
 
-void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_item) {
+void IO::Scheduler::ProcessWrite(const IO::Socket *socket, ScheduleItem &sched_item) {
     auto stop = false;
     do {
         DataSource *sched_item_front = sched_item.Front();
@@ -109,7 +112,7 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_i
             if (mem_buffer != nullptr) {
                 auto &data = mem_buffer->data;
                 try {
-                    const auto written = socket.WriteSome(data);
+                    const auto written = socket->WriteSome(data);
                     if (written == 0) {
                         stop = true;
                     }
@@ -119,7 +122,7 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_i
                         auto old_data_size = data.size();
                         DataType(data.begin() + written, data.end()).swap(data);
                         if (old_data_size - written != data.size())
-                            throw DataCorruption{std::addressof(socket)};
+                            throw DataCorruption{socket};
                     }
                 } catch (const Socket::WriteError &e) {
                     debug("Write error on socket with "
@@ -136,7 +139,7 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_i
             UnixFile *unix_file = dynamic_cast<UnixFile *>(sched_item_front);
             if (unix_file != nullptr) {
                 try {
-                    stop = !(unix_file->SendTo(socket.GetFD()));
+                    stop = !(unix_file->SendTo(socket->GetFD()));
                     if (!(*unix_file))
                         sched_item.RemoveFront();
                 } catch (const UnixFile::BrokenPipe &) {
@@ -177,9 +180,9 @@ void IO::Scheduler::ProcessWrite(const IO::Socket &socket, ScheduleItem &sched_i
     } while (!stop);
 }
 
-void IO::Scheduler::AddNewConnections(const IO::Socket &acceptor) noexcept {
+void IO::Scheduler::AddNewConnections(const IO::Socket *acceptor) noexcept {
     do {
-        auto new_connection = acceptor.Accept();
+        auto new_connection = acceptor->Accept();
         if (*new_connection) {
             new_connection->MakeNonBlocking();
             Scheduler::Add(std::move(new_connection),

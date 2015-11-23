@@ -54,7 +54,7 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
     }
 }
 
-Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection &connection) {
+Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection *connection) {
 
     auto parser = Http::Engine(connection);
     auto request = parser();

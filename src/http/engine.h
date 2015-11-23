@@ -13,7 +13,7 @@
 
 namespace Http {
 class Engine {
-    const IO::Socket &socket_;
+    const IO::Socket *socket_;
     http_parser_settings settings_;
     http_parser parser_;
     Request request_;
@@ -25,7 +25,7 @@ class Engine {
     void AssignMethod(http_method method_numeric);
 
     public:
-    Engine(const IO::Socket &socket);
+    Engine(const IO::Socket *socket);
 
     Request operator()();
 
