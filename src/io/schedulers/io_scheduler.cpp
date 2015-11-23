@@ -92,7 +92,7 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
 }
 
 void IO::Scheduler::ScheduledItemFinished(const IO::Socket &socket, ScheduleItem &sched_item) {
-    if (sched_item.CloseWhenDone()) {
+    if (!sched_item.KeepFileOpen()) {
         Remove(socket);
     } else {
         schedule_.erase(socket.GetFD());

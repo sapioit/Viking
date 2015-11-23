@@ -1,8 +1,8 @@
 #include <io/schedulers/sched_item.h>
 
-ScheduleItem::ScheduleItem(bool close_when_done) : close_when_done(close_when_done) {}
+ScheduleItem::ScheduleItem(bool close_when_done) : keep_file_open(close_when_done) {}
 
-ScheduleItem::ScheduleItem(const std::vector<char> &data, bool close_when_done) : close_when_done(close_when_done) {
+ScheduleItem::ScheduleItem(const std::vector<char> &data, bool close_when_done) : keep_file_open(close_when_done) {
     buffers.push_back(std::make_unique<MemoryBuffer>(data));
 }
 

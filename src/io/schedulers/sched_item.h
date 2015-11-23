@@ -8,7 +8,8 @@
 
 class ScheduleItem {
     std::vector<std::unique_ptr<DataSource>> buffers;
-    bool close_when_done = true;
+    bool keep_file_open = false;
+
 
     public:
     ScheduleItem() = default;
@@ -17,8 +18,8 @@ class ScheduleItem {
     ScheduleItem &operator=(const ScheduleItem &) = delete;
     ScheduleItem(ScheduleItem &&) = default;
     ScheduleItem &operator=(ScheduleItem &&) = delete;
-    ScheduleItem(bool close_when_done);
-    ScheduleItem(const std::vector<char> &data, bool close_when_done = true);
+    ScheduleItem(bool keep_file_open);
+    ScheduleItem(const std::vector<char> &data, bool keep_file_open = true);
 
     void AddData(std::unique_ptr<MemoryBuffer> data);
     void AddData(std::unique_ptr<UnixFile> file);
@@ -26,7 +27,8 @@ class ScheduleItem {
     void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
     inline DataSource *Front() noexcept { return buffers.front().get(); }
     inline void RemoveFront() noexcept { buffers.erase(buffers.begin()); }
-    inline bool CloseWhenDone() const noexcept { return close_when_done; }
+    inline bool KeepFileOpen() const noexcept { return keep_file_open; }
+    inline void SetKeepFileOpen(bool close) { keep_file_open = close; }
     std::size_t BuffersLeft() const noexcept;
     operator bool() const noexcept;
 };

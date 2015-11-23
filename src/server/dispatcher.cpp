@@ -35,7 +35,7 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
             Http::Response response{resource};
             response.SetContentType(content_type);
             response.SetCachePolicy({Storage::GetSettings().default_max_age});
-            return {serializer(response)};
+            return {serializer(response), response.GetKeepAlive()};
         } else {
             auto unix_file =
                 std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
@@ -46,6 +46,7 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
             response.AddData(serializer.MakeHeader(http_response));
             response.AddData(std::move(unix_file));
             response.AddData(serializer.MakeEnding(http_response));
+            response.SetKeepFileOpen(http_response.GetKeepAlive());
             return response;
         }
     } catch (...) {

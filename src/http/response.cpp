@@ -57,7 +57,7 @@ void Response::SetVersion(Version version) { version_ = version; }
 
 void Response::Init() {
     version_ = {1, 1};
-    keep_alive_ = true;
+    keep_alive_ = false;
     body_type_ = BodyType::Text;
 }
 
