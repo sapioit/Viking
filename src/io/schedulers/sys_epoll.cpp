@@ -89,9 +89,9 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
     return CreateEvents(active_files);
 }
 
-epoll_event *SysEpoll::FindEvent(const IO::Channel *context) {
-    auto event_it = std::find_if(events_.begin(), events_.end(), [context](const epoll_event &ev) {
-        return (context->socket->GetFD() == reinterpret_cast<IO::Channel *>(ev.data.ptr)->socket->GetFD());
+epoll_event *SysEpoll::FindEvent(const IO::Channel *channel) {
+    auto event_it = std::find_if(events_.begin(), events_.end(), [channel](const epoll_event &ev) {
+        return (channel == ev.data.ptr);
     });
     return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }

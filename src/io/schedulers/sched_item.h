@@ -1,13 +1,13 @@
 #ifndef SCHEDITEM_H
 #define SCHEDITEM_H
 
-#include <vector>
+#include <deque>
 #include <memory>
 #include <io/buffers/unix_file.h>
 #include <io/buffers/mem_buffer.h>
 
 class ScheduleItem {
-    std::vector<std::unique_ptr<DataSource>> buffers;
+    std::deque<std::unique_ptr<DataSource>> buffers;
     bool keep_file_open = false;
 
     public:
@@ -18,11 +18,17 @@ class ScheduleItem {
     ScheduleItem(ScheduleItem &&) = default;
     ScheduleItem &operator=(ScheduleItem &&) = delete;
     ScheduleItem(bool keep_file_open);
-    ScheduleItem(const std::vector<char> &data, bool keep_file_open = true);
+    ScheduleItem(const std::vector<char> &data);
+    ScheduleItem(const std::vector<char> &data, bool);
 
-    void AddData(std::unique_ptr<MemoryBuffer> data);
-    void AddData(std::unique_ptr<UnixFile> file);
-    void AddData(ScheduleItem);
+    void PutBack(std::unique_ptr<MemoryBuffer> data);
+    void PutBack(std::unique_ptr<UnixFile> file);
+    void PutBack(ScheduleItem);
+
+    void PutFront(std::unique_ptr<MemoryBuffer> data);
+    void PutFront(std::unique_ptr<UnixFile> file);
+    void PutFront(ScheduleItem);
+
     void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
     inline DataSource *Front() noexcept { return buffers.front().get(); }
     inline void RemoveFront() noexcept { buffers.erase(buffers.begin()); }

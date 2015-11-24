@@ -23,7 +23,7 @@ void IO::Scheduler::Remove(const Channel *channel) {
     schedule_.erase(channel->socket->GetFD());
     poller_.Remove(channel);
     contexts_.erase(std::remove_if(contexts_.begin(), contexts_.end(), [&channel](auto &ctx) {
-                        return *channel->socket == *ctx->socket;
+                        return channel == &*ctx;
                     }), contexts_.end());
 }
 
@@ -50,14 +50,15 @@ void IO::Scheduler::Run() {
                 continue;
             }
 
-            if (CanRead(event) && (!HasDataScheduled(event.context->socket->GetFD()))) {
+            if (CanRead(event)){
+                    //&& (!HasDataScheduled(event.context->socket->GetFD()))) {
                 Resolution callback_response = callback(event.context->socket.get());
                 if (callback_response) {
                     /* We schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others
                      */
                     poller_.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Description::Write));
-                    AddSchedItem(event, std::move(callback_response));
+                    AddSchedItem(event, std::move(callback_response), true);
                 }
                 continue;
             }
@@ -72,7 +73,8 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
     if (item_it == schedule_.end())
         schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
     else if (append)
-        item_it->second.AddData(std::move(item));
+        item_it->second.PutBack(std::move(item));
+    else item_it->second.PutFront(std::move(item));
 }
 
 void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleItem &sched_item) {
@@ -88,7 +90,6 @@ void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleIt
 }
 
 void IO::Scheduler::ProcessWrite(const IO::Channel *channel, ScheduleItem &sched_item) {
-    auto stop = false;
     do {
         DataSource *sched_item_front = sched_item.Front();
 
@@ -99,8 +100,7 @@ void IO::Scheduler::ProcessWrite(const IO::Channel *channel, ScheduleItem &sched
                 try {
                     const auto written = channel->socket->WriteSome(data);
                     if (written == 0)
-                        stop = true;
-
+                        break;
                     if (written == data.size())
                         sched_item.RemoveFront();
                     else
@@ -117,12 +117,15 @@ void IO::Scheduler::ProcessWrite(const IO::Channel *channel, ScheduleItem &sched
             UnixFile *unix_file = dynamic_cast<UnixFile *>(sched_item_front);
             if (unix_file != nullptr) {
                 try {
-                    stop = !(unix_file->SendTo(channel->socket->GetFD()));
-                    if (!(*unix_file))
+                    auto size_left = unix_file->SizeLeft();
+                    auto written = unix_file->SendTo(channel->socket->GetFD());
+                    if(written == 0)
+                        break;
+                    if(written == size_left)
                         sched_item.RemoveFront();
                 } catch (const UnixFile::BrokenPipe &) {
                     /* Received EPIPE (in this case, with sendfile, the connection was
-                     * closed by the peer.
+                     * closed by the peer).
                      */
                     Scheduler::Remove(channel);
                     break;
@@ -147,9 +150,9 @@ void IO::Scheduler::ProcessWrite(const IO::Channel *channel, ScheduleItem &sched
         }
         if (!sched_item) {
             ScheduledItemFinished(channel, sched_item);
-            stop = true;
+            break;
         }
-    } while (!stop);
+    } while (true);
 }
 
 void IO::Scheduler::AddNewConnections(const Channel *channel) noexcept {

@@ -49,7 +49,7 @@ struct UnixFile : public DataSource {
     UnixFile &operator=(const UnixFile &) = delete;
     virtual operator bool() const noexcept;
     virtual bool Intact() const noexcept;
-    bool SendTo(int);
+    std::uint64_t SendTo(int);
     std::uint64_t SizeLeft() const noexcept;
 };
 

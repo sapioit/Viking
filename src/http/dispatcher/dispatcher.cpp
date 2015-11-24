@@ -43,9 +43,9 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
             Http::Response http_response{unix_file.get()};
             http_response.SetContentType(content_type);
             http_response.SetCachePolicy({Storage::GetSettings().default_max_age});
-            response.AddData(serializer.MakeHeader(http_response));
-            response.AddData(std::move(unix_file));
-            response.AddData(serializer.MakeEnding(http_response));
+            response.PutBack(serializer.MakeHeader(http_response));
+            response.PutBack(std::move(unix_file));
+            response.PutBack(serializer.MakeEnding(http_response));
             response.SetKeepFileOpen(http_response.GetKeepAlive());
             return response;
         }
