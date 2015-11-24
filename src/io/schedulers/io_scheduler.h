@@ -3,7 +3,7 @@
 
 #include <io/schedulers/sys_epoll.h>
 #include <io/schedulers/sched_item.h>
-#include <io/schedulers/context.h>
+#include <io/schedulers/channel.h>
 #include <io/socket/socket.h>
 
 #include <misc/debug.h>

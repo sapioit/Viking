@@ -5,7 +5,6 @@
 #include <cache/file_descriptor.h>
 #include <io/filesystem.h>
 #include <misc/storage.h>
-#include <misc/any.h>
 
 RouteMap Web::Dispatcher::routes;
 using namespace Web;

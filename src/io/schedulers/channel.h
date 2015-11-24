@@ -10,14 +10,14 @@ struct Channel {
     std::unique_ptr<Socket> socket;
     Flags flags;
     Channel() = default;
-    Channel(std::unique_ptr<Socket> socket) : socket(std::move(socket)) {}
-    Channel(std::unique_ptr<Socket> socket, Flags flags) : socket(std::move(socket)), flags(flags) {}
+    Channel(std::unique_ptr<Socket> socket);
+    Channel(std::unique_ptr<Socket> socket, Flags flags);
     Channel(const Channel &) = delete;
     Channel &operator=(const Channel &) = delete;
     Channel(Channel &&other) = default;
     Channel &operator=(Channel &other) = default;
     ~Channel() = default;
-    bool operator=(const Channel &other) const { return (*socket == *other.socket) && (flags == other.flags); }
+    bool operator=(const Channel &other) const;
 };
 }
 

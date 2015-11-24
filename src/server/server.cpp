@@ -1,19 +1,10 @@
 #include <server/server.h>
-#include <server/dispatcher.h>
 #include <io/schedulers/io_scheduler.h>
-#include <http/parser.h>
 #include <misc/storage.h>
 #include <misc/debug.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <utility>
-#include <algorithm>
-#include <iostream>
-#include <thread>
-#include <future>
-#include <regex>
-#include <map>
 #include <functional>
 #include <signal.h>
 

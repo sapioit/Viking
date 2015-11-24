@@ -50,6 +50,7 @@ struct UnixFile : public DataSource {
     virtual operator bool() const noexcept;
     virtual bool Intact() const noexcept;
     bool SendTo(int);
+    std::uint64_t SizeLeft() const noexcept;
 };
 
 #endif // UNIX_FILE_H

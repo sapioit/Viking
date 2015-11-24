@@ -32,8 +32,8 @@ void IO::Scheduler::Run() {
         return;
     try {
         const auto events = poller_.Wait(contexts_.size());
-        for (const auto &event : events) {
 
+        for (const auto &event : events) {
             if (event.context->socket->IsAcceptor()) {
                 AddNewConnections(event.context);
                 continue;
@@ -44,11 +44,9 @@ void IO::Scheduler::Run() {
                 continue;
             }
             if (CanWrite(event)) {
-                try {
-                    ProcessWrite(event.context, schedule_.at(event.context->socket->GetFD()));
-                } catch (const std::out_of_range &) {
-                    debug("Could not find scheduled item!");
-                }
+                auto sch_it = schedule_.find(event.context->socket->GetFD());
+                if (sch_it != schedule_.end())
+                    ProcessWrite(event.context, sch_it->second);
                 continue;
             }
 
@@ -77,11 +75,12 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
         item_it->second.AddData(std::move(item));
 }
 
-void IO::Scheduler::ScheduledItemFinished(const IO::Channel *context, ScheduleItem &sched_item) {
+void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleItem &sched_item) {
     if (!sched_item.KeepFileOpen()) {
-        Remove(context);
+        Remove(channel);
     } else {
-        schedule_.erase(context->socket->GetFD());
+        schedule_.erase(channel->socket->GetFD());
+        poller_.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Description::Write));
         /* Also, if we don't close the socket, we might want to switch back to level-triggered
          * mode, or else the client might keep sending requests and we won't get anything.
          */

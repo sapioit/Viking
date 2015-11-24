@@ -23,7 +23,8 @@ SOURCES += \
     cache/file_descriptor.cpp \
     http/util.cpp \
     misc/string_util.cpp \
-    http/response_serializer.cpp
+    http/response_serializer.cpp \
+    io/schedulers/channel.cpp
 
 HEADERS += \
     cache/file_descriptor.h \
@@ -31,7 +32,8 @@ HEADERS += \
     http/util.h \
     misc/string_util.h \
     http/version.h \
-    http/cache_policy.h
+    http/cache_policy.h \
+    io/schedulers/channel.h
 
 #HTTP
 SOURCES += \
@@ -58,7 +60,7 @@ HEADERS += \
     http/response_serializer.h \
     io/buffers/datasource.h \
     io/buffers/unix_file.h \
-    io/schedulers/sched_item.h \
+    io/schedulers/sched_item.h
     io/buffers/utils.h
 
 #IO

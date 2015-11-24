@@ -4,7 +4,7 @@
 #include <sys/epoll.h>
 #include <vector>
 #include <stdexcept>
-#include <io/schedulers/context.h>
+#include <io/schedulers/channel.h>
 
 class SysEpoll {
     int efd_;

@@ -44,8 +44,7 @@ UnixFile::UnixFile(const std::string &path, AquireFunction a, ReleaseFunction r)
 }
 
 bool UnixFile::SendTo(int other_file) {
-    auto size_left = static_cast<std::size_t>(size - offset);
-    const int ret = ::sendfile64(other_file, fd, std::addressof(offset), size_left);
+    const int ret = ::sendfile64(other_file, fd, std::addressof(offset), SizeLeft());
     if (ret == -1) {
         switch (errno) {
         case EAGAIN:
@@ -70,3 +69,5 @@ bool UnixFile::SendTo(int other_file) {
     }
     return true;
 }
+
+std::uint64_t UnixFile::SizeLeft() const noexcept { return static_cast<std::size_t>(size - offset); }
