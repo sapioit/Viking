@@ -3,8 +3,8 @@
 
 IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::Callback callback) : callback(callback) {
     try {
-        Scheduler::Add(std::move(sock), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
-                                            static_cast<std::uint32_t>(SysEpoll::Description::Termination));
+        Add(std::move(sock), static_cast<std::uint32_t>(SysEpoll::Description::Read) |
+                                 static_cast<std::uint32_t>(SysEpoll::Description::Termination));
     } catch (const SysEpoll::Error &) {
         throw;
     }
@@ -12,63 +12,54 @@ IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::Callback c
 
 void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
-        poller_.Schedule(socket.get(), flags);
-        sockets_.emplace_back(std::move(socket), flags);
+        contexts_.emplace_back(std::make_unique<IO::Channel>(std::move(socket)));
+        poller_.Schedule(&(*contexts_.back()), flags);
     } catch (const SysEpoll::Error &) {
         throw;
     }
 }
 
-void IO::Scheduler::Remove(const IO::Socket *socket) {
-    schedule_.erase(socket->GetFD());
-    poller_.Remove(socket);
-    sockets_.erase(std::remove_if(sockets_.begin(), sockets_.end(), [&socket](auto &sockptr) {
-                       return sockptr->GetFD() == socket->GetFD();
-                   }), sockets_.end());
+void IO::Scheduler::Remove(const Channel *channel) {
+    schedule_.erase(channel->socket->GetFD());
+    poller_.Remove(channel);
+    contexts_.erase(std::remove_if(contexts_.begin(), contexts_.end(), [&channel](auto &ctx) {
+                        return *channel->socket == *ctx->socket;
+                    }), contexts_.end());
 }
 
 void IO::Scheduler::Run() {
-    if (sockets_.size() == 0)
+    if (contexts_.size() == 0)
         return;
     try {
-        const auto events = poller_.Wait(sockets_.size());
-        for (const auto &associated_event : events) {
-            const auto associated_context = associated_event.context; // GetSocket(associated_event);
+        const auto events = poller_.Wait(contexts_.size());
+        for (const auto &event : events) {
 
-            if (associated_context->socket->IsAcceptor()) {
-                debug("The master socket is active");
-                AddNewConnections(associated_context);
+            if (event.context->socket->IsAcceptor()) {
+                AddNewConnections(event.context);
                 continue;
             }
 
-            if (CanTerminate(associated_event)) {
-                debug("Event with fd = " + std::to_string(associated_event.file_descriptor) + " must be closed");
-                Remove(associated_context);
+            if (CanTerminate(event)) {
+                Remove(event.context);
                 continue;
             }
-            if (CanWrite(associated_event)) {
+            if (CanWrite(event)) {
                 try {
-                    ProcessWrite(associated_context, schedule_.at(associated_context->GetFD()));
-                } catch (const DataCorruption &e) {
-                    Remove(e.sock);
-                    debug("Data corruption occured!");
+                    ProcessWrite(event.context, schedule_.at(event.context->socket->GetFD()));
                 } catch (const std::out_of_range &) {
                     debug("Could not find scheduled item!");
                 }
                 continue;
             }
 
-            if (CanRead(associated_event) && (!IsScheduled(associated_event.socket->GetFD()))) {
-                debug("Socket with fd = " + std::to_string(associated_context.GetFD()) +
-                      " can be read from, and there is no write "
-                      "scheduled for it");
-                Resolution callback_response = callback(associated_context);
+            if (CanRead(event) && (!HasDataScheduled(event.context->socket->GetFD()))) {
+                Resolution callback_response = callback(event.context->socket.get());
                 if (callback_response) {
-                    /* Schedule the item in the epoll instance with just the Write flag,
+                    /* We schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others
                      */
-                    poller_.Modify(associated_context, static_cast<std::uint32_t>(SysEpoll::Description::Write));
-                    AddSchedItem(associated_event, std::move(callback_response));
+                    poller_.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Description::Write));
+                    AddSchedItem(event, std::move(callback_response));
                 }
                 continue;
             }
@@ -79,30 +70,25 @@ void IO::Scheduler::Run() {
 }
 
 void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append) noexcept {
-    auto item_it = schedule_.find(ev.socket->GetFD());
-    if (item_it == schedule_.end()) {
-        schedule_.emplace(std::make_pair(ev.socket->GetFD(), std::move(item)));
-    } else {
-        if (!append) {
-            /* Unlikely */
-        } else {
-            item_it->second.AddData(std::move(item));
-        }
-    }
+    auto item_it = schedule_.find(ev.context->socket->GetFD());
+    if (item_it == schedule_.end())
+        schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
+    else if (append)
+        item_it->second.AddData(std::move(item));
 }
 
-void IO::Scheduler::ScheduledItemFinished(const IO::Socket *socket, ScheduleItem &sched_item) {
+void IO::Scheduler::ScheduledItemFinished(const IO::Channel *context, ScheduleItem &sched_item) {
     if (!sched_item.KeepFileOpen()) {
-        Remove(socket);
+        Remove(context);
     } else {
-        schedule_.erase(socket->GetFD());
+        schedule_.erase(context->socket->GetFD());
         /* Also, if we don't close the socket, we might want to switch back to level-triggered
          * mode, or else the client might keep sending requests and we won't get anything.
          */
     }
 }
 
-void IO::Scheduler::ProcessWrite(const IO::Socket *socket, ScheduleItem &sched_item) {
+void IO::Scheduler::ProcessWrite(const IO::Channel *channel, ScheduleItem &sched_item) {
     auto stop = false;
     do {
         DataSource *sched_item_front = sched_item.Front();
@@ -112,26 +98,19 @@ void IO::Scheduler::ProcessWrite(const IO::Socket *socket, ScheduleItem &sched_i
             if (mem_buffer != nullptr) {
                 auto &data = mem_buffer->data;
                 try {
-                    const auto written = socket->WriteSome(data);
-                    if (written == 0) {
+                    const auto written = channel->socket->WriteSome(data);
+                    if (written == 0)
                         stop = true;
-                    }
-                    if (written == data.size()) {
+
+                    if (written == data.size())
                         sched_item.RemoveFront();
-                    } else {
-                        auto old_data_size = data.size();
+                    else
                         DataType(data.begin() + written, data.end()).swap(data);
-                        if (old_data_size - written != data.size())
-                            throw DataCorruption{socket};
-                    }
-                } catch (const Socket::WriteError &e) {
-                    debug("Write error on socket with "
-                          "sockfd = " +
-                          std::to_string(e.fd) + " errno = " + std::to_string(errno));
-                    Remove(socket);
+                } catch (const Socket::WriteError &) {
+                    Remove(channel);
                     break;
                 } catch (const Socket::ConnectionClosedByPeer &) {
-                    Remove(socket);
+                    Remove(channel);
                     break;
                 }
             }
@@ -139,21 +118,17 @@ void IO::Scheduler::ProcessWrite(const IO::Socket *socket, ScheduleItem &sched_i
             UnixFile *unix_file = dynamic_cast<UnixFile *>(sched_item_front);
             if (unix_file != nullptr) {
                 try {
-                    stop = !(unix_file->SendTo(socket->GetFD()));
+                    stop = !(unix_file->SendTo(channel->socket->GetFD()));
                     if (!(*unix_file))
                         sched_item.RemoveFront();
                 } catch (const UnixFile::BrokenPipe &) {
-                    /* Received EPIPE. Remove the scheduled
-                     * item */
-                    Scheduler::Remove(socket);
+                    /* Received EPIPE (in this case, with sendfile, the connection was
+                     * closed by the peer.
+                     */
+                    Scheduler::Remove(channel);
                     break;
                 } catch (const UnixFile::BadFile &) {
-                    /* The file has been somehow removed or it cannot be read from anymore.
-                     * We need to remove the whole scheduled item, since everything has been corrupted.
-                     * TODO in the future, maybe pass this decision to a callback
-                     * function.
-                     */
-                    Scheduler::Remove(socket);
+                    Scheduler::Remove(channel);
                     break;
                 } catch (const UnixFile::DIY &e) {
                     /* This is how Linux tells you that you'd better do it yourself in userspace.
@@ -164,25 +139,23 @@ void IO::Scheduler::ProcessWrite(const IO::Socket *socket, ScheduleItem &sched_i
                         auto buffer = From(*e.ptr);
                         sched_item.ReplaceFront(std::move(buffer));
                     } catch (const UnixFile::BadFile &) {
-                        /* For some reason, we could not generate a MemoryBuffer out of
-                         * this, so we'll remove the whole scheduled item.
-                         */
-                        Scheduler::Remove(socket);
+                        /* For some reason, we could not generate a MemoryBuffer out of this */
+                        Scheduler::Remove(channel);
                         break;
                     }
                 }
             }
         }
         if (!sched_item) {
-            ScheduledItemFinished(socket, sched_item);
+            ScheduledItemFinished(channel, sched_item);
             stop = true;
         }
     } while (!stop);
 }
 
-void IO::Scheduler::AddNewConnections(const Context *context) noexcept {
+void IO::Scheduler::AddNewConnections(const Channel *channel) noexcept {
     do {
-        auto new_connection = context->socket->Accept();
+        auto new_connection = channel->socket->Accept();
         if (*new_connection) {
             new_connection->MakeNonBlocking();
             Scheduler::Add(std::move(new_connection),
@@ -201,12 +174,12 @@ bool IO::Scheduler::CanRead(const SysEpoll::Event &event) const noexcept {
     return (event.description & static_cast<std::uint32_t>(SysEpoll::Description::Read));
 }
 
-bool IO::Scheduler::IsScheduled(int file_descriptor) const noexcept {
-    auto item = schedule_.find(file_descriptor);
-    return (item != schedule_.end());
-}
-
 bool IO::Scheduler::CanTerminate(const SysEpoll::Event &event) const noexcept {
     return (event.description & static_cast<std::uint32_t>(SysEpoll::Description::Termination) ||
             event.description & static_cast<std::uint32_t>(SysEpoll::Description::Error));
+}
+
+bool IO::Scheduler::HasDataScheduled(int file_descriptor) const noexcept {
+    auto item = schedule_.find(file_descriptor);
+    return (item != schedule_.end());
 }

@@ -19,10 +19,8 @@ std::unique_ptr<MemoryBuffer> From(const UnixFile &file) {
     if (mem_zone == MAP_FAILED) {
         throw UnixFile::BadFile{std::addressof(file)};
     }
-    auto result = std::make_unique<MemoryBuffer>();
-    (*result).data.reserve(length);
     const char *const my_thing = mem_zone + file.offset - pa_offset;
-    (*result).data.insert((*result).data.end(), my_thing, my_thing + length);
+    auto result = std::make_unique<MemoryBuffer>(std::vector<char>{my_thing, my_thing + length});
     auto munmap_res = ::munmap(mem_zone, at);
     if (munmap_res != 0) {
         // TODO handle error

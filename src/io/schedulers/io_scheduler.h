@@ -1,7 +1,6 @@
 #ifndef SOCKET_WATCHER_H
 #define SOCKET_WATCHER_H
 
-#include <io/schedulers/file_container.h>
 #include <io/schedulers/sys_epoll.h>
 #include <io/schedulers/sched_item.h>
 #include <io/schedulers/context.h>
@@ -17,9 +16,6 @@
 namespace IO {
 class Scheduler {
     private:
-    struct DataCorruption {
-        const Socket *sock;
-    };
     struct SocketNotFound {
         const SysEpoll::Event *event;
     };
@@ -31,7 +27,7 @@ class Scheduler {
 
     private:
     std::map<int, ScheduleItem> schedule_;
-    std::vector<std::unique_ptr<Context>> contexts_;
+    std::vector<std::unique_ptr<Channel>> contexts_;
     SysEpoll poller_;
     Callback callback;
 
@@ -43,26 +39,26 @@ class Scheduler {
 
     void Add(std::unique_ptr<Socket> socket, std::uint32_t flags);
 
-    void Remove(const Socket *socket);
-
     virtual void Run();
 
     protected:
+    void Remove(const Channel *);
+
     void AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append = true) noexcept;
 
-    void ScheduledItemFinished(const Socket *socket, ScheduleItem &sched_item);
+    void ScheduledItemFinished(const Channel *, ScheduleItem &sched_item);
 
-    void ProcessWrite(const Socket *socket, ScheduleItem &sched_item);
+    void ProcessWrite(const Channel *socket, ScheduleItem &sched_item);
 
     inline bool CanWrite(const SysEpoll::Event &event) const noexcept;
 
     inline bool CanRead(const SysEpoll::Event &event) const noexcept;
 
-    inline bool IsScheduled(int) const noexcept;
+    inline bool HasDataScheduled(int) const noexcept;
 
     inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 
-    void AddNewConnections(const Context *) noexcept;
+    void AddNewConnections(const Channel *) noexcept;
 };
 }
 

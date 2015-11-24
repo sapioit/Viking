@@ -10,7 +10,6 @@ class ScheduleItem {
     std::vector<std::unique_ptr<DataSource>> buffers;
     bool keep_file_open = false;
 
-
     public:
     ScheduleItem() = default;
     virtual ~ScheduleItem() = default;

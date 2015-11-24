@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <errno.h>
 #include <unistd.h>
-
+#include <io/socket/socket.h>
 SysEpoll::SysEpoll() {
     efd_ = epoll_create1(0);
     if (efd_ == -1)
@@ -19,41 +19,41 @@ SysEpoll::~SysEpoll() {
     ::close(efd_);
 }
 
-void SysEpoll::Schedule(IO::Socket *socket, std::uint32_t flags) {
+void SysEpoll::Schedule(IO::Channel *context, std::uint32_t flags) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     // ev.data.fd = file_descriptor;
-    ev.data.ptr = socket;
+    ev.data.ptr = context;
     ev.events = flags | EPOLLET;
-    if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, socket->GetFD(), &ev)) {
+    if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->GetFD(), &ev)) {
         if (errno != EEXIST) {
         } else {
-            Modify(socket, flags);
+            Modify(context, flags);
         }
     } else
         events_.push_back(ev);
 }
 
-void SysEpoll::Modify(const IO::Socket *socket, std::uint32_t flags) {
-    auto *event = FindEvent(socket);
+void SysEpoll::Modify(const IO::Channel *context, std::uint32_t flags) {
+    auto *event = FindEvent(context);
     if (event) {
         event->events |= flags;
-        if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, socket->GetFD(), event)) {
+        if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->GetFD(), event)) {
             debug("Could not modify the event with fd = " + std::to_string(file_descriptor) + " errno = " +
                   std::to_string(errno));
         }
     }
 }
 
-void SysEpoll::Remove(const IO::Socket *socket) {
+void SysEpoll::Remove(const IO::Channel *context) {
     // FIXME
     auto event_it =
-        std::find_if(events_.begin(), events_.end(), [socket](epoll_event &ev) { return (socket == ev.data.ptr); });
+        std::find_if(events_.begin(), events_.end(), [context](epoll_event &ev) { return (context == ev.data.ptr); });
 
     if (event_it != events_.end()) {
         auto *event = std::addressof(*event_it);
-        if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, socket->GetFD(), event))
-            throw Error("Could not remove the file with fd = " + std::to_string(socket->GetFD()) +
+        if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->GetFD(), event))
+            throw Error("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
                         " from the OS queue");
 
         events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {
@@ -67,8 +67,7 @@ void SysEpoll::Remove(const IO::Socket *socket) {
 static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
     std::vector<SysEpoll::Event> epoll_events;
     for (const auto &event : events) {
-        epoll_events.emplace_back(static_cast<IO::Socket *>(event.data.ptr), event.events);
-        debug("Event with fd = " + std::to_string(event.data.ptr->GetFD()) + " was reported to be active");
+        epoll_events.emplace_back(static_cast<IO::Channel *>(event.data.ptr), event.events);
     }
     return epoll_events;
 }
@@ -90,11 +89,13 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
     return CreateEvents(active_files);
 }
 
-epoll_event *SysEpoll::FindEvent(const IO::Socket *socket) {
-    auto event_it = std::find_if(events_.begin(), events_.end(),
-                                 [socket](const epoll_event &ev) { return (socket == ev.data.ptr); });
+epoll_event *SysEpoll::FindEvent(const IO::Channel *context) {
+    auto event_it = std::find_if(events_.begin(), events_.end(), [context](const epoll_event &ev) {
+        return (context->socket->GetFD() == reinterpret_cast<IO::Channel *>(ev.data.ptr)->socket->GetFD());
+    });
     return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }
-SysEpoll::Event::Event(IO::Socket *sock, int description) noexcept : socket(sock), description(description) {}
+SysEpoll::Event::Event(IO::Channel *context, std::uint32_t description) noexcept : context(context),
+                                                                                   description(description) {}
 
 SysEpoll::Error::Error(const std::string &err) : std::runtime_error(err) {}

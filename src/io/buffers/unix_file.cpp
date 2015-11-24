@@ -28,6 +28,8 @@ UnixFile &UnixFile::operator=(UnixFile &&other) {
     return *this;
 }
 
+bool UnixFile::Intact() const noexcept { return offset == 0; }
+
 UnixFile::operator bool() const noexcept { return !(offset == size); }
 
 UnixFile::UnixFile(const std::string &path, AquireFunction a, ReleaseFunction r) : aquire_func_(a), release_func_(r) {

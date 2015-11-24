@@ -4,23 +4,23 @@
 #include <sys/epoll.h>
 #include <vector>
 #include <stdexcept>
-#include <io/socket/socket.h>
+#include <io/schedulers/context.h>
 
 class SysEpoll {
     int efd_;
     std::vector<epoll_event> events_;
 
-    epoll_event *FindEvent(const IO::Socket *socket);
+    epoll_event *FindEvent(const IO::Channel *socket);
 
     public:
     struct Event {
         public:
-        IO::Socket *socket;
+        IO::Channel *context;
         std::uint32_t description;
         Event() noexcept = default;
-        Event(IO::Socket *sock, int description) noexcept;
-        bool operator<(const Event &other) const { return socket->GetFD() < other.socket->GetFD(); }
-        bool operator==(const Event &other) const { return socket->GetFD() == other.socket->GetFD(); }
+        Event(IO::Channel *, std::uint32_t description) noexcept;
+        bool operator<(const Event &other) const { return context < other.context; }
+        bool operator==(const Event &other) const { return context == other.context; }
     };
 
     struct Error : public std::runtime_error {
@@ -28,9 +28,9 @@ class SysEpoll {
     };
 
     enum class Description { Read = EPOLLIN, Write = EPOLLOUT, Error = EPOLLERR, Termination = EPOLLRDHUP };
-    void Schedule(IO::Socket *, std::uint32_t);
-    void Modify(const IO::Socket *, std::uint32_t);
-    void Remove(const IO::Socket *);
+    void Schedule(IO::Channel *, std::uint32_t);
+    void Modify(const IO::Channel *, std::uint32_t);
+    void Remove(const IO::Channel *);
     std::vector<Event> Wait(std::uint32_t = 1000) const;
 
     SysEpoll();

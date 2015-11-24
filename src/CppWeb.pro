@@ -64,7 +64,6 @@ HEADERS += \
 #IO
 SOURCES += \
     io/filesystem.cpp \
-    io/schedulers/file_container.cpp \
     io/schedulers/io_scheduler.cpp \
     io/socket/socket.cpp \
     io/schedulers/sys_epoll.cpp
@@ -73,7 +72,6 @@ HEADERS += \
     io/filesystem.h \
     io/socket/socket.h \
     io/schedulers/sys_epoll.h \
-    io/schedulers/file_container.h \
     io/schedulers/io_scheduler.h \
     io/buffers/mem_buffer.h
 
@@ -114,11 +112,11 @@ HEADERS += \
 
 #SERVER
 SOURCES += \
-    server/dispatcher.cpp \
+    http/dispatcher/dispatcher.cpp \
     server/server.cpp
 
 HEADERS += \
-    server/dispatcher.h \
+    http/dispatcher/dispatcher.h \
     server/server.h \
 #SERVER-END
 

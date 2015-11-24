@@ -11,9 +11,8 @@ void ScheduleItem::AddData(std::unique_ptr<MemoryBuffer> data) { buffers.push_ba
 void ScheduleItem::AddData(std::unique_ptr<UnixFile> file) { buffers.push_back(std::move(file)); }
 
 void ScheduleItem::AddData(ScheduleItem other_item) {
-    for (auto &buffer : other_item.buffers) {
+    for (auto &buffer : other_item.buffers)
         buffers.push_back(std::move(buffer));
-    }
 }
 
 void ScheduleItem::ReplaceFront(std::unique_ptr<MemoryBuffer> with) noexcept { buffers.front() = std::move(with); }
