@@ -50,8 +50,8 @@ void IO::Scheduler::Run() {
                 continue;
             }
 
-            if (CanRead(event)){
-                    //&& (!HasDataScheduled(event.context->socket->GetFD()))) {
+            if (CanRead(event)) {
+                //&& (!HasDataScheduled(event.context->socket->GetFD()))) {
                 Resolution callback_response = callback(event.context->socket.get());
                 if (callback_response) {
                     /* We schedule the item in the epoll instance with just the Write flag,
@@ -74,7 +74,8 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
         schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
     else if (append)
         item_it->second.PutBack(std::move(item));
-    else item_it->second.PutFront(std::move(item));
+    else
+        item_it->second.PutFront(std::move(item));
 }
 
 void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleItem &sched_item) {
@@ -95,56 +96,52 @@ void IO::Scheduler::ProcessWrite(const IO::Channel *channel, ScheduleItem &sched
 
         if (typeid(*sched_item_front) == typeid(MemoryBuffer)) {
             MemoryBuffer *mem_buffer = dynamic_cast<MemoryBuffer *>(sched_item_front);
-            if (mem_buffer != nullptr) {
-                auto &data = mem_buffer->data;
-                try {
-                    const auto written = channel->socket->WriteSome(data);
-                    if (written == 0)
-                        break;
-                    if (written == data.size())
-                        sched_item.RemoveFront();
-                    else
-                        DataType(data.begin() + written, data.end()).swap(data);
-                } catch (const Socket::WriteError &) {
-                    Remove(channel);
+            auto &data = mem_buffer->data;
+            try {
+                const auto written = channel->socket->WriteSome(data);
+                if (written == 0)
                     break;
-                } catch (const Socket::ConnectionClosedByPeer &) {
-                    Remove(channel);
-                    break;
-                }
+                if (written == data.size())
+                    sched_item.RemoveFront();
+                else
+                    DataType(data.begin() + written, data.end()).swap(data);
+            } catch (const Socket::WriteError &) {
+                Remove(channel);
+                break;
+            } catch (const Socket::ConnectionClosedByPeer &) {
+                Remove(channel);
+                break;
             }
         } else if (typeid(*sched_item_front) == typeid(UnixFile)) {
             UnixFile *unix_file = dynamic_cast<UnixFile *>(sched_item_front);
-            if (unix_file != nullptr) {
+            try {
+                auto size_left = unix_file->SizeLeft();
+                auto written = unix_file->SendTo(channel->socket->GetFD());
+                if (written == 0)
+                    break;
+                if (written == size_left)
+                    sched_item.RemoveFront();
+            } catch (const UnixFile::BrokenPipe &) {
+                /* Received EPIPE (in this case, with sendfile, the connection was
+                 * closed by the peer).
+                 */
+                Scheduler::Remove(channel);
+                break;
+            } catch (const UnixFile::BadFile &) {
+                Scheduler::Remove(channel);
+                break;
+            } catch (const UnixFile::DIY &e) {
+                /* This is how Linux tells you that you'd better do it yourself in userspace.
+                 * We need to replace this item with a MemoryBuffer version of this
+                 * data, at the right offset.
+                 */
                 try {
-                    auto size_left = unix_file->SizeLeft();
-                    auto written = unix_file->SendTo(channel->socket->GetFD());
-                    if(written == 0)
-                        break;
-                    if(written == size_left)
-                        sched_item.RemoveFront();
-                } catch (const UnixFile::BrokenPipe &) {
-                    /* Received EPIPE (in this case, with sendfile, the connection was
-                     * closed by the peer).
-                     */
-                    Scheduler::Remove(channel);
-                    break;
+                    auto buffer = From(*e.ptr);
+                    sched_item.ReplaceFront(std::move(buffer));
                 } catch (const UnixFile::BadFile &) {
+                    /* For some reason, we could not generate a MemoryBuffer out of this */
                     Scheduler::Remove(channel);
                     break;
-                } catch (const UnixFile::DIY &e) {
-                    /* This is how Linux tells you that you'd better do it yourself in userspace.
-                     * We need to replace this item with a MemoryBuffer version of this
-                     * data, at the right offset.
-                     */
-                    try {
-                        auto buffer = From(*e.ptr);
-                        sched_item.ReplaceFront(std::move(buffer));
-                    } catch (const UnixFile::BadFile &) {
-                        /* For some reason, we could not generate a MemoryBuffer out of this */
-                        Scheduler::Remove(channel);
-                        break;
-                    }
                 }
             }
         }
