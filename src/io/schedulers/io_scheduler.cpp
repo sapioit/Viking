@@ -13,7 +13,7 @@ IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::Callback c
 void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
         poller_.Schedule(socket.get(), flags);
-        sockets_.emplace_back(std::move(socket));
+        sockets_.emplace_back(std::move(socket), flags);
     } catch (const SysEpoll::Error &) {
         throw;
     }
@@ -33,22 +33,22 @@ void IO::Scheduler::Run() {
     try {
         const auto events = poller_.Wait(sockets_.size());
         for (const auto &associated_event : events) {
-            const auto associated_socket = associated_event.socket; // GetSocket(associated_event);
+            const auto associated_context = associated_event.context; // GetSocket(associated_event);
 
-            if (associated_socket->IsAcceptor()) {
+            if (associated_context->socket->IsAcceptor()) {
                 debug("The master socket is active");
-                AddNewConnections(associated_socket);
+                AddNewConnections(associated_context);
                 continue;
             }
 
             if (CanTerminate(associated_event)) {
                 debug("Event with fd = " + std::to_string(associated_event.file_descriptor) + " must be closed");
-                Remove(associated_socket);
+                Remove(associated_context);
                 continue;
             }
             if (CanWrite(associated_event)) {
                 try {
-                    ProcessWrite(associated_socket, schedule_.at(associated_socket->GetFD()));
+                    ProcessWrite(associated_context, schedule_.at(associated_context->GetFD()));
                 } catch (const DataCorruption &e) {
                     Remove(e.sock);
                     debug("Data corruption occured!");
@@ -59,15 +59,15 @@ void IO::Scheduler::Run() {
             }
 
             if (CanRead(associated_event) && (!IsScheduled(associated_event.socket->GetFD()))) {
-                debug("Socket with fd = " + std::to_string(associated_socket.GetFD()) +
+                debug("Socket with fd = " + std::to_string(associated_context.GetFD()) +
                       " can be read from, and there is no write "
                       "scheduled for it");
-                Resolution callback_response = callback(associated_socket);
+                Resolution callback_response = callback(associated_context);
                 if (callback_response) {
                     /* Schedule the item in the epoll instance with just the Write flag,
                      * since it already has the others
                      */
-                    poller_.Modify(associated_socket, static_cast<std::uint32_t>(SysEpoll::Description::Write));
+                    poller_.Modify(associated_context, static_cast<std::uint32_t>(SysEpoll::Description::Write));
                     AddSchedItem(associated_event, std::move(callback_response));
                 }
                 continue;
@@ -180,9 +180,9 @@ void IO::Scheduler::ProcessWrite(const IO::Socket *socket, ScheduleItem &sched_i
     } while (!stop);
 }
 
-void IO::Scheduler::AddNewConnections(const IO::Socket *acceptor) noexcept {
+void IO::Scheduler::AddNewConnections(const Context *context) noexcept {
     do {
-        auto new_connection = acceptor->Accept();
+        auto new_connection = context->socket->Accept();
         if (*new_connection) {
             new_connection->MakeNonBlocking();
             Scheduler::Add(std::move(new_connection),

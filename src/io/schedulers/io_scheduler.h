@@ -4,6 +4,7 @@
 #include <io/schedulers/file_container.h>
 #include <io/schedulers/sys_epoll.h>
 #include <io/schedulers/sched_item.h>
+#include <io/schedulers/context.h>
 #include <io/socket/socket.h>
 
 #include <misc/debug.h>
@@ -30,7 +31,7 @@ class Scheduler {
 
     private:
     std::map<int, ScheduleItem> schedule_;
-    std::vector<std::unique_ptr<Socket>> sockets_;
+    std::vector<std::unique_ptr<Context>> contexts_;
     SysEpoll poller_;
     Callback callback;
 
@@ -61,7 +62,7 @@ class Scheduler {
 
     inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 
-    void AddNewConnections(const Socket *acceptor) noexcept;
+    void AddNewConnections(const Context *) noexcept;
 };
 }
 
