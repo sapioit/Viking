@@ -3,7 +3,6 @@
 
 #include <sys/epoll.h>
 #include <vector>
-#include <stdexcept>
 #include <io/schedulers/channel.h>
 
 class SysEpoll {

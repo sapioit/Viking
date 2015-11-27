@@ -9,6 +9,7 @@
 #include <http/header.h>
 #include <http/version.h>
 #include <string>
+#include <vector>
 
 namespace Http {
 

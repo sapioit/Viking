@@ -3,15 +3,11 @@
 
 #include <io/schedulers/sys_epoll.h>
 #include <io/schedulers/sched_item.h>
-#include <io/schedulers/channel.h>
 #include <io/socket/socket.h>
-
-#include <misc/debug.h>
-#include <stdexcept>
-#include <algorithm>
-#include <utility>
 #include <map>
 #include <functional>
+
+class Channel;
 
 namespace IO {
 class Scheduler {

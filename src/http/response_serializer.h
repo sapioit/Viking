@@ -3,7 +3,6 @@
 
 #include <http/response.h>
 #include <http/request.h>
-#include <http/engine.h>
 
 class ResponseSerializer {
     public:

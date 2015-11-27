@@ -1,7 +1,7 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
-#include "settings.h"
+#include <misc/settings.h>
 
 class Storage {
     static Settings settings_;

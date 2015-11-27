@@ -6,10 +6,8 @@
 #define SOCKET_HEADER_H
 
 #include <string>
-#include <unordered_map>
-#include <map>
-#include <vector>
-#include "components.h"
+#include <http/components.h>
+
 namespace Http {
 struct Header {
     Header() = default;
@@ -77,7 +75,7 @@ struct Header {
         constexpr static auto Content_Disposition = "Content-Disposition";
         constexpr static auto Content_Encoding = "Content-Encoding";
         constexpr static auto Content_Language = "Content-Language";
-        constexpr static auto Content_Location = "Content-Location";
+        constexpr static auto Contentw_Location = "Content-Location";
         constexpr static auto Content_Range = "Content-Range";
         constexpr static auto ETag = "ETag";
         constexpr static auto Expires = "Expires";

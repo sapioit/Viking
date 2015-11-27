@@ -1,7 +1,6 @@
 #ifndef CACHEMANAGER_H
 #define CACHEMANAGER_H
 
-#include <vector>
 #include <string>
 #include <map>
 #include <mutex>

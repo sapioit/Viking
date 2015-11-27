@@ -1,9 +1,9 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#include <iostream>
 //#define LOGGING
 #ifdef LOGGING
+#include <iostream>
 #define debug(x) std::cout << x << std::endl;
 #else
 #define debug(x)

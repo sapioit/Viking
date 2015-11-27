@@ -1,5 +1,8 @@
 #include <io/schedulers/io_scheduler.h>
 #include <io/buffers/utils.h>
+#include <stdexcept>
+#include <algorithm>
+#include <utility>
 
 IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::Callback callback) : callback(callback) {
     try {

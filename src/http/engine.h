@@ -8,7 +8,6 @@
 #include <io/socket/socket.h>
 #include <http/request.h>
 #include <http/parser.h>
-#include <iostream>
 #include <string>
 
 namespace Http {

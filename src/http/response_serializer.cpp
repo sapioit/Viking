@@ -3,6 +3,7 @@
 #include <misc/string_util.h>
 #include <misc/dfa.h>
 #include <misc/date.h>
+#include <http/engine.h>
 #include <string.h>
 
 enum class States { StatusLine, GeneralHeader, ResponseHeader, Body, CRLFHeader, CRLFBody, End };

@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <time.h>
-#include <string>
 
 struct Date {
     time_t _time;
