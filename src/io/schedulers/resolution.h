@@ -4,10 +4,6 @@
 class Resolution {
     public:
     Resolution();
-
-    signals:
-
-    public slots:
 };
 
 #endif // RESOLUTION_H
