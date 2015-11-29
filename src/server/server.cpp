@@ -34,7 +34,7 @@ void Server::Run() {
     signal(SIGPIPE, SIG_IGN);
     debug("Pid = " + std::to_string(getpid()));
     try {
-        IO::Scheduler watcher(std::move(std::unique_ptr<IO::Socket>(make_socket(_port, _maxPending))),
+        IO::Scheduler watcher(std::unique_ptr<IO::Socket>(make_socket(_port, _maxPending)),
                               Dispatcher::HandleConnection, Dispatcher::HandleBarrier);
         while (true) {
             watcher.Run();

@@ -61,7 +61,8 @@ void IO::Scheduler::Run() noexcept {
                  * since it already has the others
                  */
                 poller_.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
-                std::type_index type = typeid(*callback_response.Front());
+                auto &cb_front = *callback_response.Front();
+                std::type_index type = typeid(cb_front);
                 if (type == typeid(MemoryBuffer) || type == typeid(MemoryBuffer)) {
                     AddSchedItem(event, std::move(callback_response), true);
                 } else {

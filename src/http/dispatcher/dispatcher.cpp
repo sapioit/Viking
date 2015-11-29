@@ -29,7 +29,7 @@ Dispatcher::SchedulerResponse Dispatcher::PassRequest(const Http::Request &reque
     if (likely(resolution.GetType() == Http::Resolution::Type::Sync))
         return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
     else
-        return {std::move(std::make_unique<AsyncBuffer<Http::Response>>(std::move(resolution.GetFuture())))};
+        return {std::make_unique<AsyncBuffer<Http::Response>>(std::move(resolution.GetFuture()))};
 }
 
 Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &request) noexcept {
