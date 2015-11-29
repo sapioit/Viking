@@ -1,6 +1,7 @@
 #include <http/dispatcher/dispatcher.h>
 #include <http/engine.h>
 #include <http/util.h>
+#include <http/resolution.h>
 #include <http/response_serializer.h>
 #include <cache/file_descriptor.h>
 #include <io/filesystem.h>
@@ -23,8 +24,16 @@ bool ShouldCopyInMemory(const std::string &resource_path) {
 }
 
 Dispatcher::SchedulerResponse Dispatcher::PassRequest(const Http::Request &request, Handler handler) noexcept {
-    auto response = handler(request);
-    return {serializer(response), response.GetKeepAlive()};
+    auto resolution = handler(request);
+    if(resolution.type == Http::Resolution::Type::Sync) {
+        auto& response = resolution.response;
+        return {serializer(response), response.GetKeepAlive()};
+    } else {
+        auto& future = resolution.future;
+        Dispatcher::SchedulerResponse re(std::move(std::make_unique<AsyncBuffer<Http::Response>>(std::move(future))));
+        return re;
+
+    }
 }
 
 Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &request) noexcept {

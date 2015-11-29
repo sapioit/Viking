@@ -7,7 +7,7 @@
 namespace IO {
 struct Channel {
     std::unique_ptr<Socket> socket;
-    std::uint8_t flags;
+    std::uint8_t flags = 0;
     static constexpr std::uint8_t Barrier = 1 << 1;
     Channel() = default;
     Channel(std::unique_ptr<Socket> socket);

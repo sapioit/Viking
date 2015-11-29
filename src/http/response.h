@@ -9,7 +9,7 @@
 #include <io/buffers/unix_file.h>
 
 #include <string>
-#include <iostream>
+#include <future>
 
 namespace Http {
 using namespace Http;
@@ -17,7 +17,7 @@ class Response {
     void Init();
 
     public:
-    enum class BodyType { Resource, File, Text };
+    enum class Type { Resource, File, Text };
     Response();
     Response(const UnixFile *);
     Response(StatusCode);
@@ -25,6 +25,7 @@ class Response {
     Response(Http::StatusCode, const std::string &);
     Response(const Resource &);
     Response(const Json::Value &);
+    Response(std::future<Response>);
     virtual ~Response() = default;
 
     CachePolicy GetCachePolicy() const;
@@ -43,7 +44,7 @@ class Response {
     void SetContentType(const Http::ContentType &value);
 
     std::size_t ContentLength() const;
-    BodyType GetBodyType() const;
+    Type GetType() const;
 
     const Resource &GetResource() const;
     void SetResource(const Resource &text);
@@ -54,7 +55,7 @@ class Response {
     private:
     Version version_;
     StatusCode code_;
-    BodyType body_type_;
+    Type type_;
     Resource resource_;
     std::string text_;
     const UnixFile *file_ = nullptr;

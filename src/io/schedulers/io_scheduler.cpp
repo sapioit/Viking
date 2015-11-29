@@ -61,22 +61,31 @@ void IO::Scheduler::Run() noexcept {
                  * since it already has the others
                  */
                 poller_.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
-                AddSchedItem(event, std::move(callback_response), true);
+                std::type_index type = typeid(*callback_response.Front ());
+                if(type == typeid(MemoryBuffer) || type == typeid(MemoryBuffer)) {
+                    AddSchedItem(event, std::move(callback_response), true);
+                } else {
+                    AddSchedItem (event, std::move(callback_response), false);
+                    event.context->flags |= IO::Channel::Barrier;
+                }
             }
             continue;
         }
     }
 }
 
-void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append) noexcept {
+void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool back) noexcept {
     /* TODO this must be re-written from scratch to either use a vector, or a multimap */
     auto item_it = schedule_.find(ev.context->socket->GetFD());
     if (item_it == schedule_.end())
         schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
-    else if (append)
+    else if (back) {
         item_it->second.PutBack(std::move(item));
-    else
-        item_it->second.PutFront(std::move(item));
+    }
+    else {
+        //TODO put after the first non-intact buffer
+        item_it->second.PutAfterFirstIntact(std::move(item));
+    }
 }
 
 void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleItem &sched_item) {

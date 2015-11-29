@@ -3,12 +3,21 @@
 
 #include <deque>
 #include <memory>
+#include <http/response.h>
 #include <io/buffers/unix_file.h>
 #include <io/buffers/mem_buffer.h>
+#include <io/buffers/asyncbuffer.h>
 
 class ScheduleItem {
     std::deque<std::unique_ptr<DataSource>> buffers;
     bool keep_file_open = false;
+
+    auto GetFirstIntact() {
+        for(auto it = buffers.begin(); it != buffers.end(); ++it)
+            if(it->get()->Intact())
+                return it;
+        return buffers.end();
+    }
 
     public:
     ScheduleItem() = default;
@@ -20,14 +29,15 @@ class ScheduleItem {
     ScheduleItem(bool keep_file_open);
     ScheduleItem(const std::vector<char> &data);
     ScheduleItem(const std::vector<char> &data, bool);
+    ScheduleItem(std::unique_ptr<AsyncBuffer<Http::Response>>);
 
     void PutBack(std::unique_ptr<MemoryBuffer> data);
     void PutBack(std::unique_ptr<UnixFile> file);
     void PutBack(ScheduleItem);
 
-    void PutFront(std::unique_ptr<MemoryBuffer> data);
-    void PutFront(std::unique_ptr<UnixFile> file);
-    void PutFront(ScheduleItem);
+    void PutAfterFirstIntact(std::unique_ptr<MemoryBuffer> data);
+    void PutAfterFirstIntact(std::unique_ptr<UnixFile> file);
+    void PutAfterFirstIntact(ScheduleItem);
 
     void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
     inline DataSource *Front() noexcept { return buffers.front().get(); }

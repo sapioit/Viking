@@ -6,6 +6,7 @@
 #include <http/parser.h>
 #include <http/cachemanager.h>
 #include <http/routeutility.h>
+#include <http/resolution.h>
 #include <map>
 #include <memory>
 #include <functional>
@@ -16,7 +17,7 @@ class Dispatcher {
     using Connection = IO::Socket;
     static RouteMap routes;
     typedef IO::Scheduler::Resolution SchedulerResponse;
-    typedef std::function<Http::Response(Http::Request)> Handler;
+    typedef std::function<Http::Resolution(Http::Request)> Handler;
 
     static SchedulerResponse TakeResource(const Http::Request &) noexcept;
     static SchedulerResponse PassRequest(const Http::Request &, Handler) noexcept;

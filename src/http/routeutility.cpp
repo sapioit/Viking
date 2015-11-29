@@ -4,12 +4,12 @@
 #include <algorithm>
 #include <regex>
 
-std::function<Http::Response(Http::Request)> RouteUtility::GetHandler(const Http::Request &request,
+std::function<Http::Resolution(Http::Request)> RouteUtility::GetHandler(const Http::Request &request,
                                                                       const RouteMap &routes) {
     auto strippedRoute = Http::Engine::StripRoute(request.url);
     auto result = std::find_if(
         routes.begin(), routes.end(),
-        [&](const std::pair<std::pair<Http::Method, std::string>, std::function<Http::Response(Http::Request)>> &route)
+        [&](const std::pair<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> &route)
             -> bool {
                 auto &method = route.first.first;
                 if (request.method != method)

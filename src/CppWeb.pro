@@ -24,7 +24,8 @@ SOURCES += \
     http/util.cpp \
     misc/string_util.cpp \
     http/response_serializer.cpp \
-    io/schedulers/channel.cpp
+    io/schedulers/channel.cpp \
+    http/resolution.cpp
 
 HEADERS += \
     cache/file_descriptor.h \
@@ -35,7 +36,8 @@ HEADERS += \
     http/cache_policy.h \
     io/schedulers/channel.h \
     io/buffers/asyncbuffer.h \
-    misc/common.h
+    misc/common.h \
+    http/resolution.h
 
 #HTTP
 SOURCES += \
