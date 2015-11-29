@@ -10,8 +10,8 @@ IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::ReadCallba
                          BarrierCallback barrier_callback)
     : read_callback(callback), barrier_callback(barrier_callback) {
     try {
-        Add(std::move(sock), static_cast<std::uint32_t>(SysEpoll::Read) |
-                                 static_cast<std::uint32_t>(SysEpoll::Termination));
+        Add(std::move(sock),
+            static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
     } catch (const SysEpoll::PollError &) {
         throw;
     }
@@ -61,11 +61,11 @@ void IO::Scheduler::Run() noexcept {
                  * since it already has the others
                  */
                 poller_.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
-                std::type_index type = typeid(*callback_response.Front ());
-                if(type == typeid(MemoryBuffer) || type == typeid(MemoryBuffer)) {
+                std::type_index type = typeid(*callback_response.Front());
+                if (type == typeid(MemoryBuffer) || type == typeid(MemoryBuffer)) {
                     AddSchedItem(event, std::move(callback_response), true);
                 } else {
-                    AddSchedItem (event, std::move(callback_response), false);
+                    AddSchedItem(event, std::move(callback_response), false);
                     event.context->flags |= IO::Channel::Barrier;
                 }
             }
@@ -81,9 +81,8 @@ void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, b
         schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
     else if (back) {
         item_it->second.PutBack(std::move(item));
-    }
-    else {
-        //TODO put after the first non-intact buffer
+    } else {
+        // TODO put after the first non-intact buffer
         item_it->second.PutAfterFirstIntact(std::move(item));
     }
 }
@@ -104,20 +103,19 @@ void IO::Scheduler::ProcessWrite(IO::Channel *channel) noexcept {
         auto sch_it = schedule_.find(channel->socket->GetFD());
         if (sch_it == schedule_.end())
             return;
-        auto& sched_item = sch_it->second;
+        auto &sched_item = sch_it->second;
         auto sched_item_front = sched_item.Front();
         std::type_index sched_item_type = typeid(*sched_item_front);
-        if (unlikely(channel->flags & IO::Channel::Barrier &&
-                sched_item_type != typeid(MemoryBuffer) &&
-                sched_item_type != typeid(UnixFile))) {
+        if (unlikely(channel->flags & IO::Channel::Barrier && sched_item_type != typeid(MemoryBuffer) &&
+                     sched_item_type != typeid(UnixFile))) {
             std::unique_ptr<MemoryBuffer> new_buffer;
             if (!barrier_callback(sched_item, new_buffer)) {
-                poller_.Modify (channel, ~static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                poller_.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
                 break;
             } else {
-                sched_item.ReplaceFront (std::move(new_buffer));
+                sched_item.ReplaceFront(std::move(new_buffer));
                 sched_item_front = sched_item.Front();
-                poller_.Modify (channel, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
+                poller_.Modify(channel, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
                 channel->flags |= ~IO::Channel::Barrier;
             }
         }
@@ -186,9 +184,8 @@ void IO::Scheduler::AddNewConnections(const Channel *channel) noexcept {
             auto new_connection = channel->socket->Accept();
             if (*new_connection) {
                 new_connection->MakeNonBlocking();
-                Scheduler::Add(std::move(new_connection),
-                               static_cast<std::uint32_t>(SysEpoll::Read) |
-                                   static_cast<std::uint32_t>(SysEpoll::Termination));
+                Scheduler::Add(std::move(new_connection), static_cast<std::uint32_t>(SysEpoll::Read) |
+                                                              static_cast<std::uint32_t>(SysEpoll::Termination));
             } else
                 break;
         } catch (SysEpoll::PollError &) {

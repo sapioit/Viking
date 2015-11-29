@@ -54,7 +54,7 @@ void SysEpoll::Remove(const IO::Channel *context) {
         auto *event = std::addressof(*event_it);
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->GetFD(), event))
             throw PollError("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
-                        " from the OS queue");
+                            " from the OS queue");
 
         events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {
                           return ev.data.fd == event_it->data.fd;

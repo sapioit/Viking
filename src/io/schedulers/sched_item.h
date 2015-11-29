@@ -13,8 +13,8 @@ class ScheduleItem {
     bool keep_file_open = false;
 
     auto GetFirstIntact() {
-        for(auto it = buffers.begin(); it != buffers.end(); ++it)
-            if(it->get()->Intact())
+        for (auto it = buffers.begin(); it != buffers.end(); ++it)
+            if (it->get()->Intact())
                 return it;
         return buffers.end();
     }

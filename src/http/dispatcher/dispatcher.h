@@ -29,7 +29,7 @@ class Dispatcher {
     public:
     template <typename T> static void AddRoute(T route) noexcept { routes.insert(route); }
     static SchedulerResponse HandleConnection(const Connection *Connection) noexcept;
-    static bool HandleBarrier(ScheduleItem&, std::unique_ptr<MemoryBuffer> &) noexcept;
+    static bool HandleBarrier(ScheduleItem &, std::unique_ptr<MemoryBuffer> &) noexcept;
 };
 }
 

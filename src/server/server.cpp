@@ -25,7 +25,7 @@ IO::Socket *make_socket(int port, int max_pending, bool = false) {
         sock->MakeNonBlocking();
         sock->Listen(max_pending);
         return sock;
-    } catch (const IO::Socket::PortInUse&) {
+    } catch (const IO::Socket::PortInUse &) {
         return nullptr;
     }
 }
@@ -41,7 +41,7 @@ void Server::Run() {
         }
 
     } catch (...) {
-        std::rethrow_exception (std::current_exception ());
+        std::rethrow_exception(std::current_exception());
     }
 }
 int Server::GetMaxPending() const { return _maxPending; }

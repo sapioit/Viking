@@ -3,16 +3,15 @@
 
 #include <http/response.h>
 #include <future>
-namespace Http{
-    class Resolution
-    {
+namespace Http {
+class Resolution {
     public:
-        enum Type { Sync, Async };
-        Http::Response response;
-        std::future<Http::Response> future;
-        Type type;
-        Resolution(const Http::Response&);
-        Resolution(std::future<Http::Response>);
+    enum Type { Sync, Async };
+    Http::Response response;
+    std::future<Http::Response> future;
+    Type type;
+    Resolution(const Http::Response &);
+    Resolution(std::future<Http::Response>);
 };
 }
 
