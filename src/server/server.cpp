@@ -11,9 +11,6 @@
 
 using namespace Web;
 
-std::mutex Log::mLock;
-std::string Log::_fn;
-
 Server::Server(int port) : _port(port) {}
 
 void Server::SetSettings(const Settings &s) {
@@ -22,32 +19,29 @@ void Server::SetSettings(const Settings &s) {
 }
 
 IO::Socket *make_socket(int port, int max_pending, bool = false) {
-    auto sock = new IO::Socket(port);
-    sock->Bind();
-    sock->MakeNonBlocking();
-    sock->Listen(max_pending);
-    return sock;
+    try {
+        auto sock = new IO::Socket(port);
+        sock->Bind();
+        sock->MakeNonBlocking();
+        sock->Listen(max_pending);
+        return sock;
+    } catch (const IO::Socket::PortInUse&) {
+        return nullptr;
+    }
 }
 
 void Server::Run() {
     signal(SIGPIPE, SIG_IGN);
     debug("Pid = " + std::to_string(getpid()));
-    if (_port == -1)
-        throw std::runtime_error("Port number not set!");
     try {
-        auto master_socket = std::unique_ptr<IO::Socket>(make_socket(_port, _maxPending));
-
-        IO::Scheduler watcher(std::move(master_socket), Dispatcher::HandleConnection);
+        IO::Scheduler watcher(std::move(std::unique_ptr<IO::Socket>(make_socket(_port, _maxPending))),
+                              Dispatcher::HandleConnection, Dispatcher::HandleBarrier);
         while (true) {
             watcher.Run();
         }
 
-    } catch (std::exception &ex) {
-        Log::e(std::string("Server error: ").append(ex.what()));
-        auto msg = std::string("Server error. Please see the log file. Last exception: ");
-        msg += ex.what();
-        msg += "\n";
-        throw std::runtime_error(msg);
+    } catch (...) {
+        std::rethrow_exception (std::current_exception ());
     }
 }
 int Server::GetMaxPending() const { return _maxPending; }

@@ -4,6 +4,7 @@
 #include <http/response_serializer.h>
 #include <cache/file_descriptor.h>
 #include <io/filesystem.h>
+#include <io/buffers/asyncbuffer.h>
 #include <misc/storage.h>
 
 RouteMap Web::Dispatcher::routes;
@@ -54,7 +55,7 @@ Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &requ
     }
 }
 
-Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection *connection) {
+Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection *connection) noexcept {
 
     auto parser = Http::Engine(connection);
     auto request = parser();
@@ -70,4 +71,20 @@ Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection *con
             return {serializer({Http::StatusCode::NotFound})};
     }
     return {serializer({Http::StatusCode::NotFound})};
+}
+
+bool Dispatcher::HandleBarrier(ScheduleItem &item, std::unique_ptr<MemoryBuffer>& new_item) noexcept
+{
+    auto raw_buffer = item.Front ();
+    if(typeid(*raw_buffer) == typeid(AsyncBuffer<Http::Response>)) {
+        auto async_buffer = dynamic_cast<AsyncBuffer<Http::Response>*>(raw_buffer);
+        auto status = async_buffer->future.wait_for(std::chrono::seconds(0));
+        if(status == std::future_status::ready || status == std::future_status::deferred) {
+            /* The future is ready or not async, we need to schedule it now as a memory buffer */
+            auto http_response = async_buffer->future.get ();
+            new_item = std::make_unique<MemoryBuffer>(serializer(http_response));
+            return true;
+        }
+    }
+    return false;
 }

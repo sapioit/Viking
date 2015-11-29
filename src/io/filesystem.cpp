@@ -6,7 +6,6 @@
 using namespace IO;
 
 std::vector<char> FileSystem::ReadFile(const std::string &path) {
-    debug("File requested: " + path);
     std::ifstream stream(path, std::ios::binary);
     if (!stream.is_open())
         throw fs_error("File could not be opened");

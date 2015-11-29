@@ -33,7 +33,9 @@ HEADERS += \
     misc/string_util.h \
     http/version.h \
     http/cache_policy.h \
-    io/schedulers/channel.h
+    io/schedulers/channel.h \
+    io/buffers/asyncbuffer.h \
+    misc/common.h
 
 #HTTP
 SOURCES += \
@@ -89,7 +91,6 @@ HEADERS += \
 
 #MISC
 SOURCES += \
-    misc/log.cpp \
     misc/resource.cpp \
     misc/settings.cpp \
     misc/storage.cpp \
@@ -97,7 +98,6 @@ SOURCES += \
 HEADERS += \
     misc/date.h \
     misc/dfa.h \
-    misc/log.h \
     misc/resource.h \
     misc/settings.h \
     misc/storage.h \

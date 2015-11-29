@@ -21,9 +21,14 @@ class Dispatcher {
     static SchedulerResponse TakeResource(const Http::Request &) noexcept;
     static SchedulerResponse PassRequest(const Http::Request &, Handler) noexcept;
 
+    static constexpr auto ready = 0;
+    static constexpr auto not_ready = 1;
+    static constexpr auto not_future = 2;
+
     public:
-    template <typename T> static void AddRoute(T route) { routes.insert(route); }
-    static SchedulerResponse HandleConnection(const Connection *Connection);
+    template <typename T> static void AddRoute(T route) noexcept { routes.insert(route); }
+    static SchedulerResponse HandleConnection(const Connection *Connection) noexcept;
+    static bool HandleBarrier(ScheduleItem&, std::unique_ptr<MemoryBuffer> &) noexcept;
 };
 }
 

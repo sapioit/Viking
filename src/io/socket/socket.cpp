@@ -3,7 +3,6 @@
 //
 
 #include <io/socket/socket.h>
-#include <misc/log.h>
 #include <misc/debug.h>
 
 #include <sys/fcntl.h>
@@ -41,12 +40,9 @@ Socket &Socket::operator=(Socket &&other) {
 }
 
 void Socket::Bind() const {
-    if (::bind(fd_, reinterpret_cast<const struct sockaddr *>(&address_), sizeof(address_)) == -1) {
+    if (::bind(fd_, reinterpret_cast<const struct sockaddr *>(&address_), sizeof(address_)) == -1)
         if (errno == EADDRINUSE)
-            throw std::runtime_error("Port " + std::to_string(port_) + " is already in use (errno = " +
-                                     std::to_string(errno) + ")\n");
-        throw std::runtime_error("Bind failed, errno = " + std::to_string(errno));
-    }
+            throw PortInUse{port_};
 }
 
 void Socket::Listen(int pending_max) const {
@@ -84,25 +80,12 @@ bool Socket::IsAcceptor() const { return (!connection_); }
 
 void Socket::Close() {
     if (fd_ != -1) {
-        debug("Closing socket with fd = " + std::to_string(fd_));
         ::close(fd_);
         fd_ = -1;
     }
 }
 
 Socket::~Socket() { Close(); }
-
-Socket Socket::start_socket(int port, int maxConnections) {
-    try {
-        Socket socket(port);
-        socket.Bind();
-        socket.MakeNonBlocking();
-        socket.Listen(maxConnections);
-        return socket;
-    } catch (std::exception &ex) {
-        throw;
-    }
-}
 
 bool Socket::WasShutDown() const {
     char a;

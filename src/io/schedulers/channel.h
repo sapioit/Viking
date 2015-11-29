@@ -5,13 +5,13 @@
 #include <io/socket/socket.h>
 
 namespace IO {
-using Flags = std::uint8_t;
 struct Channel {
     std::unique_ptr<Socket> socket;
-    Flags flags;
+    std::uint8_t flags;
+    static constexpr std::uint8_t Barrier = 1 << 1;
     Channel() = default;
     Channel(std::unique_ptr<Socket> socket);
-    Channel(std::unique_ptr<Socket> socket, Flags flags);
+    Channel(std::unique_ptr<Socket> socket, std::uint8_t flags);
     Channel(const Channel &) = delete;
     Channel &operator=(const Channel &) = delete;
     Channel(Channel &&other) = default;

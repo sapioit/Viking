@@ -10,8 +10,7 @@
 SysEpoll::SysEpoll() {
     efd_ = epoll_create1(0);
     if (efd_ == -1)
-        throw Error("Could not start polling");
-    debug("SysEpoll instance with fd = " + std::to_string(efd_));
+        debug("Could not start polling");
 }
 
 SysEpoll::~SysEpoll() {
@@ -41,8 +40,7 @@ void SysEpoll::Modify(const IO::Channel *context, std::uint32_t flags) {
     if (event) {
         event->events |= flags;
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->GetFD(), event)) {
-            debug("Could not modify the event with fd = " + std::to_string(file_descriptor) + " errno = " +
-                  std::to_string(errno));
+            // WTF?
         }
     }
 }
@@ -55,14 +53,14 @@ void SysEpoll::Remove(const IO::Channel *context) {
     if (event_it != events_.end()) {
         auto *event = std::addressof(*event_it);
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->GetFD(), event))
-            throw Error("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
+            throw PollError("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
                         " from the OS queue");
 
         events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {
                           return ev.data.fd == event_it->data.fd;
                       }), events_.end());
     } else {
-        debug("SysEpoll could not find event with fd = " + std::to_string(file_descriptor));
+        // WTF?
     }
 }
 
@@ -82,9 +80,8 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
     if (-1 == events_number) {
         active_files.resize(0);
         if (errno != EINTR)
-            throw Error("Could not poll for events. errno = " + std::to_string(errno));
+            throw PollError("Could not poll for events. errno = " + std::to_string(errno));
     } else {
-        debug("Waited for " + std::to_string(events_number) + " events");
         active_files.resize(events_number);
     }
 
@@ -99,4 +96,4 @@ epoll_event *SysEpoll::FindEvent(const IO::Channel *channel) {
 SysEpoll::Event::Event(IO::Channel *context, std::uint32_t description) noexcept : context(context),
                                                                                    description(description) {}
 
-SysEpoll::Error::Error(const std::string &err) : std::runtime_error(err) {}
+SysEpoll::PollError::PollError(const std::string &err) : std::runtime_error(err) {}

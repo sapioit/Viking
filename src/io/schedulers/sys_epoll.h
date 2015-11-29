@@ -22,11 +22,16 @@ class SysEpoll {
         bool operator==(const Event &other) const { return context == other.context; }
     };
 
-    struct Error : public std::runtime_error {
-        Error(const std::string &err);
+    struct PollError : public std::runtime_error {
+        PollError(const std::string &err);
     };
 
-    enum class Description { Read = EPOLLIN, Write = EPOLLOUT, Error = EPOLLERR, Termination = EPOLLRDHUP };
+    static constexpr std::uint32_t Read = EPOLLIN;
+    static constexpr std::uint32_t Write = EPOLLOUT;
+    static constexpr std::uint32_t Termination = EPOLLRDHUP;
+    static constexpr std::uint32_t EdgeTriggered = EPOLLET;
+    static constexpr std::uint32_t LevelTriggered = ~EPOLLET;
+    static constexpr std::uint32_t Error = EPOLLERR;
     void Schedule(IO::Channel *, std::uint32_t);
     void Modify(const IO::Channel *, std::uint32_t);
     void Remove(const IO::Channel *);

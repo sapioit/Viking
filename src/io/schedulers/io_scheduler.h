@@ -4,6 +4,7 @@
 #include <io/schedulers/sys_epoll.h>
 #include <io/schedulers/sched_item.h>
 #include <io/socket/socket.h>
+#include <io/buffers/mem_buffer.h>
 #include <map>
 #include <functional>
 
@@ -19,42 +20,34 @@ class Scheduler {
     public:
     typedef ScheduleItem Resolution;
     typedef std::vector<char> DataType;
-    typedef std::function<Resolution(const Socket *)> Callback;
+    typedef std::function<Resolution(const Socket *)> ReadCallback;
+    typedef std::function<bool(ScheduleItem&, std::unique_ptr<MemoryBuffer>&)> BarrierCallback;
 
     private:
     std::map<int, ScheduleItem> schedule_;
     std::vector<std::unique_ptr<Channel>> contexts_;
     SysEpoll poller_;
-    Callback callback;
+    ReadCallback read_callback;
+    BarrierCallback barrier_callback;
 
     public:
     Scheduler() = default;
-
-    Scheduler(std::unique_ptr<Socket> sock, Callback callback);
+    Scheduler(std::unique_ptr<Socket> sock, ReadCallback, BarrierCallback);
     ~Scheduler() = default;
 
     void Add(std::unique_ptr<Socket> socket, std::uint32_t flags);
-
-    virtual void Run();
+    virtual void Run() noexcept;
 
     protected:
-    void Remove(const Channel *);
-
-    void AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool append = true) noexcept;
-
-    void ScheduledItemFinished(const Channel *, ScheduleItem &sched_item);
-
-    void ProcessWrite(const Channel *socket, ScheduleItem &sched_item);
-
-    inline bool CanWrite(const SysEpoll::Event &event) const noexcept;
-
-    inline bool CanRead(const SysEpoll::Event &event) const noexcept;
-
-    inline bool HasDataScheduled(int) const noexcept;
-
-    inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
-
+    void AddSchedItem(const SysEpoll::Event &, ScheduleItem, bool = true) noexcept;
     void AddNewConnections(const Channel *) noexcept;
+    void Remove(const Channel *) noexcept;
+    void ScheduledItemFinished(const Channel *, ScheduleItem &sched_item);
+    void ProcessWrite(Channel *socket) noexcept;
+    inline bool CanWrite(const SysEpoll::Event &event) const noexcept;
+    inline bool CanRead(const SysEpoll::Event &event) const noexcept;
+    inline bool HasDataScheduled(int) const noexcept;
+    inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 };
 }
 

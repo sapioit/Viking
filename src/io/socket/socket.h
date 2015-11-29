@@ -34,6 +34,9 @@ class Socket {
         int fd;
         const Socket *ptr;
     };
+    struct PortInUse {
+        int port;
+    };
 
     Socket(int);
     Socket(int port, int);
@@ -54,8 +57,6 @@ class Socket {
     int AvailableToRead() const;
     bool WasShutDown() const;
     void Close();
-
-    static Socket start_socket(int port, int maxConnections);
 
     template <typename T> T ReadSome() const {
         T result;
