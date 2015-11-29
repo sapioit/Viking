@@ -69,7 +69,7 @@ Response::Response(const UnixFile *file) : code_(Http::StatusCode::OK), file_(fi
 
 Response::Response(StatusCode code) : code_(code) { Init(); }
 
-Response::Response(const std::string &text) : code_(StatusCode::OK), resource_({text.begin(), text.end()}) {
+Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text.begin(), text.end()}) {
     Init();
     type_ = Type::Text;
 }

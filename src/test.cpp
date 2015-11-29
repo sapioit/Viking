@@ -50,7 +50,8 @@ int main() {
                                          records.append(a1);
                                          records.append(a2);
                                          root.append(records);
-                                         return {root};
+                                         // return {root};
+                                         return Http::Response(std::string("asdasfa"));
                                      });
         Settings settings;
         settings.root_path = "/mnt/exthdd/server";
