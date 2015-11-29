@@ -7,6 +7,7 @@
 #include <io/filesystem.h>
 #include <io/buffers/asyncbuffer.h>
 #include <misc/storage.h>
+#include <misc/common.h>
 
 RouteMap Web::Dispatcher::routes;
 using namespace Web;
@@ -24,15 +25,11 @@ bool ShouldCopyInMemory(const std::string &resource_path) {
 }
 
 Dispatcher::SchedulerResponse Dispatcher::PassRequest(const Http::Request &request, Handler handler) noexcept {
-    auto resolution = handler(request);
-    if (resolution.type == Http::Resolution::Type::Sync) {
-        auto &response = resolution.response;
-        return {serializer(response), response.GetKeepAlive()};
-    } else {
-        auto &future = resolution.future;
-        Dispatcher::SchedulerResponse re(std::move(std::make_unique<AsyncBuffer<Http::Response>>(std::move(future))));
-        return re;
-    }
+    Http::Resolution resolution = handler(request);
+    if (likely(resolution.GetType() == Http::Resolution::Type::Sync))
+        return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
+    else
+        return {std::move(std::make_unique<AsyncBuffer<Http::Response>>(std::move(resolution.GetFuture())))};
 }
 
 Dispatcher::SchedulerResponse Dispatcher::TakeResource(const Http::Request &request) noexcept {
@@ -83,11 +80,9 @@ Dispatcher::SchedulerResponse Dispatcher::HandleConnection(const Connection *con
 
 bool Dispatcher::HandleBarrier(ScheduleItem &item, std::unique_ptr<MemoryBuffer> &new_item) noexcept {
     auto raw_buffer = item.Front();
-    if (typeid(*raw_buffer) == typeid(AsyncBuffer<Http::Response>)) {
+    if (likely(typeid(*raw_buffer) == typeid(AsyncBuffer<Http::Response>))) {
         auto async_buffer = dynamic_cast<AsyncBuffer<Http::Response> *>(raw_buffer);
-        auto status = async_buffer->future.wait_for(std::chrono::seconds(0));
-        if (status == std::future_status::ready || status == std::future_status::deferred) {
-            /* The future is ready or not async, we need to schedule it now as a memory buffer */
+        if (async_buffer->IsReady()) {
             auto http_response = async_buffer->future.get();
             new_item = std::make_unique<MemoryBuffer>(serializer(http_response));
             return true;

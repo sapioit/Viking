@@ -75,16 +75,13 @@ void IO::Scheduler::Run() noexcept {
 }
 
 void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool back) noexcept {
-    /* TODO this must be re-written from scratch to either use a vector, or a multimap */
     auto item_it = schedule_.find(ev.context->socket->GetFD());
     if (item_it == schedule_.end())
         schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
-    else if (back) {
+    else if (back)
         item_it->second.PutBack(std::move(item));
-    } else {
-        // TODO put after the first non-intact buffer
+    else
         item_it->second.PutAfterFirstIntact(std::move(item));
-    }
 }
 
 void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleItem &sched_item) {

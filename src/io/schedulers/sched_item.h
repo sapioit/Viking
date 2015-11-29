@@ -3,7 +3,6 @@
 
 #include <deque>
 #include <memory>
-#include <http/response.h>
 #include <io/buffers/unix_file.h>
 #include <io/buffers/mem_buffer.h>
 #include <io/buffers/asyncbuffer.h>
@@ -29,7 +28,9 @@ class ScheduleItem {
     ScheduleItem(bool keep_file_open);
     ScheduleItem(const std::vector<char> &data);
     ScheduleItem(const std::vector<char> &data, bool);
-    ScheduleItem(std::unique_ptr<AsyncBuffer<Http::Response>>);
+    template <typename T> ScheduleItem(std::unique_ptr<AsyncBuffer<T>> future) {
+        buffers.emplace_back(std::move(future));
+    }
 
     void PutBack(std::unique_ptr<MemoryBuffer> data);
     void PutBack(std::unique_ptr<UnixFile> file);

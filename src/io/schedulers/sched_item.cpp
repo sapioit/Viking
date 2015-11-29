@@ -9,10 +9,6 @@ ScheduleItem::ScheduleItem(const std::vector<char> &data, bool keep_file_open) :
     buffers.push_back(std::make_unique<MemoryBuffer>(data));
 }
 
-ScheduleItem::ScheduleItem(std::unique_ptr<AsyncBuffer<Http::Response>> future) {
-    buffers.emplace_back(std::move(future));
-}
-
 void ScheduleItem::PutBack(std::unique_ptr<MemoryBuffer> data) { buffers.push_back(std::move(data)); }
 
 void ScheduleItem::PutBack(std::unique_ptr<UnixFile> file) { buffers.push_back(std::move(file)); }
