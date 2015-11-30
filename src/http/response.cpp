@@ -28,6 +28,8 @@ std::size_t Response::ContentLength() const {
 
 Response::Type Response::GetType() const { return type_; }
 
+void Response::SetType(Response::Type type) noexcept { type_ = type; }
+
 const Resource &Response::GetResource() const { return resource_; }
 
 void Response::SetResource(const Resource &resource) {
@@ -42,6 +44,10 @@ void Response::SetText(const std::string &text) {
     type_ = Type::Text;
 }
 
+const UnixFile *Response::GetFile() const { return file_; }
+
+void Response::SetFile(UnixFile *file) noexcept { file_ = file; }
+
 CachePolicy Response::GetCachePolicy() const { return cache_policy_; }
 
 void Response::SetCachePolicy(CachePolicy cache_policy) { cache_policy_ = cache_policy; }
@@ -54,33 +60,15 @@ Version Response::GetVersion() const { return version_; }
 
 void Response::SetVersion(Version version) { version_ = version; }
 
-void Response::Init() {
-    version_ = {1, 1};
-    keep_alive_ = false;
-    type_ = Type::Text;
-}
-
-Response::Response() { Init(); }
-
-Response::Response(const UnixFile *file) : code_(Http::StatusCode::OK), file_(file) {
-    Init();
-    type_ = Type::File;
-}
-
-Response::Response(StatusCode code) : code_(code) { Init(); }
+Response::Response(StatusCode code) : code_(code) {}
 
 Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text.begin(), text.end()}) {
-    Init();
     type_ = Type::Text;
 }
 
-Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
-    Init();
-    type_ = Type::Resource;
-}
+Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) { type_ = Type::Resource; }
 
 Response::Response(const Json::Value &json)
     : code_(StatusCode::OK), text_(json.toStyledString()), _content_type(Http::ContentType::ApplicationJson) {
-    Init();
     type_ = Type::Text;
 }

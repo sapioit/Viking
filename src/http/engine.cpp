@@ -48,7 +48,7 @@ Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
     };
     settings_.on_body = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = GetMe(parser);
-        me->request_.body = {at, at + length};
+        me->request_.body += {at, at + length};
         /* TODO check if body size is OK, and if yes, then copy it to the request. If not,
          * we should provide the user with a way of getting the body on demand (either async,
          * by returning a future -> implies starting an I/O scheduler async, or by
@@ -58,14 +58,17 @@ Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
         return 0;
 
     };
-    parser_.data = reinterpret_cast<void *>(this);
-    http_parser_init(&parser_, HTTP_REQUEST);
 }
+
+const IO::Socket *Http::Engine::GetSocket() const { return socket_; }
 
 Http::Request Http::Engine::operator()() {
     try {
-        auto data = socket_->ReadSome<std::string>();
-        http_parser_execute(&parser_, &settings_, &data.front(), data.size());
+        buffer += socket_->ReadSome<std::string>();
+        std::cout << buffer << std::endl;
+        parser_.data = reinterpret_cast<void *>(this);
+        http_parser_init(&parser_, HTTP_REQUEST);
+        http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
         return request_;
         /* TODO in the future, take the state into account, because we
              * might not be getting the full header
