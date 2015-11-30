@@ -9,7 +9,7 @@
 int main() {
     try {
         Web::Server server(1234);
-        auto route1 = std::make_pair(std::make_pair(Http::Method::Get, "^\\/adsaf\\/json\\/(\\d+)$"),
+        auto route1 = std::make_pair(std::make_pair(Http::Method::Post, "^\\/adsaf\\/json\\/(\\d+)$"),
                                      [](Http::Request req) -> Http::Resolution {
                                          // /adsaf/json/<int>
 
@@ -21,7 +21,7 @@ int main() {
                                              Json::Value a1{Json::arrayValue};
                                              Json::Value a2(Json::arrayValue);
                                              a1.append("1");
-                                             a1.append("2");
+                                             a1.append(req.body);
                                              auto url_parts = req.SplitURL();
                                              a2.append(url_parts.at(2));
                                              a2.append("2");
@@ -29,7 +29,6 @@ int main() {
                                              records.append(a1);
                                              records.append(a2);
                                              root.append(records);
-                                             std::this_thread::sleep_for(std::chrono::seconds(5));
                                              return {root};
                                          });
                                          return future;
@@ -50,8 +49,8 @@ int main() {
                                          records.append(a1);
                                          records.append(a2);
                                          root.append(records);
-                                         // return {root};
-                                         return Http::Response(std::string("asdasfa"));
+                                         return {root};
+                                         // return Http::Response(std::string("asdasfa"));
                                      });
         Settings settings;
         settings.root_path = "/mnt/exthdd/server";

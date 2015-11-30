@@ -21,7 +21,7 @@ bool Util::IsPassable(const Http::Request &request) noexcept {
 }
 
 bool Util::ExtensionAllowed(const std::string &url) noexcept {
-    static std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json|mkv)$",
+    static std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json|mkv|js)$",
                                  std::regex::ECMAScript | std::regex::icase);
     return std::regex_match(url, extensions);
 }
@@ -41,6 +41,10 @@ Http::ContentType Util::GetMimeType(const std::string &url) noexcept {
         return ContentType::TextHtml;
     if (ext == "json")
         return ContentType::ApplicationJson;
+    if (ext == "js")
+        return ContentType::TextJavaScript;
+    if (ext == "css")
+        return ContentType::TextCss;
 
     return ContentType::TextPlain;
 }

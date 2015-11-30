@@ -53,7 +53,17 @@ const std::map<const std::string, const Method> MethodMap{std::make_pair("GET", 
                                                           std::make_pair("SUBSCRIBE", Method::Subscribe),
                                                           std::make_pair("UNSUBSCRIBE", Method::Unsubscribe)};
 
-enum class ContentType { ApplicationJson, TextPlain, TextHtml, ImageJpeg, ImagePng, MovieMp4, Zip };
+enum class ContentType {
+    ApplicationJson,
+    TextPlain,
+    TextHtml,
+    TextJavaScript,
+    TextCss,
+    ImageJpeg,
+    ImagePng,
+    MovieMp4,
+    Zip
+};
 
 const std::map<const ContentType, const std::string> ContentTypes{
     std::make_pair(ContentType::ApplicationJson, "application/json"),
@@ -61,7 +71,9 @@ const std::map<const ContentType, const std::string> ContentTypes{
     std::make_pair(ContentType::TextHtml, "text/html; charset=utf-8"),
     std::make_pair(ContentType::ImageJpeg, "image/jpeg"),
     std::make_pair(ContentType::ImagePng, "image/png"),
-    std::make_pair(ContentType::MovieMp4, "video/mp4")};
+    std::make_pair(ContentType::MovieMp4, "video/mp4"),
+    std::make_pair(ContentType::TextJavaScript, "text/javascript"),
+    std::make_pair(ContentType::TextCss, "text/css")};
 
 enum StatusCode { OK = 200, BadRequest = 400, NotFound = 404, UnsupportedMediaType = 415, InternalServerError = 500 };
 
