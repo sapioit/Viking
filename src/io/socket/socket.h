@@ -60,7 +60,7 @@ class Socket {
 
     template <typename T> T ReadSome() const {
         T result;
-        auto available = AvailableToRead();
+        auto available = AvailableToRead() + 100;
         result.resize(static_cast<std::size_t>(available));
         ssize_t readBytes = ::read(fd_, &result.front(), available);
         if (readBytes == 0)
