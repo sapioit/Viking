@@ -45,14 +45,14 @@ std::vector<char> ResponseSerializer::MakeHeader(const Http::Response &response)
             break;
         }
         case States::GeneralHeader: {
-            stream << "Date:"
-                   << " " << StringUtil::ToString(Date::Now()) << crlf;
-            stream << "Connection: ";
+            stream << Http::Header::Fields::Date << ": " << StringUtil::ToString(Date::Now()) << crlf;
+            stream << Http::Header::Fields::Connection << ": ";
             if (response.GetKeepAlive())
                 stream << conn_keep_alive;
             else
                 stream << conn_close;
             stream << crlf;
+            stream << Http::Header::Fields::Access_Control_Allow_Origin << ": *" << crlf;
             machine.Transition(Transitions::EndGeneralHeader);
             break;
         }

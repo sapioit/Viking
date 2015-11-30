@@ -16,6 +16,7 @@ class Engine {
     http_parser_settings settings_;
     http_parser parser_;
     Request request_;
+    std::string buffer;
 
     std::string header_field;
 
@@ -25,6 +26,8 @@ class Engine {
 
     public:
     Engine(const IO::Socket *socket);
+
+    const IO::Socket *GetSocket() const;
 
     Request operator()();
 

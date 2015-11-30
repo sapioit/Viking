@@ -18,8 +18,7 @@ class Response {
 
     public:
     enum class Type { Resource, File, Text };
-    Response();
-    Response(const UnixFile *);
+    Response() = default;
     Response(StatusCode);
     Response(const std::string &);
     Response(Http::StatusCode, const std::string &);
@@ -43,7 +42,9 @@ class Response {
     void SetContentType(const Http::ContentType &value);
 
     std::size_t ContentLength() const;
+
     Type GetType() const;
+    void SetType(Type type) noexcept;
 
     const Resource &GetResource() const;
     void SetResource(const Resource &text);
@@ -51,13 +52,18 @@ class Response {
     const std::string &GetText() const;
     void SetText(const std::string &);
 
+    const UnixFile *GetFile() const;
+    void SetFile(UnixFile *file) noexcept;
+
     private:
-    Version version_;
-    StatusCode code_;
+    Version version_ = {1, 1};
+    StatusCode code_ = Http::StatusCode::OK;
     Type type_;
+
     Resource resource_;
     std::string text_;
     const UnixFile *file_ = nullptr;
+
     Http::ContentType _content_type = Http::ContentType::TextPlain;
     bool keep_alive_;
     CachePolicy cache_policy_;

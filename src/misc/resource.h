@@ -16,9 +16,10 @@ class Resource {
 
     public:
     Resource() = default;
+    Resource(const Resource &) = default;
     Resource(const std::string &, const std::vector<char> &, const struct stat &);
     Resource(const std::string &);
-    virtual ~Resource() = default;
+    ~Resource() = default;
     operator bool();
     bool operator<(const Resource &);
 

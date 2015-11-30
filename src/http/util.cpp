@@ -25,6 +25,31 @@ bool Util::ExtensionAllowed(const std::string &url) noexcept {
                                  std::regex::ECMAScript | std::regex::icase);
     return std::regex_match(url, extensions);
 }
+bool Util::IsComplete(const Request &request) noexcept {
+    if (CanHaveBody(request.method)) {
+        auto cl_it = request.header.fields.find(Http::Header::Fields::Content_Length);
+        if (cl_it != request.header.fields.end()) {
+            auto content_length = static_cast<std::size_t>(std::atoi(cl_it->second.c_str()));
+            if (request.body.size() < content_length)
+                return false;
+        }
+        return true;
+    }
+    return true;
+}
+
+bool Util::CanHaveBody(Method method) noexcept {
+    switch (method) {
+    case Http::Method::Put:
+        return true;
+    case Http::Method::Post:
+        return true;
+    case Http::Method::Options:
+        return true;
+    default:
+        return false;
+    }
+}
 
 Http::ContentType Util::GetMimeType(const std::string &url) noexcept {
 
