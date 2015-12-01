@@ -4,8 +4,9 @@
 #include <algorithm>
 #include <regex>
 
-std::function<Http::Resolution(Http::Request)> RouteUtility::GetHandler(const Http::Request &request,
-                                                                        const std::map<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> &routes) {
+std::function<Http::Resolution(Http::Request)> RouteUtility::GetHandler(
+    const Http::Request &request,
+    const std::map<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> &routes) {
     auto strippedRoute = StripRoute(request.url);
     auto result = std::find_if(routes.begin(), routes.end(),
                                [&](const std::pair<std::pair<Http::Method, std::string>,

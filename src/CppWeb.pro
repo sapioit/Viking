@@ -64,7 +64,7 @@ HEADERS += \
     http/response_serializer.h \
     io/buffers/datasource.h \
     io/buffers/unix_file.h \
-    io/schedulers/sched_item.h
+    io/schedulers/sched_item.h \
     io/buffers/utils.h
 
 #IO
@@ -125,7 +125,7 @@ HEADERS += \
 #SERVER-END
 
 SOURCES += \
-    test.cpp
+    ../test/test.cpp
 
 unix {
     target.path = /mnt/exthdd/debugg

@@ -20,9 +20,7 @@ class Server {
     Server &operator=(const Server &) = delete;
     Server(Server &&);
     Server &operator=(Server &&);
-    template <class T> void AddRoute(T route) {
-        dispatcher_->AddRoute(std::forward<T>(route));
-    }
+    template <class T> void AddRoute(T route) { dispatcher_->AddRoute(std::forward<T>(route)); }
     void SetSettings(const Settings &);
     void Run();
 };

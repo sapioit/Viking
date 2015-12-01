@@ -6,7 +6,7 @@
 #include <misc/debug.h>
 #include <sstream>
 
-Http::Engine* GetMe(http_parser *parser) { return static_cast<Http::Engine *>(parser->data); }
+Http::Engine *GetMe(http_parser *parser) { return static_cast<Http::Engine *>(parser->data); }
 
 void Http::Engine::AssignMethod(http_method method_numeric) {
     auto method = Http::MethodMap.find(http_method_str(method_numeric));
@@ -77,6 +77,5 @@ Http::Request Http::Engine::operator()() {
     }
     return {};
 }
-
 
 #endif

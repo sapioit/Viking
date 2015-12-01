@@ -11,9 +11,7 @@
 
 using namespace Web;
 
-Server::Server(int port) : port_(port) {
-    dispatcher_ = new Dispatcher();
-}
+Server::Server(int port) : port_(port) { dispatcher_ = new Dispatcher(); }
 
 Server::~Server() { delete dispatcher_; }
 
@@ -23,7 +21,6 @@ Server &Server::operator=(Server &&other) {
         dispatcher_ = other.dispatcher_;
         other.dispatcher_ = nullptr;
         port_ = other.port_;
-        port_ = other.port_;
     }
     return *this;
 }
@@ -32,7 +29,7 @@ Server::Server(Server &&other) { *this = std::move(other); }
 
 void Server::SetSettings(const Settings &s) {
     Storage::SetSettings(s);
-    port_ = s.max_connections;
+    max_pending_ = s.max_connections;
 }
 
 IO::Socket *make_socket(int port, int max_pending, bool = false) {
@@ -66,4 +63,3 @@ void Server::Run() {
         std::rethrow_exception(std::current_exception());
     }
 }
-

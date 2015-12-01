@@ -31,5 +31,6 @@
 */bin/*
 build-*
 *.user
+*.user.*
 cppweb_test
 */.DS_Store
