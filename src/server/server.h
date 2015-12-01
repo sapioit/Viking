@@ -11,16 +11,16 @@ namespace Web {
 class Server {
     int port_;
     int max_pending_;
-    Dispatcher *dispatcher_;
+    Dispatcher dispatcher_;
 
     public:
     Server(int);
-    ~Server();
+    ~Server() = default;
     Server(const Server &) = delete;
     Server &operator=(const Server &) = delete;
     Server(Server &&);
     Server &operator=(Server &&);
-    template <class T> void AddRoute(T route) { dispatcher_->AddRoute(std::forward<T>(route)); }
+    template <class T> void AddRoute(T route) { dispatcher_.AddRoute(std::forward<T>(route)); }
     void SetSettings(const Settings &);
     void Run();
 };

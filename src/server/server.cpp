@@ -11,15 +11,12 @@
 
 using namespace Web;
 
-Server::Server(int port) : port_(port) { dispatcher_ = new Dispatcher(); }
-
-Server::~Server() { delete dispatcher_; }
+Server::Server(int port) : port_(port) {}
 
 Server &Server::operator=(Server &&other) {
     if (this != &other) {
-        delete dispatcher_;
         dispatcher_ = other.dispatcher_;
-        other.dispatcher_ = nullptr;
+        other.dispatcher_ = {};
         port_ = other.port_;
     }
     return *this;
@@ -49,12 +46,10 @@ void Server::Run() {
     debug("Pid = " + std::to_string(getpid()));
     try {
         IO::Scheduler watcher(std::unique_ptr<IO::Socket>(make_socket(port_, max_pending_)),
-                              [this](const IO::Socket *socket) { return dispatcher_->HandleConnection(socket); },
+                              [this](const IO::Socket *socket) { return dispatcher_.HandleConnection(socket); },
                               [this](ScheduleItem &schedule_item, std::unique_ptr<MemoryBuffer> &buf) {
-                                  return dispatcher_->HandleBarrier(schedule_item, buf);
+                                  return dispatcher_.HandleBarrier(schedule_item, buf);
                               });
-
-        // Dispatcher::HandleConnection, Dispatcher::HandleBarrier);
         while (true) {
             watcher.Run();
         }

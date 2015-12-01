@@ -1,6 +1,7 @@
 #include <io/schedulers/io_scheduler.h>
 #include <io/buffers/utils.h>
 #include <misc/common.h>
+#include <misc/debug.h>
 #include <stdexcept>
 #include <algorithm>
 #include <utility>
@@ -155,6 +156,7 @@ void IO::Scheduler::ProcessWrite(IO::Channel *channel) noexcept {
                 Scheduler::Remove(channel);
                 break;
             } catch (const UnixFile::DIY &e) {
+                debug("Must do it myself");
                 /* This is how Linux tells you that you'd better do it yourself in userspace.
                  * We need to replace this item with a MemoryBuffer version of this
                  * data, at the right offset.

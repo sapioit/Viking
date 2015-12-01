@@ -12,6 +12,7 @@
 #include <io/buffers/asyncbuffer.h>
 #include <misc/storage.h>
 #include <misc/common.h>
+#include <misc/debug.h>
 #include <algorithm>
 
 using namespace Web;
@@ -103,6 +104,10 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
             response.SetKeepFileOpen(http_response.GetKeepAlive());
             return response;
         }
+    } catch (UnixFile::Error) {
+        return {serializer({Http::StatusCode::NotFound})};
+    } catch (Http::StatusCode) {
+        return {serializer({Http::StatusCode::NotFound})};
     } catch (...) {
         return {serializer({Http::StatusCode::NotFound})};
     }

@@ -1,6 +1,6 @@
 # Compiler
-CXX = clang++
-CC = clang
+CXX = g++
+CC = gcc
 CXX_OPTS = -fPIC -std=c++14 -O3 -Wall -Werror
 C_OPTS = -fPIC -O3 -Wall -Werror
 DEBUG_OPTS =
@@ -13,8 +13,6 @@ PROJECT = cppweb
 # Libraries
 LIBS = -lpthread
 LDFLAGS = -shared
-TESTAPP_LDFLAGS = -L../bin
-TESTAPP_INCLUDEDIRS = -Icppweb
 LIBNAME = libcppweb.so
 LIBNAME_ABBREVIATED = -lcppweb
 BINFOLDER = ../lib
@@ -79,10 +77,11 @@ install:
 	cp http/cache_policy.h /usr/include/cppweb/http/cache_policy.h
 
 uninstall:
-	rm -rf /usr/lib/$(PROJECT)
+	rm /usr/lib/$(LIBNAME)
+	rm -rf /usr/include/$(PROJECT)
 
 testapp: 
-	cd ../test && $(MAKE) -e
+	cd ../test && $(MAKE)
 
 %.o : %.cpp
 	$(CXX) -c $(CXX_OPTS) $(DEBUG_OPTS) $(INCLUDEDIRS) $< -o $@

@@ -24,8 +24,8 @@ std::string FileSystem::GetCurrentDirectory() {
 
 std::size_t FileSystem::GetFileSize(const std::string &file_path) {
     struct stat64 st;
-    if (-1 == ::stat64(file_path.c_str(), &st))
+    if (-1 == ::stat64(file_path.c_str(), &st)) {
         throw fs_error{"not found"};
-    else
+    } else
         return st.st_size;
 }
