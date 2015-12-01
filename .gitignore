@@ -32,3 +32,4 @@
 build-*
 *.user
 cppweb_test
+*/.DS_Store

@@ -6,7 +6,7 @@
 #include <misc/debug.h>
 #include <sstream>
 
-Http::Engine *Http::Engine::GetMe(http_parser *parser) { return static_cast<Engine *>(parser->data); }
+Http::Engine* GetMe(http_parser *parser) { return static_cast<Http::Engine *>(parser->data); }
 
 void Http::Engine::AssignMethod(http_method method_numeric) {
     auto method = Http::MethodMap.find(http_method_str(method_numeric));
@@ -65,7 +65,6 @@ const IO::Socket *Http::Engine::GetSocket() const { return socket_; }
 Http::Request Http::Engine::operator()() {
     try {
         buffer += socket_->ReadSome<std::string>();
-        std::cout << buffer << std::endl;
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
@@ -79,18 +78,5 @@ Http::Request Http::Engine::operator()() {
     return {};
 }
 
-std::string Http::Engine::StripRoute(const std::string &URI) {
-    auto firstSlash = URI.find_first_of('/');
-    return {URI.begin() + firstSlash, URI.end()};
-}
-
-std::vector<Http::ContentType> Http::Engine::GetAcceptedEncodings(const std::string &) {
-    return std::vector<Http::ContentType>();
-}
-
-Http::ContentType Http::Engine::GetMimeType(const std::string &) {
-    // TODO parse line and get it
-    return Http::ContentType::ApplicationJson;
-}
 
 #endif

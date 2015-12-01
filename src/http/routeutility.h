@@ -7,11 +7,12 @@
 #include <map>
 #include <functional>
 
-typedef std::map<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> RouteMap;
 class RouteUtility {
     public:
     static std::function<Http::Resolution(Http::Request)> GetHandler(const Http::Request &request,
-                                                                     const RouteMap &routes);
+                                                                     const std::map<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> &routes);
+
+    static std::string StripRoute(const std::string &URI);
 };
 
 #endif // ROUTESMANAGER_H

@@ -1,1 +1,1 @@
-make lib -j4 && make testapp -j4 && make install
+make lib -j4 && sudo make install && make testapp -j4 

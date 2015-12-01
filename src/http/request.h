@@ -5,7 +5,6 @@
 #ifndef SOCKET_REQUEST_H
 #define SOCKET_REQUEST_H
 
-#include <http/components.h>
 #include <http/header.h>
 #include <http/version.h>
 #include <string>

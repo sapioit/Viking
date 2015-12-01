@@ -17,24 +17,14 @@ class Engine {
     http_parser parser_;
     Request request_;
     std::string buffer;
-
     std::string header_field;
-
-    inline static Engine *GetMe(http_parser *parser);
 
     void AssignMethod(http_method method_numeric);
 
     public:
     Engine(const IO::Socket *socket);
-
     const IO::Socket *GetSocket() const;
-
     Request operator()();
-
-    static std::string StripRoute(const std::string &URI);
-    //	// static std::string GetURI(const std::string& line);
-    Http::ContentType GetMimeType(const std::string &);
-    std::vector<Http::ContentType> GetAcceptedEncodings(const std::string &);
 };
 };
 

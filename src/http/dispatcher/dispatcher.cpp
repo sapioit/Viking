@@ -3,15 +3,17 @@
 #include <http/util.h>
 #include <http/resolution.h>
 #include <http/response_serializer.h>
+#include <http/cachemanager.h>
+#include <http/routeutility.h>
+#include <http/engine.h>
 #include <cache/file_descriptor.h>
 #include <io/filesystem.h>
+#include <io/socket/socket.h>
 #include <io/buffers/asyncbuffer.h>
 #include <misc/storage.h>
 #include <misc/common.h>
 #include <algorithm>
 
-RouteMap Web::Dispatcher::routes;
-std::vector<Http::Engine> Web::Dispatcher::pending_;
 using namespace Web;
 
 static ResponseSerializer serializer;

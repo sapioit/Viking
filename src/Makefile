@@ -5,17 +5,19 @@ CXX_OPTS = -fPIC -std=c++14 -O3 -Wall -Werror
 C_OPTS = -fPIC -O3 -Wall -Werror
 DEBUG_OPTS =
 INCLUDEDIRS = -I.
+.DEFAULT_GOAL := lib
 
 # Project name
-PROJECT = cppweb_test
+PROJECT = cppweb
 
 # Libraries
 LIBS = -lpthread
 LDFLAGS = -shared
 TESTAPP_LDFLAGS = -L../bin
+TESTAPP_INCLUDEDIRS = -Icppweb
 LIBNAME = libcppweb.so
 LIBNAME_ABBREVIATED = -lcppweb
-BINFOLDER = ../bin
+BINFOLDER = ../lib
 
 SUBDIR_ROOTS := .
 DIRS := . $(shell find $(SUBDIR_ROOTS) -type d)
@@ -37,19 +39,50 @@ lib: $(OBJS)
 	mkdir -p $(BINFOLDER)
 	mv $(LIBNAME) $(BINFOLDER)
 
-testapp: test.o
-	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(TESTAPP_LDFLAGS) $(LIBS) $(LIBNAME_ABBREVIATED) $^ -o $(PROJECT)
-	mv $(PROJECT) $(BINFOLDER)
-
 clean: 
 	rm -rf $(GARBAGE)
 	rm *.o *.d -Rf
-	rm $(BINFOLDER)/$(LIBNAME)
-	rm $(BINFOLDER)/$(PROJECT)
-# TODO install the required headers also
+	rm -rf $(BINFOLDER)
 
 install: 
 	cp $(BINFOLDER)/$(LIBNAME) /usr/lib
+	mkdir -p /usr/include/cppweb
+	mkdir -p /usr/include/cppweb/server
+	mkdir -p /usr/include/cppweb/misc
+	mkdir -p /usr/include/cppweb/http
+	mkdir -p /usr/include/cppweb/http/dispatcher
+	mkdir -p /usr/include/cppweb/io
+	mkdir -p /usr/include/cppweb/io/schedulers
+	mkdir -p /usr/include/cppweb/io/buffers
+	mkdir -p /usr/include/cppweb/io/socket
+	mkdir -p /usr/include/cppweb/http
+	mkdir -p /usr/include/cppweb/json
+	cp json/json.h /usr/include/cppweb/json/json.h
+	cp misc/settings.h /usr/include/cppweb/misc/settings.h
+	cp misc/resource.h /usr/include/cppweb/misc/resource.h
+	cp server/server.h /usr/include/cppweb/server/server.h
+	cp http/dispatcher/dispatcher.h /usr/include/cppweb/http/dispatcher/dispatcher.h
+	cp io/schedulers/sched_item.h /usr/include/cppweb/io/schedulers/sched_item.h
+	cp io/buffers/unix_file.h /usr/include/cppweb/io/buffers/unix_file.h
+	cp io/buffers/mem_buffer.h /usr/include/cppweb/io/buffers/mem_buffer.h
+	cp io/buffers/asyncbuffer.h /usr/include/cppweb/io/buffers/asyncbuffer.h
+	cp io/buffers/datasource.h /usr/include/cppweb/io/buffers/datasource.h
+	cp io/socket/socket.h /usr/include/cppweb/io/socket/socket.h
+	cp http/engine.h /usr/include/cppweb/http/engine.h
+	cp http/request.h /usr/include/cppweb/http/request.h
+	cp http/header.h /usr/include/cppweb/http/header.h
+	cp http/components.h /usr/include/cppweb/http/components.h
+	cp http/version.h /usr/include/cppweb/http/version.h
+	cp http/parser.h /usr/include/cppweb/http/parser.h
+	cp http/response.h /usr/include/cppweb/http/response.h
+	cp http/resolution.h /usr/include/cppweb/http/resolution.h
+	cp http/cache_policy.h /usr/include/cppweb/http/cache_policy.h
+
+uninstall:
+	rm -rf /usr/lib/$(cppweb)
+
+testapp: 
+	cd ../test && $(MAKE) -e
 
 %.o : %.cpp
 	$(CXX) -c $(CXX_OPTS) $(DEBUG_OPTS) $(INCLUDEDIRS) $< -o $@

@@ -1,26 +1,30 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <http/dispatcher/dispatcher.h>
 #include <misc/settings.h>
+#include <http/dispatcher/dispatcher.h>
 
 #include <vector>
 #include <memory>
 
 namespace Web {
 class Server {
+    int port_;
+    int max_pending_;
+    Dispatcher *dispatcher_;
+
     public:
     Server(int);
-    template <class T> void AddRoute(T route) { Dispatcher::AddRoute(std::forward<T>(route)); }
-    void Run();
+    ~Server();
+    Server(const Server &) = delete;
+    Server &operator=(const Server &) = delete;
+    Server(Server &&);
+    Server &operator=(Server &&);
+    template <class T> void AddRoute(T route) {
+        dispatcher_->AddRoute(std::forward<T>(route));
+    }
     void SetSettings(const Settings &);
-
-    int GetMaxPending() const;
-    void SetMaxPending(int);
-
-    private:
-    int _port = -1;
-    int _maxPending;
+    void Run();
 };
 };
 
