@@ -79,7 +79,7 @@ install:
 	cp http/cache_policy.h /usr/include/cppweb/http/cache_policy.h
 
 uninstall:
-	rm -rf /usr/lib/$(cppweb)
+	rm -rf /usr/lib/$(PROJECT)
 
 testapp: 
 	cd ../test && $(MAKE) -e
