@@ -49,7 +49,7 @@ class Socket {
     operator bool() const;
     virtual ~Socket();
     std::unique_ptr<Socket> Accept() const;
-    int GetFD() const;
+    inline int GetFD() const { return fd_; }
     bool IsAcceptor() const;
     void Bind() const;
     void MakeNonBlocking() const;
@@ -60,7 +60,7 @@ class Socket {
 
     template <typename T> T ReadSome() const {
         T result;
-        auto available = AvailableToRead() + 100;
+        auto available = AvailableToRead();
         result.resize(static_cast<std::size_t>(available));
         ssize_t readBytes = ::read(fd_, &result.front(), available);
         if (readBytes == 0)
@@ -85,9 +85,9 @@ class Socket {
 
     private:
     int fd_ = -1;
-    int port_;
     bool connection_ = false;
     struct sockaddr_in address_;
+    int port_;
 };
 typedef std::reference_wrapper<Socket> SocketRef;
 }

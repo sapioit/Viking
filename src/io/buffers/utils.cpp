@@ -16,15 +16,11 @@ std::unique_ptr<MemoryBuffer> From(const UnixFile &file) {
     auto at = length + file.offset - pa_offset;
 
     char *const mem_zone = static_cast<char *>(::mmap(NULL, at, PROT_READ, MAP_SHARED, file.fd, file.offset));
-    if (mem_zone == MAP_FAILED) {
+    if (mem_zone == MAP_FAILED)
         throw UnixFile::BadFile{std::addressof(file)};
-    }
     const char *const my_thing = mem_zone + file.offset - pa_offset;
     auto result = std::make_unique<MemoryBuffer>(std::vector<char>{my_thing, my_thing + length});
-    auto munmap_res = ::munmap(mem_zone, at);
-    if (munmap_res != 0) {
-        // TODO handle error
-    }
+    ::munmap(mem_zone, at);
     return result;
 }
 

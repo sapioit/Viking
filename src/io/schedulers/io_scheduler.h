@@ -16,6 +16,7 @@ class Scheduler {
     struct SocketNotFound {
         const SysEpoll::Event *event;
     };
+    struct WriteError {};
 
     public:
     typedef ScheduleItem Resolution;
@@ -24,7 +25,7 @@ class Scheduler {
     typedef std::function<bool(ScheduleItem &, std::unique_ptr<MemoryBuffer> &)> BarrierCallback;
 
     private:
-    std::map<int, ScheduleItem> schedule_;
+    std::map<int, ScheduleItem> schedule_map_;
     std::vector<std::unique_ptr<Channel>> contexts_;
     SysEpoll poller_;
     ReadCallback read_callback;
@@ -41,9 +42,9 @@ class Scheduler {
     protected:
     void AddSchedItem(const SysEpoll::Event &, ScheduleItem, bool = true) noexcept;
     void AddNewConnections(const Channel *) noexcept;
-    void Remove(const Channel *) noexcept;
-    void ScheduledItemFinished(const Channel *, ScheduleItem &sched_item);
+    void Remove(Channel *) noexcept;
     void ProcessWrite(Channel *socket) noexcept;
+    void ConsumeItem(ScheduleItem &, Channel *channel);
     inline bool CanWrite(const SysEpoll::Event &event) const noexcept;
     inline bool CanRead(const SysEpoll::Event &event) const noexcept;
     inline bool HasDataScheduled(int) const noexcept;

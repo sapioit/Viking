@@ -28,6 +28,7 @@ class ScheduleItem {
     ScheduleItem(bool keep_file_open);
     ScheduleItem(const std::vector<char> &data);
     ScheduleItem(const std::vector<char> &data, bool);
+
     template <typename T> ScheduleItem(std::unique_ptr<AsyncBuffer<T>> future) {
         buffers.emplace_back(std::move(future));
     }
@@ -40,6 +41,7 @@ class ScheduleItem {
     void PutAfterFirstIntact(std::unique_ptr<UnixFile> file);
     void PutAfterFirstIntact(ScheduleItem);
 
+    void UpdateFrontMemoryBuffer(std::size_t) noexcept;
     void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
     inline DataSource *Front() noexcept { return buffers.front().get(); }
     inline void RemoveFront() noexcept { buffers.erase(buffers.begin()); }

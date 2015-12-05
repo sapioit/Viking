@@ -23,7 +23,7 @@ Socket::Socket(int port) : port_(port) {
     address_.sin_port = htons(port);
 }
 
-Socket::Socket(int fd, int port) : fd_(fd), port_(port), connection_(true) {}
+Socket::Socket(int fd, int port) : fd_(fd), connection_(true), port_(port) {}
 
 Socket::Socket(Socket &&other) : fd_(-1) { *this = std::move(other); }
 
@@ -73,8 +73,6 @@ std::unique_ptr<Socket> Socket::Accept() const {
     in_len = sizeof(in_addr);
     return std::make_unique<Socket>(::accept(fd_, &in_addr, &in_len), port_);
 }
-
-int Socket::GetFD() const { return fd_; }
 
 bool Socket::IsAcceptor() const { return (!connection_); }
 

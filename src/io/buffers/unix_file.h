@@ -10,8 +10,8 @@
 
 struct UnixFile : public DataSource {
     int fd = -1;
-    off64_t offset = 0;
     off64_t size = 0;
+    off64_t offset = 0;
 
     public:
     typedef std::function<int(const std::string &)> AquireFunction;

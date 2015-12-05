@@ -1,6 +1,6 @@
 # Compiler
-CXX = g++
-CC = gcc
+CXX = clang++
+CC = clang
 CXX_OPTS = -fPIC -std=c++14 -O3 -Wall -Werror
 C_OPTS = -fPIC -O3 -Wall -Werror
 DEBUG_OPTS =
@@ -33,7 +33,7 @@ OBJS += $(patsubst ./%.c, ./%.o, $(C_FILES))
 -include $(OBJS:.o=.o.d)
 
 lib: $(OBJS)
-	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LIBS) $(LDFLAGS) $^ -o $(LIBNAME)
+	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LIBS) -flto $(LDFLAGS) $^ -o $(LIBNAME)
 	mkdir -p $(BINFOLDER)
 	mv $(LIBNAME) $(BINFOLDER)
 

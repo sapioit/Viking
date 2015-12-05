@@ -27,8 +27,8 @@ void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     }
 }
 
-void IO::Scheduler::Remove(const Channel *channel) noexcept {
-    schedule_.erase(channel->socket->GetFD());
+void IO::Scheduler::Remove(Channel *channel) noexcept {
+    schedule_map_.erase(channel->socket->GetFD());
     poller_.Remove(channel);
     contexts_.erase(std::remove_if(contexts_.begin(), contexts_.end(), [&channel](auto &ctx) {
                         return channel == &*ctx;
@@ -49,13 +49,12 @@ void IO::Scheduler::Run() noexcept {
             Remove(event.context);
             continue;
         }
-        if (CanWrite(event)) {
+        if (CanWrite(event) && !(event.context->flags & IO::Channel::Barrier)) {
             ProcessWrite(event.context);
             continue;
         }
 
         if (CanRead(event)) {
-            //&& (!HasDataScheduled(event.context->socket->GetFD()))) {
             Resolution callback_response = read_callback(event.context->socket.get());
             if (callback_response) {
                 /* We schedule the item in the epoll instance with just the Write flag,
@@ -64,7 +63,7 @@ void IO::Scheduler::Run() noexcept {
                 poller_.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
                 auto &cb_front = *callback_response.Front();
                 std::type_index type = typeid(cb_front);
-                if (type == typeid(MemoryBuffer) || type == typeid(MemoryBuffer)) {
+                if (type == typeid(MemoryBuffer) || type == typeid(UnixFile)) {
                     AddSchedItem(event, std::move(callback_response), true);
                 } else {
                     AddSchedItem(event, std::move(callback_response), false);
@@ -77,105 +76,93 @@ void IO::Scheduler::Run() noexcept {
 }
 
 void IO::Scheduler::AddSchedItem(const SysEpoll::Event &ev, ScheduleItem item, bool back) noexcept {
-    auto item_it = schedule_.find(ev.context->socket->GetFD());
-    if (item_it == schedule_.end())
-        schedule_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
-    else if (back)
-        item_it->second.PutBack(std::move(item));
-    else
-        item_it->second.PutAfterFirstIntact(std::move(item));
-}
-
-void IO::Scheduler::ScheduledItemFinished(const IO::Channel *channel, ScheduleItem &sched_item) {
-    if (!sched_item.KeepFileOpen()) {
-        Remove(channel);
-    } else {
-        schedule_.erase(channel->socket->GetFD());
-        poller_.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
-        /* Also, if we don't close the socket, we might want to switch back to level-triggered
-         * mode, or else the client might keep sending requests and we won't get anything.
-         */
+    auto item_it = schedule_map_.find(ev.context->socket->GetFD());
+    if (item_it == schedule_map_.end())
+        schedule_map_.emplace(std::make_pair(ev.context->socket->GetFD(), std::move(item)));
+    else {
+        if (back)
+            item_it->second.PutBack(std::move(item));
+        else
+            item_it->second.PutAfterFirstIntact(std::move(item));
     }
 }
-void IO::Scheduler::ProcessWrite(IO::Channel *channel) noexcept {
-    do {
-        auto sch_it = schedule_.find(channel->socket->GetFD());
-        if (sch_it == schedule_.end())
-            return;
-        auto &sched_item = sch_it->second;
-        auto sched_item_front = sched_item.Front();
-        std::type_index sched_item_type = typeid(*sched_item_front);
-        if (unlikely(channel->flags & IO::Channel::Barrier && sched_item_type != typeid(MemoryBuffer) &&
-                     sched_item_type != typeid(UnixFile))) {
-            std::unique_ptr<MemoryBuffer> new_buffer;
-            if (!barrier_callback(sched_item, new_buffer)) {
-                poller_.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
-                break;
-            } else {
-                sched_item.ReplaceFront(std::move(new_buffer));
-                sched_item_front = sched_item.Front();
-                poller_.Modify(channel, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
-                channel->flags |= ~IO::Channel::Barrier;
-            }
-        }
 
-        if (sched_item_type == typeid(MemoryBuffer)) {
-            MemoryBuffer *mem_buffer = dynamic_cast<MemoryBuffer *>(sched_item_front);
-            auto &data = mem_buffer->data;
-            try {
-                const auto written = channel->socket->WriteSome(data);
-                if (written == 0)
-                    break;
-                if (written == data.size())
-                    sched_item.RemoveFront();
-                else
-                    DataType(data.begin() + written, data.end()).swap(data);
-            } catch (const Socket::WriteError &) {
-                Remove(channel);
-                break;
-            } catch (const Socket::ConnectionClosedByPeer &) {
-                Remove(channel);
-                break;
-            }
-        } else if (sched_item_type == typeid(UnixFile)) {
-            UnixFile *unix_file = dynamic_cast<UnixFile *>(sched_item_front);
-            try {
-                auto size_left = unix_file->SizeLeft();
-                auto written = unix_file->SendTo(channel->socket->GetFD());
-                if (written == 0)
-                    break;
-                if (written == size_left)
-                    sched_item.RemoveFront();
-            } catch (const UnixFile::BrokenPipe &) {
-                /* Received EPIPE (in this case, with sendfile, the connection was
-                 * closed by the peer).
-                 */
-                Scheduler::Remove(channel);
-                break;
-            } catch (const UnixFile::BadFile &) {
-                Scheduler::Remove(channel);
-                break;
-            } catch (const UnixFile::DIY &e) {
-                debug("Must do it myself");
-                /* This is how Linux tells you that you'd better do it yourself in userspace.
-                 * We need to replace this item with a MemoryBuffer version of this
-                 * data, at the right offset.
-                 */
-                try {
-                    auto buffer = From(*e.ptr);
-                    sched_item.ReplaceFront(std::move(buffer));
-                } catch (const UnixFile::BadFile &) {
-                    /* For some reason, we could not generate a MemoryBuffer out of this */
-                    Scheduler::Remove(channel);
-                    break;
+void IO::Scheduler::ProcessWrite(IO::Channel *channel) noexcept {
+    for (auto sched_item_it = schedule_map_.find(channel->socket->GetFD()); sched_item_it != schedule_map_.end();
+         sched_item_it = schedule_map_.find(channel->socket->GetFD())) {
+        auto &item = sched_item_it->second;
+        try {
+            ConsumeItem(item, channel);
+            if (!item) {
+                if (item.KeepFileOpen()) {
+                    schedule_map_.erase(channel->socket->GetFD());
+                    poller_.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
+                    /* Also, if we don't close the socket, we might want to switch back to level-triggered
+                     * mode, or else the client might keep sending requests and we won't get anything.
+                     */
+                } else {
+                    Remove(channel);
+                    return;
                 }
             }
+        } catch (...) {
+            Remove(channel);
+            return;
         }
-        if (!sched_item) {
-            ScheduledItemFinished(channel, sched_item);
-            break;
+    }
+}
+
+void IO::Scheduler::ConsumeItem(ScheduleItem &item, IO::Channel *channel) {
+    auto sched_item_front = item.Front();
+    std::type_index sched_item_type = typeid(*sched_item_front);
+    if (unlikely(channel->flags & IO::Channel::Barrier && sched_item_type != typeid(MemoryBuffer) &&
+                 sched_item_type != typeid(UnixFile))) {
+        std::unique_ptr<MemoryBuffer> new_buffer;
+        if (!barrier_callback(item, new_buffer)) {
+            poller_.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+            return;
+        } else {
+            item.ReplaceFront(std::move(new_buffer));
+            sched_item_front = item.Front();
+            poller_.Modify(channel, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
+            channel->flags |= ~IO::Channel::Barrier;
         }
-    } while (true);
+    }
+
+    if (sched_item_type == typeid(MemoryBuffer)) {
+        MemoryBuffer *mem_buffer = reinterpret_cast<MemoryBuffer *>(sched_item_front);
+        try {
+            if (const auto written = channel->socket->WriteSome(mem_buffer->data))
+                item.UpdateFrontMemoryBuffer(written);
+        } catch (...) {
+            throw WriteError{};
+        }
+
+    } else if (sched_item_type == typeid(UnixFile)) {
+        UnixFile *unix_file = reinterpret_cast<UnixFile *>(sched_item_front);
+        try {
+            auto size_left = unix_file->SizeLeft();
+            if (auto written = unix_file->SendTo(channel->socket->GetFD()))
+                if (written == size_left)
+                    item.RemoveFront();
+        } catch (const UnixFile::BrokenPipe &) {
+            throw WriteError{};
+        } catch (const UnixFile::BadFile &) {
+            throw WriteError{};
+        } catch (const UnixFile::DIY &e) {
+            /* This is how Linux tells you that you'd better do it yourself in userspace.
+             * We need to replace this item with a MemoryBuffer version of this
+             * data, at the right offset.
+             */
+            try {
+                debug("diy");
+                auto buffer = From(*e.ptr);
+                item.ReplaceFront(std::move(buffer));
+            } catch (const UnixFile::BadFile &) {
+                throw WriteError{};
+            }
+        }
+    }
 }
 
 void IO::Scheduler::AddNewConnections(const Channel *channel) noexcept {
@@ -207,6 +194,6 @@ bool IO::Scheduler::CanTerminate(const SysEpoll::Event &event) const noexcept {
 }
 
 bool IO::Scheduler::HasDataScheduled(int file_descriptor) const noexcept {
-    auto item = schedule_.find(file_descriptor);
-    return (item != schedule_.end());
+    auto item = schedule_map_.find(file_descriptor);
+    return (item != schedule_map_.end());
 }
