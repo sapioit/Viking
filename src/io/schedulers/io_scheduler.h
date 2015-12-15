@@ -25,9 +25,8 @@ class Scheduler {
     typedef std::function<bool(ScheduleItem &, std::unique_ptr<MemoryBuffer> &)> BarrierCallback;
 
     private:
-    std::map<int, ScheduleItem> schedule_map_;
     std::vector<std::unique_ptr<Channel>> contexts_;
-    SysEpoll poller_;
+    SysEpoll poll;
     ReadCallback read_callback;
     BarrierCallback barrier_callback;
 
@@ -40,14 +39,14 @@ class Scheduler {
     virtual void Run() noexcept;
 
     protected:
-    void AddSchedItem(const SysEpoll::Event &, ScheduleItem, bool = true) noexcept;
+    void AddSchedItem(IO::Channel *, ScheduleItem &, bool = true) noexcept;
     void AddNewConnections(const Channel *) noexcept;
     void Remove(Channel *) noexcept;
     void ProcessWrite(Channel *socket) noexcept;
     void ConsumeItem(ScheduleItem &, Channel *channel);
+    void FillChannel(Channel *);
     inline bool CanWrite(const SysEpoll::Event &event) const noexcept;
     inline bool CanRead(const SysEpoll::Event &event) const noexcept;
-    inline bool HasDataScheduled(int) const noexcept;
     inline bool CanTerminate(const SysEpoll::Event &event) const noexcept;
 };
 }
