@@ -41,9 +41,10 @@ class ScheduleItem {
     void PutAfterFirstIntact(std::unique_ptr<UnixFile> file);
     void PutAfterFirstIntact(ScheduleItem);
 
-    void UpdateFrontMemoryBuffer(std::size_t) noexcept;
     void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
     inline DataSource *Front() noexcept { return buffers.front().get(); }
+    inline const DataSource *CFront() const noexcept { return buffers.front().get(); }
+    bool IsFrontAsync() const noexcept;
     inline void RemoveFront() noexcept { buffers.erase(buffers.begin()); }
     inline bool KeepFileOpen() const noexcept { return keep_file_open; }
     inline void SetKeepFileOpen(bool close) { keep_file_open = close; }

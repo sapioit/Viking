@@ -20,8 +20,8 @@ IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::ReadCallba
 
 void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
-        contexts_.emplace_back(std::make_unique<IO::Channel>(std::move(socket)));
-        poll.Schedule(&(*contexts_.back()), flags);
+        channels.emplace_back(std::make_unique<IO::Channel>(std::move(socket)));
+        poll.Schedule(&(*channels.back()), flags);
     } catch (const SysEpoll::PollError &) {
         throw;
     }
@@ -29,15 +29,14 @@ void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
 
 void IO::Scheduler::Remove(Channel *channel) noexcept {
     poll.Remove(channel);
-    contexts_.erase(std::remove_if(contexts_.begin(), contexts_.end(), [&channel](auto &ctx) {
-                        return channel == &*ctx;
-                    }), contexts_.end());
+    channels.erase(std::remove_if(channels.begin(), channels.end(), [&channel](auto &ctx) { return channel == &*ctx; }),
+                   channels.end());
 }
 
 void IO::Scheduler::Run() noexcept {
-    if (contexts_.size() == 0)
+    if (channels.size() == 0)
         return;
-    const auto events = poll.Wait(contexts_.size());
+    const auto events = poll.Wait(channels.size());
     for (const auto &event : events) {
         if (event.context->socket->IsAcceptor()) {
             AddNewConnections(event.context);
@@ -49,9 +48,9 @@ void IO::Scheduler::Run() noexcept {
             continue;
         }
         if (CanWrite(event)) {
-            if (unlikely(!(event.context->flags & IO::Channel::Full)))
+            if (unlikely(!(event.context->flags & Channel::Full)))
                 poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
-            event.context->flags &= ~IO::Channel::Full;
+            event.context->flags &= ~Channel::Full;
             ProcessWrite(event.context);
             continue;
         }
@@ -65,10 +64,10 @@ void IO::Scheduler::Run() noexcept {
                 auto &front = *callback_response.Front();
                 std::type_index type = typeid(front);
                 if (type == typeid(MemoryBuffer) || type == typeid(UnixFile)) {
-                    AddSchedItem(event.context, callback_response, true);
+                    QueueItem(event.context, callback_response, true);
                 } else {
-                    AddSchedItem(event.context, callback_response, false);
-                    event.context->flags |= IO::Channel::Barrier;
+                    QueueItem(event.context, callback_response, false);
+                    event.context->flags |= Channel::Barrier;
                 }
             }
             continue;
@@ -76,30 +75,28 @@ void IO::Scheduler::Run() noexcept {
     }
 }
 
-void IO::Scheduler::AddSchedItem(IO::Channel *channel, ScheduleItem &item, bool back) noexcept {
-    if (back)
-        channel->queue.PutBack(std::move(item));
-    else
-        channel->queue.PutAfterFirstIntact(std::move(item));
+void IO::Scheduler::QueueItem(Channel *channel, ScheduleItem &item, bool back) noexcept {
+    back ? channel->queue.PutBack(std::move(item)) : channel->queue.PutAfterFirstIntact(std::move(item));
 }
 
-void IO::Scheduler::ProcessWrite(IO::Channel *channel) noexcept {
+void IO::Scheduler::ProcessWrite(Channel *channel) noexcept {
     try {
-        while (channel->queue && !(channel->flags & IO::Channel::Full)) {
-            if (channel->flags & IO::Channel::Barrier) {
+        while (channel->queue && !(channel->flags & Channel::Full)) {
+            if (channel->flags & Channel::Barrier) {
                 poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
                 return;
             }
             FillChannel(channel);
             if (!channel->queue) {
-                if (channel->queue.KeepFileOpen())
+                if (channel->queue.KeepFileOpen()) {
                     poll.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
-                else
+                } else {
                     Remove(channel);
-            } else {
-                if (!(channel->flags & IO::Channel::Full))
-                    poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                    return;
+                }
             }
+            if (!(channel->flags & Channel::Full) || channel->flags & Channel::Barrier)
+                poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
         }
     } catch (...) {
         Remove(channel);
@@ -107,17 +104,24 @@ void IO::Scheduler::ProcessWrite(IO::Channel *channel) noexcept {
 }
 
 // TODO fix the support for async buffers
-void IO::Scheduler::FillChannel(IO::Channel *channel) {
+void IO::Scheduler::FillChannel(Channel *channel) {
     auto &front = *channel->queue.Front();
     std::type_index sched_item_type = typeid(front);
 
     if (sched_item_type == typeid(MemoryBuffer)) {
         MemoryBuffer *mem_buffer = reinterpret_cast<MemoryBuffer *>(channel->queue.Front());
         try {
-            if (const auto written = channel->socket->WriteSome(mem_buffer->data))
-                channel->queue.UpdateFrontMemoryBuffer(written);
-            else
-                channel->flags |= IO::Channel::Full;
+            if (const auto written = channel->socket->WriteSome(mem_buffer->data)) {
+                if (written == mem_buffer->data.size()) {
+                    channel->queue.RemoveFront();
+                    if (channel->queue.BuffersLeft() && channel->queue.IsFrontAsync())
+                        channel->flags |= Channel::Barrier;
+                } else
+                    std::vector<char>(mem_buffer->data.begin() + written, mem_buffer->data.end())
+                        .swap(mem_buffer->data);
+            } else {
+                channel->flags |= Channel::Full;
+            }
         } catch (...) {
             throw WriteError{};
         }
@@ -127,15 +131,15 @@ void IO::Scheduler::FillChannel(IO::Channel *channel) {
         try {
             auto size_left = unix_file->SizeLeft();
             if (auto written = unix_file->SendTo(channel->socket->GetFD())) {
-                if (written == size_left)
+                if (written == size_left) {
                     channel->queue.RemoveFront();
+                    if (channel->queue.BuffersLeft() && channel->queue.IsFrontAsync())
+                        channel->flags |= Channel::Barrier;
+                }
             } else {
-                channel->flags |= IO::Channel::Full;
+                channel->flags |= Channel::Full;
             }
-        } catch (const UnixFile::BrokenPipe &) {
-            throw WriteError{};
-        } catch (const UnixFile::BadFile &) {
-            throw WriteError{};
+
         } catch (const UnixFile::DIY &e) {
             /* This is how Linux tells you that you'd better do it yourself in userspace.
              * We need to replace this item with a MemoryBuffer version of this
@@ -145,9 +149,12 @@ void IO::Scheduler::FillChannel(IO::Channel *channel) {
                 debug("diy");
                 auto buffer = From(*e.ptr);
                 channel->queue.ReplaceFront(std::move(buffer));
-            } catch (const UnixFile::BadFile &) {
+                FillChannel(channel);
+            } catch (...) {
                 throw WriteError{};
             }
+        } catch (...) {
+            throw WriteError{};
         }
     }
 }

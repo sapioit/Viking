@@ -1,5 +1,6 @@
 #include <io/schedulers/sched_item.h>
 #include <algorithm>
+#include <typeindex>
 
 ScheduleItem::ScheduleItem(bool keep_file_open) : keep_file_open(keep_file_open) {}
 
@@ -28,15 +29,17 @@ void ScheduleItem::PutAfterFirstIntact(ScheduleItem other_item) {
                    std::make_move_iterator(other_item.buffers.rend()));
 }
 
-void ScheduleItem::UpdateFrontMemoryBuffer(std::size_t to_remove) noexcept {
-    auto buffer = reinterpret_cast<MemoryBuffer *>(Front());
-    if (to_remove != buffer->data.size())
-        std::vector<char>(buffer->data.begin() + to_remove, buffer->data.end()).swap(buffer->data);
-    else
-        RemoveFront();
-}
-
 void ScheduleItem::ReplaceFront(std::unique_ptr<MemoryBuffer> with) noexcept { buffers.front() = std::move(with); }
+
+bool ScheduleItem::IsFrontAsync() const noexcept {
+    if (!BuffersLeft())
+        return false;
+    const auto &front = *CFront();
+    std::type_index type = typeid(front);
+    if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
+        return false;
+    return true;
+}
 
 std::size_t ScheduleItem::BuffersLeft() const noexcept { return buffers.size(); }
 
