@@ -23,7 +23,6 @@ class Response {
     Response(const std::string &);
     Response(Http::StatusCode, const std::string &);
     Response(const Resource &);
-    Response(const Json::Value &);
     virtual ~Response() = default;
 
     CachePolicy GetCachePolicy() const;

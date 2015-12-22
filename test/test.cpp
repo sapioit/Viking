@@ -9,7 +9,7 @@ int main() {
         Web::Server server(1234);
         auto route1 = std::make_pair(
                     std::make_pair(Http::Method::Get, "^\\/adsaf\\/json\\/(\\d+)$"),
-                    [](Http::Request req) -> Http::Resolution {
+                    [](Http::Request req) -> Http::Response {
                 // /adsaf/json/<int>
 
                 Json::Value root(Json::arrayValue);
@@ -27,33 +27,20 @@ int main() {
         records.append(a1);
         records.append(a2);
         root.append(records);
-        return {root};
+        return {root.toStyledString()};
     });
 
     auto route2 = std::make_pair(
                 std::make_pair(Http::Method::Get, "^\\/adsaf\\/json\\/$"),
                 [](Http::Request) -> Http::Response {
-            // /adsaf/json/
-
-            Json::Value root(Json::arrayValue);
-            Json::Value records(Json::arrayValue);
-            Json::Value a1(Json::arrayValue);
-            Json::Value a2(Json::arrayValue);
-            a1.append("1");
-            a1.append("2");
-            a2.append("3");
-            a2.append("4");
-            records.append(a1);
-            records.append(a2);
-            root.append(records);
-            return {root};
+            return {"This is a sample string response"};
 });
 
     auto route3 = std::make_pair(
                 std::make_pair(Http::Method::Get, "^\\/adsaf\\/jsons\\/$"),
                 [](Http::Request) -> Http::Resolution {
-            // /adsaf/json/
-            auto future = std::async(std::launch::async, []() -> auto{
+            // /adsaf/jsons/
+            auto future = std::async(std::launch::async, []() -> Http::Response {
                                          Json::Value root(Json::arrayValue);
                                          Json::Value records(Json::arrayValue);
                                          Json::Value a1(Json::arrayValue);
@@ -66,12 +53,16 @@ int main() {
                                          records.append(a2);
                                          root.append(records);
                                          std::this_thread::sleep_for(std::chrono::seconds(5));
-                                         return Http::Response{root};
+                                         return {root.toStyledString()};
                                      });
-            return Http::Resolution(std::move(future));
+            return {std::move(future)};
 });
     Settings settings;
+#ifdef __arm__
     settings.root_path = "/mnt/exthdd/server";
+#else
+    settings.root_path = "/mnt/hdd/store/basic";
+#endif
     settings.max_connections = 1000;
     server.SetSettings(settings);
     server.AddRoute(route1);

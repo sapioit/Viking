@@ -68,7 +68,7 @@ Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text
 
 Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) { type_ = Type::Resource; }
 
-Response::Response(const Json::Value &json)
-    : code_(StatusCode::OK), text_(json.toStyledString()), _content_type(Http::ContentType::ApplicationJson) {
-    type_ = Type::Text;
-}
+//Response::Response(const Json::Value &json)
+//    : code_(StatusCode::OK), text_(json.toStyledString()), _content_type(Http::ContentType::ApplicationJson) {
+//    type_ = Type::Text;
+//}
