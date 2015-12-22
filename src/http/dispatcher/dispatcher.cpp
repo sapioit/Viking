@@ -31,7 +31,7 @@ bool ShouldCopyInMemory(const std::string &resource_path) {
 
 ScheduleItem Dispatcher::PassRequest(const Http::Request &request, Handler handler) noexcept {
     Http::Resolution resolution = handler(request);
-    if (likely(resolution.GetType() == Http::Resolution::Type::Sync))
+    if (resolution.GetType() == Http::Resolution::Type::Sync)
         return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
     else
         return {std::make_unique<AsyncBuffer<Http::Response>>(std::move(resolution.GetFuture()))};
@@ -75,7 +75,7 @@ ScheduleItem Dispatcher::HandleConnection(const IO::Socket *connection) noexcept
         return ProcessEngine(connection, engine, true);
     } else {
         auto new_engine = Http::Engine(connection);
-        return ProcessEngine(connection, &new_engine);
+        return ProcessEngine(connection, &new_engine, false);
     }
 }
 
@@ -113,15 +113,15 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
     }
 }
 
-bool Dispatcher::HandleBarrier(ScheduleItem &item, std::unique_ptr<MemoryBuffer> &new_item) noexcept {
-    auto raw_buffer = item.Front();
-    if (likely(typeid(*raw_buffer) == typeid(AsyncBuffer<Http::Response>))) {
-        auto async_buffer = dynamic_cast<AsyncBuffer<Http::Response> *>(raw_buffer);
-        if (async_buffer->IsReady()) {
-            auto http_response = async_buffer->future.get();
-            new_item = std::make_unique<MemoryBuffer>(serializer(http_response));
-            return true;
-        }
-    }
-    return false;
+std::unique_ptr<MemoryBuffer> Dispatcher::HandleBarrier(AsyncBuffer<Http::Response> *item) noexcept {
+    //    auto raw_buffer = item.Front();
+    //    if (likely(typeid(*raw_buffer) == typeid(AsyncBuffer<Http::Response>))) {
+    //        auto async_buffer = dynamic_cast<AsyncBuffer<Http::Response> *>(raw_buffer);
+    //        if (async_buffer->IsReady()) {
+    auto http_response = item->future.get();
+    return std::make_unique<MemoryBuffer>(serializer(http_response));
+    //            return true;
+    //        }
+    //    }
+    //    return false;
 }

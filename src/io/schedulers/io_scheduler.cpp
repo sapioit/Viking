@@ -67,7 +67,7 @@ void IO::Scheduler::Run() noexcept {
                     QueueItem(event.context, callback_response, true);
                 } else {
                     QueueItem(event.context, callback_response, false);
-                    event.context->flags |= Channel::Barrier;
+                    // event.context->flags |= Channel::Barrier;
                 }
             }
             continue;
@@ -82,9 +82,17 @@ void IO::Scheduler::QueueItem(Channel *channel, ScheduleItem &item, bool back) n
 void IO::Scheduler::ProcessWrite(Channel *channel) noexcept {
     try {
         while (channel->queue && !(channel->flags & Channel::Full)) {
-            if (channel->flags & Channel::Barrier) {
-                poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
-                return;
+            /* We cannot rely on the barrier here, because there might only be one item in queue
+             * and nobody has managed to set the barrier, so we have to use IsFrontAsync which uses typeid */
+            if (channel->queue.IsFrontAsync()) {
+                auto new_sync_buffer = barrier_callback(channel->queue);
+                if (*new_sync_buffer) {
+                    channel->queue.ReplaceFront(std::move(new_sync_buffer));
+                    channel->flags &= ~Channel::Barrier;
+                } else {
+                    poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                    return;
+                }
             }
             FillChannel(channel);
             if (!channel->queue) {
@@ -95,6 +103,8 @@ void IO::Scheduler::ProcessWrite(Channel *channel) noexcept {
                     return;
                 }
             }
+            /* Using the barrier as a cheap way of knowing if the next item in the queue is async (instead of typeid),
+             * because we might have consumed a sync item without filling the OS socket buffer. */
             if (!(channel->flags & Channel::Full) || channel->flags & Channel::Barrier)
                 poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
         }

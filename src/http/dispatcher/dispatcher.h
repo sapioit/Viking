@@ -24,7 +24,7 @@ class Dispatcher {
     class Socket;
     template <typename T> void AddRoute(T route) noexcept { routes.insert(route); }
     ScheduleItem HandleConnection(const IO::Socket *) noexcept;
-    bool HandleBarrier(ScheduleItem &, std::unique_ptr<MemoryBuffer> &) noexcept;
+    std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
 };
 }
 

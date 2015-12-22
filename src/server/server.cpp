@@ -40,15 +40,22 @@ IO::Socket *make_socket(int port, int max_pending, bool = false) {
         return nullptr;
     }
 }
-
+#include <type_traits>
 void Server::Run() {
     signal(SIGPIPE, SIG_IGN);
     debug("Pid = " + std::to_string(getpid()));
     try {
         IO::Scheduler watcher(std::unique_ptr<IO::Socket>(make_socket(port_, max_pending_)),
                               [this](const IO::Socket *socket) { return dispatcher_.HandleConnection(socket); },
-                              [this](ScheduleItem &schedule_item, std::unique_ptr<MemoryBuffer> &buf) {
-                                  return dispatcher_.HandleBarrier(schedule_item, buf);
+                              [this](ScheduleItem & schedule_item) -> auto {
+                                  if (schedule_item.IsFrontAsync()) {
+                                      AsyncBuffer<Http::Response> *async_buffer =
+                                          static_cast<AsyncBuffer<Http::Response> *>(schedule_item.Front());
+                                      if (async_buffer->IsReady()) {
+                                          return dispatcher_.HandleBarrier(async_buffer);
+                                      }
+                                  }
+                                  return std::make_unique<MemoryBuffer>(std::vector<char>());
                               });
         while (true) {
             watcher.Run();

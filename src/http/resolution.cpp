@@ -3,7 +3,7 @@
 using namespace Http;
 Resolution::Resolution(const Http::Response &response) : response(response), type(Type::Sync) {}
 
-Resolution::Resolution(std::future<Response> &future)
+Resolution::Resolution(std::future<Response> &&future)
     : future(std::forward<std::future<Http::Response>>(future)), type(Type::Async) {}
 
 Resolution::Type Resolution::GetType() const noexcept { return type; }

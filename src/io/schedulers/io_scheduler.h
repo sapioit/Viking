@@ -22,7 +22,7 @@ class Scheduler {
     typedef ScheduleItem Resolution;
     typedef std::vector<char> DataType;
     typedef std::function<Resolution(const Socket *)> ReadCallback;
-    typedef std::function<bool(ScheduleItem &, std::unique_ptr<MemoryBuffer> &)> BarrierCallback;
+    typedef std::function<std::unique_ptr<MemoryBuffer>(ScheduleItem &)> BarrierCallback;
 
     private:
     std::vector<std::unique_ptr<Channel>> channels;
