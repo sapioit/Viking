@@ -20,8 +20,9 @@ IO::Scheduler::Scheduler(std::unique_ptr<Socket> sock, IO::Scheduler::ReadCallba
 
 void IO::Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
-        channels.emplace_back(std::make_unique<IO::Channel>(std::move(socket)));
-        poll.Schedule(&(*channels.back()), flags);
+        auto ctx = std::make_unique<IO::Channel>(std::move(socket));
+        poll.Schedule(ctx.get(), flags);
+        channels.emplace_back(std::move(ctx));
     } catch (const SysEpoll::PollError &) {
         throw;
     }

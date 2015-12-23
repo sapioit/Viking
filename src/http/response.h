@@ -2,7 +2,7 @@
 #define RESPONSE_H
 
 #include <http/header.h>
-#include <http/request.h>
+#include <http/version.h>
 #include <misc/resource.h>
 #include <io/buffers/unix_file.h>
 

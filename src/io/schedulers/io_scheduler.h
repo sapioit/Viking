@@ -34,6 +34,11 @@ class Scheduler {
     Scheduler(std::unique_ptr<Socket> sock, ReadCallback, BarrierCallback);
     ~Scheduler() = default;
 
+    Scheduler(const Scheduler &) = delete;
+    Scheduler &operator=(const Scheduler &) = delete;
+    Scheduler(Scheduler &&) = default;
+    Scheduler &operator=(Scheduler &&) = default;
+
     void Add(std::unique_ptr<Socket> socket, std::uint32_t flags);
     virtual void Run() noexcept;
 

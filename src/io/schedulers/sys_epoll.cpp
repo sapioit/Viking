@@ -17,7 +17,8 @@ SysEpoll::~SysEpoll() {
     /* We only close the epoll file descriptor, because epoll is aware of
      * sockets
      * that get closed */
-    ::close(efd_);
+    if (efd_ != -1)
+        ::close(efd_);
 }
 
 void SysEpoll::Schedule(IO::Channel *context, std::uint32_t flags) {
@@ -97,3 +98,13 @@ SysEpoll::Event::Event(IO::Channel *context, std::uint32_t description) noexcept
                                                                                    description(description) {}
 
 SysEpoll::PollError::PollError(const std::string &err) : std::runtime_error(err) {}
+
+SysEpoll &SysEpoll::operator=(SysEpoll &&other) {
+    if (this != &other) {
+        this->efd_ = other.efd_;
+        other.efd_ = -1;
+    }
+    return *this;
+}
+
+SysEpoll::SysEpoll(SysEpoll &&other) { *this = std::move(other); }

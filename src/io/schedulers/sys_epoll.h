@@ -39,6 +39,10 @@ class SysEpoll {
 
     SysEpoll();
     virtual ~SysEpoll();
+    SysEpoll(const SysEpoll &) = delete;
+    SysEpoll &operator=(const SysEpoll &) = delete;
+    SysEpoll(SysEpoll &&);
+    SysEpoll &operator=(SysEpoll &&);
 };
 
 #endif
