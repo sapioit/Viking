@@ -1,7 +1,6 @@
 #include <http/response_serializer.h>
 #include <http/components.h>
 #include <misc/string_util.h>
-#include <misc/dfa.h>
 #include <misc/date.h>
 #include <http/engine.h>
 #include <string.h>

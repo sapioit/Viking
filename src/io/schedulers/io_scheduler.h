@@ -5,7 +5,6 @@
 #include <io/schedulers/sched_item.h>
 #include <io/socket/socket.h>
 #include <io/buffers/mem_buffer.h>
-#include <map>
 #include <functional>
 
 class Channel;

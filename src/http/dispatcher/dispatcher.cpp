@@ -60,10 +60,8 @@ ScheduleItem Dispatcher::ProcessEngine(const IO::Socket *connection, Http::Engin
                 /* It's a resource on the filesystem */
                 return TakeResource(request);
             if (auto handler = RouteUtility::GetHandler(request, routes))
-                /* Got handler */
                 return PassRequest(request, handler);
             else
-                /* No handler */
                 return {serializer({Http::StatusCode::NotFound})};
         }
         return {serializer({Http::StatusCode::NotFound})};

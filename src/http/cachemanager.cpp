@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-std::map<std::string, Resource> CacheManager::_resources;
+std::unordered_map<std::string, Resource> CacheManager::_resources;
 
 Resource CacheManager::GetItem(const std::string &path) {
     auto item = CacheManager::_resources.find(path);

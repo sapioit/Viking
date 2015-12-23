@@ -1,7 +1,7 @@
 #ifndef FILE_DESCRIPTOR_H
 #define FILE_DESCRIPTOR_H
 
-#include <map>
+#include <unordered_map>
 #include <string>
 
 namespace Cache {
@@ -14,7 +14,7 @@ class FileDescriptor {
         }
     };
 
-    static std::map<std::string, handle_use_count> file_descriptor_cache_;
+    static std::unordered_map<std::string, handle_use_count> file_descriptor_cache_;
 
     public:
     static int Aquire(const std::string &) noexcept;

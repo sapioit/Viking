@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <utility>
 
-std::map<std::string, Cache::FileDescriptor::handle_use_count> Cache::FileDescriptor::file_descriptor_cache_;
+std::unordered_map<std::string, Cache::FileDescriptor::handle_use_count> Cache::FileDescriptor::file_descriptor_cache_;
 
 int Cache::FileDescriptor::Aquire(const std::string &path) noexcept {
     auto it = file_descriptor_cache_.find(path);

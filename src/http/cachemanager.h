@@ -2,12 +2,12 @@
 #define CACHEMANAGER_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <mutex>
 #include <misc/resource.h>
 
 class CacheManager {
-    static std::map<std::string, Resource> _resources;
+    static std::unordered_map<std::string, Resource> _resources;
     static std::mutex _cacheLock;
 
     public:

@@ -80,7 +80,7 @@ void Response::Init() {
     Set(f::Content_Type, "text/plain");
     Set(f::Content_Length, std::to_string(ContentLength()));
     Set(f::Transfer_Encoding, "binary");
-    Set(f::Cache_Control, "max-age = " + std::to_string(Storage::GetSettings().default_max_age));
+    Set(f::Cache_Control, "max-age=" + std::to_string(Storage::GetSettings().default_max_age));
 }
 
 Response::Response(StatusCode code) : code_(code) {

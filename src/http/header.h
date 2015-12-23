@@ -7,13 +7,14 @@
 
 #include <string>
 #include <http/components.h>
+#include <unordered_map>
 
 namespace Http {
 struct Header {
     Header() = default;
     ~Header() = default;
     bool operator==(const Header &other) { return fields == other.fields; }
-    std::map<std::string, std::string> fields;
+    std::unordered_map<std::string, std::string> fields;
 
     // Common
     struct Fields {

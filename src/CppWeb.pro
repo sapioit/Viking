@@ -33,7 +33,6 @@ HEADERS += \
     http/util.h \
     misc/string_util.h \
     http/version.h \
-    http/cache_policy.h \
     io/schedulers/channel.h \
     io/buffers/asyncbuffer.h \
     misc/common.h \
@@ -99,7 +98,6 @@ SOURCES += \
 
 HEADERS += \
     misc/date.h \
-    misc/dfa.h \
     misc/resource.h \
     misc/settings.h \
     misc/storage.h \
