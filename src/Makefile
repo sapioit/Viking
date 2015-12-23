@@ -33,7 +33,7 @@ OBJS += $(patsubst ./%.c, ./%.o, $(C_FILES))
 -include $(OBJS:.o=.o.d)
 
 lib: $(OBJS)
-	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LIBS) -flto $(LDFLAGS) $^ -o $(LIBNAME)
+	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LIBS) $(LDFLAGS) $^ -o $(LIBNAME)
 	mkdir -p $(BINFOLDER)
 	mv $(LIBNAME) $(BINFOLDER)
 

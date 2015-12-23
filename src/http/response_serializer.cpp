@@ -5,6 +5,7 @@
 #include <misc/date.h>
 #include <http/engine.h>
 #include <string.h>
+#include <sstream>
 
 enum class States { StatusLine, GeneralHeader, ResponseHeader, Body, CRLFHeader, CRLFBody, End };
 enum class Transitions { EndStatusLine, EndGeneralHeader, EndResponseHeader, EndBody, CRLFEnd, Error };

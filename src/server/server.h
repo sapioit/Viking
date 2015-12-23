@@ -18,9 +18,10 @@ class Server {
     ~Server() = default;
     Server(const Server &) = delete;
     Server &operator=(const Server &) = delete;
-    Server(Server &&);
-    Server &operator=(Server &&);
-    template <class T> void AddRoute(T route) { dispatcher_.AddRoute(std::forward<T>(route)); }
+    Server(Server &&) = default;
+    Server &operator=(Server &&) = default;
+    void AddRoute(Http::Method method, const std::string &uri_regex,
+                  std::function<Http::Resolution(Http::Request)> function);
     void SetSettings(const Settings &);
     void Run();
 };

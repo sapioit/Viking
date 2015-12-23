@@ -4,7 +4,6 @@
 #include <http/header.h>
 #include <http/request.h>
 #include <http/cache_policy.h>
-#include <json/json.h>
 #include <misc/resource.h>
 #include <io/buffers/unix_file.h>
 
