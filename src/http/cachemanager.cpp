@@ -20,13 +20,13 @@ Resource CacheManager::GetItem(const std::string &path) {
 void CacheManager::PutItem(const std::pair<std::string, Resource> &&item) { CacheManager::_resources.insert(item); }
 
 void CacheManager::ReplaceItem(const std::string &path, const Resource &res) { _resources[path] = res; }
+
 Resource CacheManager::GetResource(const std::string &path) {
     std::string fpath(Storage::GetSettings().root_path + path);
 
     auto item = CacheManager::GetItem(fpath);
 
     if (item) {
-        // The item is in cache
         struct stat st;
         auto st_res = stat(fpath.c_str(), &st);
         if (st_res != 0) {
@@ -35,8 +35,8 @@ Resource CacheManager::GetResource(const std::string &path) {
             // should be removed
             throw Http::StatusCode::NotFound;
         } else {
-            // The item has been updated on disk
             if (st.st_mtime > item.stat().st_mtime) {
+                // The item has been updated on disk
                 try {
                     Resource res(fpath);
                     CacheManager::ReplaceItem(fpath, res);
@@ -46,8 +46,9 @@ Resource CacheManager::GetResource(const std::string &path) {
                 } catch (std::system_error &ex) {
                     throw Http::StatusCode::InternalServerError;
                 }
-            } else
+            } else {
                 return item;
+            }
         }
     } else {
         // Fetch the item from disk and cache it

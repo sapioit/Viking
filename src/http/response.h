@@ -13,8 +13,6 @@
 namespace Http {
 using namespace Http;
 class Response {
-    void Init();
-
     public:
     enum class Type { Resource, File, Text };
     Response() = default;
@@ -24,20 +22,11 @@ class Response {
     Response(const Resource &);
     virtual ~Response() = default;
 
-    CachePolicy GetCachePolicy() const;
-    void SetCachePolicy(CachePolicy);
-
-    bool GetKeepAlive() const;
-    void SetKeepAlive(bool);
-
     Version GetVersion() const;
     void SetVersion(Version);
 
     StatusCode GetCode() const;
     void SetCode(StatusCode GetCode);
-
-    const Http::ContentType &GetContentType() const;
-    void SetContentType(const Http::ContentType &value);
 
     std::size_t ContentLength() const;
 
@@ -53,18 +42,19 @@ class Response {
     const UnixFile *GetFile() const;
     void SetFile(UnixFile *file) noexcept;
 
+    bool GetKeepAlive() const noexcept;
+    void Set(const std::string &field, const std::string &value) noexcept;
+    const std::vector<std::pair<std::string, std::string>> &GetFields() const noexcept;
+
     private:
+    std::vector<std::pair<std::string, std::string>> fields_;
     Version version_ = {1, 1};
     StatusCode code_ = Http::StatusCode::OK;
     Type type_;
-
     Resource resource_;
     std::string text_;
     const UnixFile *file_ = nullptr;
-
-    Http::ContentType _content_type = Http::ContentType::TextPlain;
-    bool keep_alive_;
-    CachePolicy cache_policy_;
+    void Init();
 };
 };
 

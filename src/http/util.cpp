@@ -51,25 +51,25 @@ bool Util::CanHaveBody(Method method) noexcept {
     }
 }
 
-Http::ContentType Util::GetMimeType(const std::string &url) noexcept {
+std::string Util::GetMimeType(const std::string &url) noexcept {
 
     auto dot = url.find_last_of('.');
     std::string ext(url.begin() + dot + 1, url.end());
 
     if (ext == "png")
-        return ContentType::ImagePng;
+        return "image/png";
     if (ext == "jpg")
-        return ContentType::ImageJpeg;
+        return "image/jpeg";
     if (ext == "mp4")
-        return ContentType::MovieMp4;
+        return "video/mp4";
     if (ext == "html" || ext == "htm")
-        return ContentType::TextHtml;
+        return "text/html; charset=utf-8";
     if (ext == "json")
-        return ContentType::ApplicationJson;
+        return "application/json";
     if (ext == "js")
-        return ContentType::TextJavaScript;
+        return "text/javascript";
     if (ext == "css")
-        return ContentType::TextCss;
+        return "text/css";
 
-    return ContentType::TextPlain;
+    return "";
 }

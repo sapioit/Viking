@@ -91,8 +91,6 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
         if (ShouldCopyInMemory(full_path)) {
             auto resource = CacheManager::GetResource(request.url);
             Http::Response response{resource};
-            response.SetContentType(content_type);
-            response.SetCachePolicy({Storage::GetSettings().default_max_age});
             return {serializer(response), response.GetKeepAlive()};
         } else {
             auto unix_file =
@@ -100,15 +98,16 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
             ScheduleItem response;
             Http::Response http_response;
             http_response.SetFile(unix_file.get());
-            http_response.SetType(Http::Response::Type::File);
-            http_response.SetContentType(content_type);
-            http_response.SetCachePolicy({Storage::GetSettings().default_max_age});
+            http_response.Set(Http::Header::Fields::Content_Type, content_type);
+            http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
             response.PutBack(serializer.MakeHeader(http_response));
             response.PutBack(std::move(unix_file));
             response.PutBack(serializer.MakeEnding(http_response));
             response.SetKeepFileOpen(http_response.GetKeepAlive());
             return response;
         }
+    } catch (CacheManager::FileTooBig) {
+        // TODO
     } catch (UnixFile::Error) {
         return {serializer({Http::StatusCode::NotFound})};
     } catch (Http::StatusCode) {
@@ -116,17 +115,10 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
     } catch (...) {
         return {serializer({Http::StatusCode::NotFound})};
     }
+    return {};
 }
 
 std::unique_ptr<MemoryBuffer> Dispatcher::HandleBarrier(AsyncBuffer<Http::Response> *item) noexcept {
-    //    auto raw_buffer = item.Front();
-    //    if (likely(typeid(*raw_buffer) == typeid(AsyncBuffer<Http::Response>))) {
-    //        auto async_buffer = dynamic_cast<AsyncBuffer<Http::Response> *>(raw_buffer);
-    //        if (async_buffer->IsReady()) {
     auto http_response = item->future.get();
     return std::make_unique<MemoryBuffer>(serializer(http_response));
-    //            return true;
-    //        }
-    //    }
-    //    return false;
 }

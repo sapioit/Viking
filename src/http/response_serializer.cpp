@@ -7,82 +7,20 @@
 #include <string.h>
 #include <sstream>
 
-enum class States { StatusLine, GeneralHeader, ResponseHeader, Body, CRLFHeader, CRLFBody, End };
-enum class Transitions { EndStatusLine, EndGeneralHeader, EndResponseHeader, EndBody, CRLFEnd, Error };
-
-static constexpr auto start = States::StatusLine;
-static constexpr auto end = States::End;
 static constexpr auto crlf = "\r\n";
 static constexpr auto crlfcrlf = "\r\n\r\n";
-static std::string conn_close = "Close";
-static std::string conn_keep_alive = "Keep-Alive";
-
-DFA<States, Transitions> GetHttpResponseMachine() noexcept {
-    static DFA<States, Transitions> machine(start, end);
-    if (machine.StateNumber() == 0) {
-        machine.Add(std::make_pair(States::StatusLine, Transitions::EndStatusLine), States::GeneralHeader);
-        machine.Add(std::make_pair(States::GeneralHeader, Transitions::Error), States::CRLFBody);
-        machine.Add(std::make_pair(States::GeneralHeader, Transitions::EndGeneralHeader), States::ResponseHeader);
-        machine.Add(std::make_pair(States::ResponseHeader, Transitions::EndResponseHeader), States::CRLFHeader);
-        machine.Add(std::make_pair(States::CRLFHeader, Transitions::CRLFEnd), States::Body);
-        machine.Add(std::make_pair(States::Body, Transitions::EndBody), States::CRLFBody);
-        machine.Add(std::make_pair(States::CRLFBody, Transitions::CRLFEnd), States::End);
-    }
-    return machine;
-}
 
 std::vector<char> ResponseSerializer::MakeHeader(const Http::Response &response) noexcept {
-    // TODO rewrite this whole thing
     std::ostringstream stream;
-    auto machine = GetHttpResponseMachine();
-
-    while (machine.State() != States::Body) {
-        switch (machine.State()) {
-        case States::StatusLine: {
-            stream << "HTTP/" << response.GetVersion().major << "." << response.GetVersion().minor;
-            stream << " " << response.GetCode() << " ";
-            stream << Http::StatusCodes.at(response.GetCode()) << crlf;
-            machine.Transition(Transitions::EndStatusLine);
-            break;
-        }
-        case States::GeneralHeader: {
-            stream << Http::Header::Fields::Date << ": " << StringUtil::ToString(Date::Now()) << crlf;
-            stream << Http::Header::Fields::Connection << ": ";
-            if (response.GetKeepAlive())
-                stream << conn_keep_alive;
-            else
-                stream << conn_close;
-            stream << crlf;
-            stream << Http::Header::Fields::Access_Control_Allow_Origin << ": *" << crlf;
-            machine.Transition(Transitions::EndGeneralHeader);
-            break;
-        }
-        case States::ResponseHeader: {
-            auto content_type_str = Http::ContentTypes.at(response.GetContentType());
-            stream << Http::Header::Fields::Content_Type << ": " << content_type_str << crlf;
-            stream << Http::Header::Fields::Content_Length << ": " << response.ContentLength() << crlf;
-            stream << Http::Header::Fields::Cache_Control << ": ";
-            if (response.GetCachePolicy().max_age != 0)
-                stream << "max-age=" + std::to_string(response.GetCachePolicy().max_age);
-            else
-                stream << "no-cache";
-            stream << crlf;
-            // TODO Research more into this
-            stream << Http::Header::Fields::Transfer_Encoding << ": "
-                   << "binary" << crlf;
-            machine.Transition(Transitions::EndResponseHeader);
-            break;
-        }
-        case States::CRLFHeader: {
-            stream << crlf;
-            machine.Transition(Transitions::CRLFEnd);
-            break;
-        }
-        default: { break; }
-        }
+    stream << "HTTP/" << response.GetVersion().major << "." << response.GetVersion().minor;
+    stream << " " << response.GetCode() << " ";
+    stream << Http::StatusCodes.at(response.GetCode()) << crlf;
+    for (const auto &pair : response.GetFields()) {
+        stream << pair.first << ": " << pair.second << crlf;
     }
-    auto str = stream.str();
-    return {str.begin(), str.end()};
+    stream << crlf;
+    auto string = stream.str();
+    return {string.begin(), string.end()};
 }
 
 std::vector<char> ResponseSerializer::MakeBody(const Http::Response &response) noexcept {

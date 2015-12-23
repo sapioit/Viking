@@ -8,7 +8,6 @@
 class StringUtil {
     public:
     static std::vector<std::string> Split(const std::string &, char) noexcept;
-    static std::string ToString(Date) noexcept;
 };
 
 #endif // UTIL_H
