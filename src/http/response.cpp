@@ -3,6 +3,7 @@
 #include <http/request.h>
 #include <http/util.h>
 #include <io/filesystem.h>
+#include <inl/mime_types.h>
 #include <misc/date.h>
 #include <misc/storage.h>
 

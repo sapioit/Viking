@@ -10,6 +10,7 @@
 #include <io/filesystem.h>
 #include <io/socket/socket.h>
 #include <io/buffers/asyncbuffer.h>
+#include <inl/mime_types.h>
 #include <misc/storage.h>
 #include <misc/common.h>
 #include <misc/debug.h>

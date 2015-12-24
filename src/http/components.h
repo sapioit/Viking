@@ -2,7 +2,6 @@
 #define COMPONENTS
 
 #include <map>
-#include <inl/mime_types.h>
 
 namespace Http {
 enum class Method {
