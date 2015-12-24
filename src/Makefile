@@ -74,7 +74,6 @@ install:
 	cp http/parser.h /usr/include/cppweb/http/parser.h
 	cp http/response.h /usr/include/cppweb/http/response.h
 	cp http/resolution.h /usr/include/cppweb/http/resolution.h
-	cp http/cache_policy.h /usr/include/cppweb/http/cache_policy.h
 
 uninstall:
 	rm /usr/lib/$(LIBNAME)
