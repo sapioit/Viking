@@ -4,6 +4,7 @@
 #include <http/engine.h>
 #include <http/components.h>
 #include <misc/debug.h>
+#include <misc/string_util.h>
 #include <sstream>
 
 Http::Engine *GetMe(http_parser *parser) { return static_cast<Http::Engine *>(parser->data); }
@@ -29,7 +30,7 @@ Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
     };
     settings_.on_url = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = GetMe(parser);
-        me->request_.url = {at, at + length};
+        me->request_.url = StringUtil::DecodeURL({at, at + length});
         return 0;
 
     };

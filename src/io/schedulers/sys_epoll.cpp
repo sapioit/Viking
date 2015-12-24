@@ -47,7 +47,6 @@ void SysEpoll::Modify(const IO::Channel *context, std::uint32_t flags) {
 }
 
 void SysEpoll::Remove(const IO::Channel *context) {
-    // FIXME
     auto event_it =
         std::find_if(events_.begin(), events_.end(), [context](epoll_event &ev) { return (context == ev.data.ptr); });
 

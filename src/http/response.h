@@ -14,7 +14,7 @@ using namespace Http;
 class Response {
     public:
     enum class Type { Resource, File, Text };
-    Response() = default;
+    Response();
     Response(StatusCode);
     Response(const std::string &);
     Response(Http::StatusCode, const std::string &);
@@ -48,7 +48,7 @@ class Response {
     private:
     std::vector<std::pair<std::string, std::string>> fields_;
     Version version_ = {1, 1};
-    StatusCode code_ = Http::StatusCode::OK;
+    StatusCode code_;
     Type type_;
     Resource resource_;
     std::string text_;

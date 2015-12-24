@@ -3,7 +3,6 @@
 
 #include <io/buffers/datasource.h>
 
-#include <sys/sendfile.h>
 #include <sys/types.h>
 #include <functional>
 #include <string>

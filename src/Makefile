@@ -1,7 +1,7 @@
 # Compiler
 CXX = clang++
 CC = clang
-CXX_OPTS = -fPIC -std=c++14 -O3 -Wall -Werror
+CXX_OPTS = -fPIC -std=c++1z -O3 -Wall -Werror
 C_OPTS = -fPIC -O3 -Wall -Werror
 DEBUG_OPTS =
 INCLUDEDIRS = -I.
@@ -11,7 +11,7 @@ INCLUDEDIRS = -I.
 PROJECT = cppweb
 
 # Libraries
-LIBS = -lpthread
+LIBS = -lpthread -lstdc++fs
 LDFLAGS = -shared
 LIBNAME = libcppweb.so
 LIBNAME_ABBREVIATED = -lcppweb
@@ -37,12 +37,12 @@ lib: $(OBJS)
 	mkdir -p $(BINFOLDER)
 	mv $(LIBNAME) $(BINFOLDER)
 
-clean: 
+clean:
 	rm -rf $(GARBAGE)
 	rm *.o *.d -Rf
 	rm -rf $(BINFOLDER)
 
-install: 
+install:
 	cp $(BINFOLDER)/$(LIBNAME) /usr/lib
 	mkdir -p /usr/include/cppweb
 	mkdir -p /usr/include/cppweb/server
@@ -79,7 +79,7 @@ uninstall:
 	rm /usr/lib/$(LIBNAME)
 	rm -rf /usr/include/$(PROJECT)
 
-testapp: 
+testapp:
 	cd ../test && $(MAKE)
 
 %.o : %.cpp

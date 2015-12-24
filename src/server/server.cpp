@@ -60,7 +60,7 @@ class Server::ServerImpl {
     inline void Freeze() { stop_requested_ = true; }
 
     inline void AddRoute(const Http::Method &method, const std::string &uri_regex,
-                  std::function<Http::Resolution(Http::Request)> function) {
+                         std::function<Http::Resolution(Http::Request)> function) {
         dispatcher_.AddRoute(std::make_pair(std::make_pair(method, uri_regex), function));
     }
 

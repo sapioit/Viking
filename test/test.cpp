@@ -3,6 +3,62 @@
 #include <http/request.h>
 #include <json/json.h>
 #include <iostream>
+#include <iomanip>
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
+
+std::string trim_quotes(std::string str) {
+  if (str.front() == '\"')
+    str = str.substr(1, str.size());
+  if (str.back() == '\"')
+    str = str.substr(0, str.size());
+  return str;
+}
+
+std::string url_encode(const std::string &value) {
+  std::ostringstream escaped;
+  escaped.fill('0');
+  escaped << std::hex;
+
+  for (std::string::const_iterator i = value.begin(), n = value.end(); i != n;
+       ++i) {
+    std::string::value_type c = (*i);
+
+    // Keep alphanumeric and other accepted characters intact
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      escaped << c;
+      continue;
+    }
+
+    // Any other characters are percent-encoded
+    escaped << std::uppercase;
+    escaped << '%' << std::setw(2) << int((unsigned char)c);
+    escaped << std::nouppercase;
+  }
+
+  return escaped.str();
+}
+
+Http::Response list_directory(Http::Request req, const std::string &root_path) {
+  try {
+    fs::path root = root_path + req.url;
+    std::ostringstream stream;
+    stream << "<h1>Directory listing of " + req.url + "</h1>";
+    for (auto it : fs::directory_iterator(root)) {
+      fs::path p = it;
+      stream << "<a href=\"";
+      stream << url_encode(trim_quotes(p.filename())) << "\">";
+      stream << trim_quotes(p.filename());
+      stream << "</a><br/>";
+    }
+    Http::Response r{stream.str()};
+    r.Set("Content-Type", "text/html; charset=utf-8");
+    return r;
+  } catch (...) {
+    return {Http::StatusCode::NotFound};
+  }
+}
 
 int main() {
   try {
@@ -35,9 +91,16 @@ int main() {
                       return {root.toStyledString()};
                     });
 
-    server.AddRoute(Http::Method::Get, "^\\/adsaf\\/json\\/$",
-                    [](auto) -> Http::Response {
-                      return {"This is a sample string response"};
+    server.AddRoute(Http::Method::Get, "^([^.]+)$",
+                    [settings](Http::Request req) -> Http::Response {
+                      // Matches any directory that doesn't have a dot in its
+                      // name
+                      if (req.url.back() != '/') {
+                        Http::Response r{Http::StatusCode::Found};
+                        r.Set("Location", req.url + '/');
+                        return r;
+                      }
+                      return list_directory(req, settings.root_path);
                     });
 
     server.AddRoute(

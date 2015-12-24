@@ -8,10 +8,11 @@ QT       -= core gui
 
 TARGET = cppweb_test
 TEMPLATE = app
-QMAKE_CXXFLAGS += -std=c++14
+QMAKE_CXXFLAGS += -std=c++1z
 QMAKE_CXXFLAGS += -Wall -Werror
 QMAKE_CXXFLAGS += -Ijson/ -I$$PWD
 DEFINES += API_LIBRARY
+LIBS += -lstdc++fs
 
 
 QMAKE_CXXFLAGS_DEBUG += -O0 -g

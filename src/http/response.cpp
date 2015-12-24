@@ -77,11 +77,13 @@ void Response::Init() {
     Set(f::Date, Date::Now().ToString());
     Set(f::Connection, "Keep-Alive");
     Set(f::Access_Control_Allow_Origin, "*");
-    Set(f::Content_Type, "text/plain");
+    Set(f::Content_Type, "text/plain; charset=utf-8");
     Set(f::Content_Length, std::to_string(ContentLength()));
     Set(f::Transfer_Encoding, "binary");
     Set(f::Cache_Control, "max-age=" + std::to_string(Storage::GetSettings().default_max_age));
 }
+
+Response::Response() : code_(StatusCode::OK) {}
 
 Response::Response(StatusCode code) : code_(code) {
     type_ = Type::Text;
