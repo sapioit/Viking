@@ -1,5 +1,6 @@
 #include <misc/string_util.h>
 #include <sstream>
+#include <iomanip>
 
 std::vector<std::string> StringUtil::Split(const std::string &source, char delimiter) noexcept {
     std::vector<std::string> result;
@@ -12,60 +13,44 @@ std::vector<std::string> StringUtil::Split(const std::string &source, char delim
     return result;
 }
 
-static constexpr char HEX2DEC[256] = {
-    /*       0  1  2  3   4  5  6  7   8  9  A  B   C  D  E  F */
-    /* 0 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 1 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 2 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 3 */ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1,
+std::string charToHex(unsigned char c) {
+    short i = c;
 
-    /* 4 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 5 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 6 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 7 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    std::stringstream s;
 
-    /* 8 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* 9 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* A */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* B */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    s << "%" << std::setw(2) << std::setfill('0') << std::hex << i;
 
-    /* C */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* D */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* E */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    /* F */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    return s.str();
+}
 
-std::string StringUtil::DecodeURL(const std::string &sSrc) {
-    // Note from RFC1630: "Sequences which start with a percent
-    // sign but are not followed by two hexadecimal characters
-    // (0-9, A-F) are reserved for future extension"
+unsigned char hexToChar(const std::string &str) {
+    short c = 0;
 
-    const unsigned char *pSrc = (const unsigned char *)sSrc.c_str();
-    const int SRC_LEN = sSrc.length();
-    const unsigned char *const SRC_END = pSrc + SRC_LEN;
-    // last decodable '%'
-    const unsigned char *const SRC_LAST_DEC = SRC_END - 2;
+    if (!str.empty()) {
+        std::istringstream in(str);
 
-    char *const pStart = new char[SRC_LEN];
-    char *pEnd = pStart;
+        in >> std::hex >> c;
 
-    while (pSrc < SRC_LAST_DEC) {
-        if (*pSrc == '%') {
-            char dec1, dec2;
-            if (-1 != (dec1 = HEX2DEC[*(pSrc + 1)]) && -1 != (dec2 = HEX2DEC[*(pSrc + 2)])) {
-                *pEnd++ = (dec1 << 4) + dec2;
-                pSrc += 3;
-                continue;
-            }
+        if (in.fail()) {
+            throw std::runtime_error("stream decode failure");
         }
-
-        *pEnd++ = *pSrc++;
     }
 
-    // the last 2- chars
-    while (pSrc < SRC_END)
-        *pEnd++ = *pSrc++;
+    return static_cast<unsigned char>(c);
+}
 
-    std::string sResult(pStart, pEnd);
-    delete[] pStart;
-    return sResult;
+std::string StringUtil::DecodeURL(const std::string &toDecode) {
+    std::ostringstream out;
+
+    for (std::string::size_type i = 0; i < toDecode.length(); ++i) {
+        if (toDecode.at(i) == '%') {
+            std::string str(toDecode.substr(i + 1, 2));
+            out << hexToChar(str);
+            i += 2;
+        } else {
+            out << toDecode.at(i);
+        }
+    }
+
+    return out.str();
 }
