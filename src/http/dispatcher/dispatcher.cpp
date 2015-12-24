@@ -40,22 +40,24 @@ ScheduleItem Dispatcher::PassRequest(const Http::Request &request, Handler handl
 }
 
 Http::Engine *Dispatcher::GetPendingEngine(const IO::Socket *connection) {
-    auto it = std::find_if(pending_.begin(), pending_.end(),
+    auto it = std::find_if(pending.begin(), pending.end(),
                            [connection](Http::Engine &engine) { return (*engine.GetSocket()) == (*connection); });
-    return it == pending_.end() ? nullptr : &*it;
+    return it == pending.end() ? nullptr : &*it;
 }
 
 ScheduleItem Dispatcher::ProcessEngine(const IO::Socket *connection, Http::Engine *engine, bool existed) {
     auto request = (*engine)();
     if (Http::Util::IsComplete(request)) {
         if (existed)
-            pending_.erase(std::remove_if(pending_.begin(), pending_.end(), [&connection](Http::Engine &engine) {
-                               return (*engine.GetSocket()) == (*connection);
-                           }), pending_.end());
+            pending.erase(std::remove_if(pending.begin(), pending.end(), [&connection](Http::Engine &engine) {
+                              return (*engine.GetSocket()) == (*connection);
+                          }), pending.end());
         if (Http::Util::IsPassable(request)) {
-            if (Http::Util::ExtensionAllowed(request.url))
-                /* It's a resource on the filesystem */
-                return TakeResource(request);
+            auto full_path = Storage::GetSettings().root_path + request.url;
+            if (IO::FileSystem::IsRegularFile(full_path)) {
+                if (IO::FileSystem::GetExtension(full_path) != "")
+                    return TakeResource(request);
+            }
             if (auto handler = RouteUtility::GetHandler(request, routes))
                 return PassRequest(request, handler);
             else
@@ -64,7 +66,7 @@ ScheduleItem Dispatcher::ProcessEngine(const IO::Socket *connection, Http::Engin
         return {serializer({Http::StatusCode::NotFound})};
     } else {
         if (!existed)
-            pending_.push_back(*engine);
+            pending.push_back(*engine);
         return {};
     }
 }
@@ -82,7 +84,6 @@ ScheduleItem Dispatcher::HandleConnection(const IO::Socket *connection) noexcept
 ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
     try {
         auto full_path = Storage::GetSettings().root_path + request.url;
-        auto content_type = Http::Util::GetMimeType(request.url);
         if (ShouldCopyInMemory(full_path)) {
             auto resource = CacheManager::GetResource(request.url);
             Http::Response response{resource};
@@ -93,7 +94,8 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
             ScheduleItem response;
             Http::Response http_response;
             http_response.SetFile(unix_file.get());
-            http_response.Set(Http::Header::Fields::Content_Type, content_type);
+            http_response.Set(Http::Header::Fields::Content_Type,
+                              mime_types[(IO::FileSystem::GetExtension(full_path))]);
             http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
             response.PutBack(serializer.MakeHeader(http_response));
             response.PutBack(std::move(unix_file));

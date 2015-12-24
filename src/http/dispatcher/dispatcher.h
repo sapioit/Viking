@@ -13,7 +13,7 @@
 namespace Web {
 class Dispatcher {
     RouteUtility::RouteMap routes;
-    std::vector<Http::Engine> pending_;
+    std::vector<Http::Engine> pending;
     typedef std::function<Http::Resolution(Http::Request)> Handler;
 
     ScheduleItem TakeResource(const Http::Request &) noexcept;

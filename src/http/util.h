@@ -9,7 +9,6 @@ class Util {
     static bool ExtensionAllowed(const std::string &) noexcept;
     static bool IsComplete(const Http::Request &) noexcept;
     static bool CanHaveBody(Http::Method) noexcept;
-    static std::string GetMimeType(const std::string &) noexcept;
 };
 }
 

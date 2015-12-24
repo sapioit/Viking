@@ -19,6 +19,11 @@ QMAKE_CXXFLAGS_DEBUG += -O0 -g
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 
+#INL
+HEADERS += \
+    inl/mime_types.h
+#INL-END
+
 #CACHE
 SOURCES += \
     cache/file_descriptor.cpp \

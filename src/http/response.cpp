@@ -2,6 +2,7 @@
 #include <http/response.h>
 #include <http/request.h>
 #include <http/util.h>
+#include <io/filesystem.h>
 #include <misc/date.h>
 #include <misc/storage.h>
 
@@ -98,5 +99,5 @@ Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text
 Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
     type_ = Type::Resource;
     Init();
-    Set(f::Content_Type, Util::GetMimeType(resource.path()));
+    Set(f::Content_Type, mime_types[(IO::FileSystem::GetExtension(resource.path()))]);
 }

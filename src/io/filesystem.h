@@ -19,6 +19,9 @@ class FileSystem {
     static std::vector<char> ReadFile(const std::string &path);
     static std::string GetCurrentDirectory();
     static std::size_t GetFileSize(const std::string &file_path);
+    static bool FileExists(const std::string &) noexcept;
+    static bool IsRegularFile(const std::string &) noexcept;
+    static std::string GetExtension(const std::string &) noexcept;
 };
 };
 
