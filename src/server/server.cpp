@@ -11,7 +11,6 @@
 #include <fstream>
 
 using namespace Web;
-
 IO::Socket *MakeSocket(int port, int max_pending);
 
 class Server::ServerImpl {
@@ -64,6 +63,19 @@ class Server::ServerImpl {
         dispatcher_.AddRoute(std::make_pair(std::make_pair(method, validator), function));
     }
 
+    inline void AddRoute(const Http::Method &method, const std::regex &regex,
+                         std::function<Http::Resolution(Http::Request)> function) {
+
+        auto ptr = [regex](auto string) {
+            try {
+                return std::regex_match(string, regex);
+            } catch (const std::regex_error &) {
+                return false;
+            }
+        };
+        dispatcher_.AddRoute(std::make_pair(std::make_pair(method, ptr), function));
+    }
+
     inline void SetSettings(const Settings &s) {
         Storage::SetSettings(s);
         max_pending_ = s.max_connections;
@@ -99,6 +111,11 @@ Server::Server(Server &&other) { *this = std::move(other); }
 void Server::AddRoute(const Http::Method &method, std::function<bool(const std::string &)> validator,
                       std::function<Http::Resolution(Http::Request)> function) {
     impl->AddRoute(method, validator, function);
+}
+
+void Server::AddRoute(const Http::Method &method, const std::regex &regex,
+                      std::function<Http::Resolution(Http::Request)> function) {
+    impl->AddRoute(method, regex, function);
 }
 
 void Server::SetSettings(const Settings &s) { impl->SetSettings(s); }
