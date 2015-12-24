@@ -4,9 +4,20 @@
 #include <json/json.h>
 #include <iostream>
 #include <iomanip>
+#include <regex>
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
+
+inline bool regex_match(const std::string &text, const std::string ex) {
+  try {
+    std::regex regex(ex);
+    bool match = std::regex_match(text, regex);
+    return match;
+  } catch (const std::regex_error &) {
+    return false;
+  }
+}
 
 std::string trim_quotes(std::string str) {
   if (str.front() == '\"')
@@ -71,7 +82,10 @@ int main() {
 #endif
     settings.max_connections = 1000;
     server.Initialize();
-    server.AddRoute(Http::Method::Get, "^\\/adsaf\\/json\\/(\\d+)$",
+    server.AddRoute(Http::Method::Get,
+                    [](std::string url) {
+                      return regex_match(url, "^\\/adsaf\\/json\\/(\\d+)$");
+                    },
                     [](auto req) -> Http::Response {
                       Json::Value root(Json::arrayValue);
                       Json::Value records(Json::arrayValue);
@@ -91,20 +105,25 @@ int main() {
                       return {root.toStyledString()};
                     });
 
-    server.AddRoute(Http::Method::Get, "^([^.]+)$",
-                    [settings](Http::Request req) -> Http::Response {
-                      // Matches any directory that doesn't have a dot in its
-                      // name
-                      if (req.url.back() != '/') {
-                        Http::Response r{Http::StatusCode::Found};
-                        r.Set("Location", req.url + '/');
-                        return r;
-                      }
-                      return list_directory(req, settings.root_path);
-                    });
+    server.AddRoute(
+        Http::Method::Get,
+        [](std::string url) { return regex_match(url, "^([^.]+)$"); },
+        [settings](Http::Request req) -> Http::Response {
+          // Matches any directory that doesn't have a dot in its
+          // name
+          if (req.url.back() != '/') {
+            Http::Response r{Http::StatusCode::Found};
+            r.Set("Location", req.url + '/');
+            return r;
+          }
+          return list_directory(req, settings.root_path);
+        });
 
     server.AddRoute(
-        Http::Method::Get, "^\\/adsaf\\/jsons\\/$",
+        Http::Method::Get,
+        [](std::string url) {
+          return regex_match(url, "^\\/adsaf\\/jsons\\/$");
+        },
         [](auto) -> Http::Resolution {
           auto future = std::async(std::launch::async, []() -> Http::Response {
             Json::Value root(Json::arrayValue);

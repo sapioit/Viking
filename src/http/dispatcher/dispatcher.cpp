@@ -19,10 +19,7 @@ using namespace Web;
 
 static ResponseSerializer serializer;
 
-void Dispatcher::AddRoute(
-    std::pair<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> route) noexcept {
-    routes.insert(route);
-}
+void Dispatcher::AddRoute(RouteUtility::Route route) noexcept { routes.push_back(route); }
 
 bool ShouldCopyInMemory(const std::string &resource_path) {
     try {

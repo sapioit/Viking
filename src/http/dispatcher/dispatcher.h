@@ -4,6 +4,7 @@
 #include <io/schedulers/sched_item.h>
 #include <http/engine.h>
 #include <http/resolution.h>
+#include <http/routeutility.h>
 
 #include <map>
 #include <memory>
@@ -11,7 +12,7 @@
 
 namespace Web {
 class Dispatcher {
-    std::map<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> routes;
+    RouteUtility::RouteMap routes;
     std::vector<Http::Engine> pending_;
     typedef std::function<Http::Resolution(Http::Request)> Handler;
 
@@ -22,8 +23,7 @@ class Dispatcher {
 
     public:
     class Socket;
-    void AddRoute(
-        std::pair<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>>) noexcept;
+    void AddRoute(RouteUtility::Route) noexcept;
     ScheduleItem HandleConnection(const IO::Socket *) noexcept;
     std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
 };

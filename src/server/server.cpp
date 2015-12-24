@@ -59,9 +59,9 @@ class Server::ServerImpl {
 
     inline void Freeze() { stop_requested_ = true; }
 
-    inline void AddRoute(const Http::Method &method, const std::string &uri_regex,
+    inline void AddRoute(const Http::Method &method, std::function<bool(const std::string &)> validator,
                          std::function<Http::Resolution(Http::Request)> function) {
-        dispatcher_.AddRoute(std::make_pair(std::make_pair(method, uri_regex), function));
+        dispatcher_.AddRoute(std::make_pair(std::make_pair(method, validator), function));
     }
 
     inline void SetSettings(const Settings &s) {
@@ -96,9 +96,9 @@ Server &Server::operator=(Server &&other) {
 
 Server::Server(Server &&other) { *this = std::move(other); }
 
-void Server::AddRoute(const Http::Method &method, const std::string &uri_regex,
+void Server::AddRoute(const Http::Method &method, std::function<bool(const std::string &)> validator,
                       std::function<Http::Resolution(Http::Request)> function) {
-    impl->AddRoute(method, uri_regex, function);
+    impl->AddRoute(method, validator, function);
 }
 
 void Server::SetSettings(const Settings &s) { impl->SetSettings(s); }

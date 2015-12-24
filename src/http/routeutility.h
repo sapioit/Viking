@@ -9,9 +9,14 @@
 
 class RouteUtility {
     public:
-    static std::function<Http::Resolution(Http::Request)> GetHandler(
-        const Http::Request &request,
-        const std::map<std::pair<Http::Method, std::string>, std::function<Http::Resolution(Http::Request)>> &routes);
+    typedef std::function<bool(std::string)> RouteValidator;
+    typedef std::pair<Http::Method, RouteValidator> MethodRouteValidatorPair;
+    typedef std::function<Http::Resolution(Http::Request)> HttpHandler;
+    typedef std::pair<MethodRouteValidatorPair, HttpHandler> Route;
+
+    typedef std::vector<Route> RouteMap;
+
+    static HttpHandler GetHandler(const Http::Request &request, const RouteMap &routes);
 
     static std::string StripRoute(const std::string &URI);
 };

@@ -19,7 +19,7 @@ class Server {
     Server &operator=(const Server &) = delete;
     Server(Server &&);
     Server &operator=(Server &&);
-    void AddRoute(const Http::Method &method, const std::string &uri_regex,
+    void AddRoute(const Http::Method &method, const std::function<bool(const std::string &)> validator,
                   std::function<Http::Resolution(Http::Request)> function);
     void SetSettings(const Settings &);
     void Initialize();
