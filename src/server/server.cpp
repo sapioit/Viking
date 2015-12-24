@@ -26,7 +26,8 @@ class Server::ServerImpl {
     public:
     ServerImpl(int port) : port_(port), stop_requested_(false) {}
 
-    void Initialize() {
+    inline void Initialize() {
+        IgnoreSigpipe();
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = MakeSocket(port_, max_pending_)) {
             scheduler_ =
@@ -45,7 +46,7 @@ class Server::ServerImpl {
             throw Server::PortInUse{port_};
     }
 
-    void Run(bool indefinitely) {
+    inline void Run(bool indefinitely) {
         if (!indefinitely)
             scheduler_.Run();
         else {
@@ -56,14 +57,14 @@ class Server::ServerImpl {
         }
     }
 
-    void Freeze() { stop_requested_ = true; }
+    inline void Freeze() { stop_requested_ = true; }
 
-    void AddRoute(const Http::Method &method, const std::string &uri_regex,
+    inline void AddRoute(const Http::Method &method, const std::string &uri_regex,
                   std::function<Http::Resolution(Http::Request)> function) {
         dispatcher_.AddRoute(std::make_pair(std::make_pair(method, uri_regex), function));
     }
 
-    void SetSettings(const Settings &s) {
+    inline void SetSettings(const Settings &s) {
         Storage::SetSettings(s);
         max_pending_ = s.max_connections;
     }
