@@ -114,8 +114,6 @@ HEADERS += \
 SOURCES +=
 
 HEADERS += \
-    util/utility.h \
-    util/set.h \
 #UTIL-END
 
 #SERVER
