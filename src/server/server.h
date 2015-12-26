@@ -23,7 +23,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/resolution.h>
 #include <http/request.h>
 #include <vector>
-#include <memory>
 #include <regex>
 
 namespace Web {

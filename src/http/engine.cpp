@@ -21,19 +21,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <http/engine.h>
 #include <http/components.h>
+#include <http/util.h>
 #include <misc/debug.h>
 #include <misc/string_util.h>
 #include <sstream>
+#include <string>
 
-Http::Engine *GetMe(http_parser *parser) { return static_cast<Http::Engine *>(parser->data); }
+Http::Context *GetMe(http_parser *parser) { return static_cast<Http::Context *>(parser->data); }
 
-void Http::Engine::AssignMethod(http_method method_numeric) {
+void Http::Context::AssignMethod(http_method method_numeric) {
     auto method = Http::MethodMap.find(http_method_str(method_numeric));
     if (method != Http::MethodMap.end())
         request_.method = method->second;
 }
 
-Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
+Http::Context::Context(const IO::Socket *socket) : socket_(socket), complete_(false) {
     settings_.on_message_begin = [](http_parser *) -> int { return 0; };
     settings_.on_message_complete = [](http_parser *) -> int {
         return 0;
@@ -48,9 +50,8 @@ Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
     };
     settings_.on_url = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = GetMe(parser);
-        me->request_.url = StringUtil::DecodeURL({at, at + length});
+        me->request_.url = {at, at + length};
         return 0;
-
     };
     settings_.on_header_field = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = GetMe(parser);
@@ -79,22 +80,26 @@ Http::Engine::Engine(const IO::Socket *socket) : socket_(socket) {
     };
 }
 
-const IO::Socket *Http::Engine::GetSocket() const { return socket_; }
+const IO::Socket *Http::Context::GetSocket() const { return socket_; }
 
-Http::Request Http::Engine::operator()() {
+const Http::Request &Http::Context::GetRequest() const noexcept { return request_; }
+
+Http::Context &Http::Context::operator()() {
     try {
         buffer += socket_->ReadSome<std::string>();
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
-        return request_;
+        complete_ = Http::Util::IsComplete(request_);
+        return *this;
         /* TODO in the future, take the state into account, because we
              * might not be getting the full header
              */
     } catch (...) {
         throw;
     }
-    return {};
 }
+
+bool Http::Context::Complete() const noexcept { return complete_; }
 
 #endif

@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sstream>
 #include <iomanip>
 
-std::vector<std::string> StringUtil::Split(const std::string &source, char delimiter) noexcept {
+std::vector<std::string> Split(const std::string &source, char delimiter) noexcept {
     std::vector<std::string> result;
     std::istringstream ss(source);
     std::string tok;
@@ -57,7 +57,7 @@ unsigned char hexToChar(const std::string &str) {
     return static_cast<unsigned char>(c);
 }
 
-std::string StringUtil::DecodeURL(const std::string &toDecode) {
+std::string UrlDecode(const std::string &toDecode) {
     std::ostringstream out;
 
     for (std::string::size_type i = 0; i < toDecode.length(); ++i) {

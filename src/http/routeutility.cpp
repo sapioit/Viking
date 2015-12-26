@@ -22,8 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 #include <regex>
 
-std::function<Http::Resolution(Http::Request)> RouteUtility::GetHandler(const Http::Request &request,
-                                                                        const RouteMap &routes) {
+std::function<Http::Resolution(Http::Request)> RouteUtility::GetUserHandler(const Http::Request &request,
+                                                                            const RouteMap &routes) {
     auto strippedRoute = StripRoute(request.url);
     auto result = std::find_if(routes.begin(), routes.end(), [&](const auto &route) -> bool {
         return request.method == route.first.first && route.first.second(strippedRoute);

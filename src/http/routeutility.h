@@ -34,7 +34,7 @@ class RouteUtility {
 
     typedef std::vector<Route> RouteMap;
 
-    static HttpHandler GetHandler(const Http::Request &request, const RouteMap &routes);
+    static HttpHandler GetUserHandler(const Http::Request &request, const RouteMap &routes);
 
     static std::string StripRoute(const std::string &URI);
 };

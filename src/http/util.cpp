@@ -17,7 +17,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <http/util.h>
-#include <regex>
+#include <io/filesystem.h>
+#include <misc/storage.h>
 using namespace Http;
 
 bool Util::IsPassable(const Http::Request &request) noexcept {
@@ -38,11 +39,15 @@ bool Util::IsPassable(const Http::Request &request) noexcept {
     return true;
 }
 
-bool Util::ExtensionAllowed(const std::string &url) noexcept {
-    static std::regex extensions(".*\\.(jpg|jpeg|png|gif|zip|pdf|mp4|html|json|mkv|js)$",
-                                 std::regex::ECMAScript | std::regex::icase);
-    return std::regex_match(url, extensions);
+bool Util::IsResource(const Request &request) noexcept {
+    fs::path full_path = Storage::GetSettings().root_path + request.url;
+    if (fs::exists(full_path) && fs::is_regular_file(full_path)) {
+        if (filesystem::GetExtension(full_path) != "")
+            return true;
+    }
+    return false;
 }
+
 bool Util::IsComplete(const Request &request) noexcept {
     if (CanHaveBody(request.method)) {
         auto cl_it = request.header.fields.find(Http::Header::Fields::Content_Length);

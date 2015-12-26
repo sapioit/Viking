@@ -23,10 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string>
 #include <misc/date.h>
 
-class StringUtil {
-    public:
-    static std::vector<std::string> Split(const std::string &, char) noexcept;
-    static std::string DecodeURL(const std::string &sSrc);
-};
+std::vector<std::string> Split(const std::string &, char) noexcept;
+std::string UrlDecode(const std::string &);
 
 #endif // UTIL_H

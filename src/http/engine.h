@@ -26,20 +26,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string>
 
 namespace Http {
-class Engine {
+class Context {
     const IO::Socket *socket_;
     http_parser_settings settings_;
     http_parser parser_;
     Request request_;
     std::string buffer;
     std::string header_field;
+    bool complete_;
 
     void AssignMethod(http_method method_numeric);
 
     public:
-    Engine(const IO::Socket *socket);
+    Context(const IO::Socket *socket);
     const IO::Socket *GetSocket() const;
-    Request operator()();
+    const Request &GetRequest() const noexcept;
+    Http::Context &operator()();
+    bool Complete() const noexcept;
 };
 };
 
