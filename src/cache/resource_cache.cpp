@@ -1,9 +1,13 @@
 #include <cache/resource_cache.h>
 #include <misc/common.h>
 #include <map>
+#include <mutex>
 
 Resource Cache::ResourceCache::Aquire(fs::path p) {
     static std::map<fs::path, Resource> map;
+    static std::mutex m;
+
+    std::lock_guard<std::mutex> hold(m);
 
     auto r = map.find(p);
     if (!fs::exists(p) && r != map.end()) {

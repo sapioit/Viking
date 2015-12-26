@@ -56,7 +56,6 @@ bool Util::IsPassable(const Http::Request &request) noexcept {
 
 bool Util::IsResource(const Request &request) noexcept {
     fs::path full_path = Storage::GetSettings().root_path + request.url;
-    debug(full_path);
     if (fs::exists(full_path) && fs::is_regular_file(full_path))
         return true;
     return false;

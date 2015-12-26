@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <map>
 #include <algorithm>
 #include <utility>
+#include <mutex>
+
 
 struct handle_use_count {
     std::size_t use_count;
@@ -34,8 +36,11 @@ struct handle_use_count {
 };
 
 static std::map<fs::path, handle_use_count> cache;
+static std::mutex m;
 
 int Cache::FileDescriptor::Aquire(const std::string &path) noexcept {
+    std::lock_guard<std::mutex> hold(m);
+
     auto it = cache.find(path);
     if (it != cache.end()) {
         ++(it->second.use_count);
@@ -51,6 +56,8 @@ int Cache::FileDescriptor::Aquire(const std::string &path) noexcept {
 }
 
 void Cache::FileDescriptor::Release(int file_descriptor) noexcept {
+    std::lock_guard<std::mutex> hold(m);
+
     auto it = std::find_if(cache.begin(), cache.end(),
                            [file_descriptor](auto &pair) { return file_descriptor == pair.second.handle; });
     if (it != cache.end()) {
