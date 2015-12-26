@@ -80,7 +80,7 @@ std::size_t Response::ContentLength() const {
     if (GetType() == Type::File)
         return file_->size;
     if (GetType() == Type::Resource)
-        return resource_.content().size();
+        return resource_.Content().size();
     if (GetType() == Type::Text)
         return text_.size();
     return 0;
@@ -118,5 +118,5 @@ Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text
 Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
     type_ = Type::Resource;
     Init();
-    Set(f::Content_Type, mime_types[(IO::FileSystem::GetExtension(resource.path()))]);
+    Set(f::Content_Type, mime_types[(filesystem::GetExtension(resource.Path()))]);
 }

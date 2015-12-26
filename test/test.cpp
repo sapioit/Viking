@@ -60,16 +60,7 @@ Http::Response list_directory(Http::Request req, const std::string &root_path) {
   }
 }
 
-constexpr long fs_lib_v() {
-#ifdef __cpp_lib_experimental_filesystem
-  return __cpp_lib_experimental_filesystem;
-#endif
-  return 0;
-}
-
 int main() {
-  static_assert(fs_lib_v(),
-                "You need filesystem support in your standard library");
   try {
     Web::Server server(1234);
     Settings settings;

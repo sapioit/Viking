@@ -17,7 +17,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <misc/storage.h>
-#include <http/cachemanager.h>
 #include <io/filesystem.h>
 
 #include <system_error>

@@ -17,27 +17,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <misc/resource.h>
-#include <io/filesystem.h>
 
-const std::vector<char> &Resource::content() const { return _content; }
+const std::vector<char> &Resource::Content() const { return _content; }
 
-const std::string &Resource::path() const { return _path; }
+const fs::path &Resource::Path() const { return _path; }
 
-struct stat Resource::stat() const {
-    return _stat;
-}
-Resource::Resource(const std::string &path, const std::vector<char> &content, const struct stat &stat)
-    : _path(path), _content(content), _stat(stat) {}
+const fs::file_time_type &Resource::LastWrite() const { return _last_write; }
 
-Resource::Resource(const std::string &path) : _path(path) {
-    try {
-        _content = IO::FileSystem::ReadFile(path);
-        auto stat_res = ::stat(_path.c_str(), &_stat);
-        if (stat_res != 0)
-            throw IO::fs_error("Could not stat " + path);
-    } catch (IO::fs_error &ex) {
-        throw;
-    }
-}
+Resource::Resource(const fs::path &path, const std::vector<char> &content)
+    : _path(path), _content(content), _last_write(fs::last_write_time(path)) {}
+
+Resource::Resource(const fs::path &path)
+    : _path(path), _content(filesystem::ReadFile(path)), _last_write(fs::last_write_time(path)) {}
 
 Resource::operator bool() { return (_content.size() != 0); }

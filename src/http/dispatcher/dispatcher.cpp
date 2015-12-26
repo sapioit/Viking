@@ -16,15 +16,15 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+#include <cache/resource_cache.h>
+#include <cache/file_descriptor.h>
 #include <http/dispatcher/dispatcher.h>
 #include <http/engine.h>
 #include <http/util.h>
 #include <http/resolution.h>
 #include <http/response_serializer.h>
-#include <http/cachemanager.h>
 #include <http/routeutility.h>
 #include <http/engine.h>
-#include <cache/file_descriptor.h>
 #include <io/filesystem.h>
 #include <io/socket/socket.h>
 #include <io/buffers/asyncbuffer.h>
@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 
 using namespace Web;
+using namespace Cache;
 
 static ResponseSerializer serializer;
 
@@ -43,7 +44,7 @@ void Dispatcher::AddRoute(RouteUtility::Route route) noexcept { routes.push_back
 bool ShouldCopyInMemory(const std::string &resource_path) {
     try {
         auto page_size = static_cast<std::size_t>(getpagesize());
-        auto file_size = IO::FileSystem::GetFileSize(resource_path.c_str());
+        auto file_size = fs::file_size(resource_path); // IO::FileSystem::GetFileSize(resource_path.c_str());
         return file_size <= page_size;
     } catch (...) {
         throw Http::StatusCode::NotFound;
@@ -73,8 +74,8 @@ ScheduleItem Dispatcher::ProcessEngine(const IO::Socket *connection, Http::Engin
                           }), pending.end());
         if (Http::Util::IsPassable(request)) {
             auto full_path = Storage::GetSettings().root_path + request.url;
-            if (IO::FileSystem::IsRegularFile(full_path)) {
-                if (IO::FileSystem::GetExtension(full_path) != "")
+            if (fs::is_regular_file(full_path)) {
+                if (filesystem::GetExtension(full_path) != "")
                     return TakeResource(request);
             }
             if (auto handler = RouteUtility::GetHandler(request, routes))
@@ -104,17 +105,18 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
     try {
         auto full_path = Storage::GetSettings().root_path + request.url;
         if (ShouldCopyInMemory(full_path)) {
-            auto resource = CacheManager::GetResource(request.url);
-            Http::Response response{resource};
-            return {serializer(response), response.GetKeepAlive()};
+            if (auto resource = ResourceCache::Aquire(full_path)) {
+                Http::Response response{resource};
+                return {serializer(response), response.GetKeepAlive()};
+            } else
+                throw Http::StatusCode::NotFound;
         } else {
             auto unix_file =
                 std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
             ScheduleItem response;
             Http::Response http_response;
             http_response.SetFile(unix_file.get());
-            http_response.Set(Http::Header::Fields::Content_Type,
-                              mime_types[(IO::FileSystem::GetExtension(full_path))]);
+            http_response.Set(Http::Header::Fields::Content_Type, mime_types[(filesystem::GetExtension(full_path))]);
             http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
             response.PutBack(serializer.MakeHeader(http_response));
             response.PutBack(std::move(unix_file));
@@ -122,8 +124,6 @@ ScheduleItem Dispatcher::TakeResource(const Http::Request &request) noexcept {
             response.SetKeepFileOpen(http_response.GetKeepAlive());
             return response;
         }
-    } catch (CacheManager::FileTooBig) {
-        // TODO
     } catch (UnixFile::Error) {
         return {serializer({Http::StatusCode::NotFound})};
     } catch (Http::StatusCode) {

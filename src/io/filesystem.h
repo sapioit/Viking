@@ -22,25 +22,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <experimental/filesystem>
 
-namespace IO {
+static constexpr auto fs_lib_v() {
+#ifdef __cpp_lib_experimental_filesystem
+    return __cpp_lib_experimental_filesystem;
+#else
+    return 0;
+#endif
+}
 
-struct fs_error : public std::runtime_error {
-    fs_error() = default;
-    fs_error(const std::string &msg) : std::runtime_error(msg) {}
+static_assert(fs_lib_v(), "You need filesystem support in your standard library (std::experimental::filesystem");
 
-    ~fs_error() = default;
-};
+namespace fs = std::experimental::filesystem;
 
-class FileSystem {
-    public:
-    static std::vector<char> ReadFile(const std::string &path);
-    static std::string GetCurrentDirectory();
-    static std::size_t GetFileSize(const std::string &file_path);
-    static bool FileExists(const std::string &) noexcept;
-    static bool IsRegularFile(const std::string &) noexcept;
-    static std::string GetExtension(const std::string &) noexcept;
-};
-};
+namespace filesystem {
+std::vector<char> ReadFile(const fs::path &path);
+std::string GetExtension(const std::string &) noexcept;
+}
 
 #endif // FILE_H

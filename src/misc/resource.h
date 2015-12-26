@@ -19,32 +19,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
-#include <cstdint>
 #include <string>
 #include <vector>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <io/filesystem.h>
 
 class Resource {
-    std::string _path;
+    fs::path _path;
     std::vector<char> _content;
-    // TODO Modify to use the stat64 version
-    struct stat _stat;
+    fs::file_time_type _last_write;
 
     public:
     Resource() = default;
-    Resource(const Resource &) = default;
-    Resource(const std::string &, const std::vector<char> &, const struct stat &);
-    Resource(const std::string &);
+    Resource(const fs::path &, const std::vector<char> &);
+    Resource(const fs::path &);
     ~Resource() = default;
     operator bool();
-    bool operator<(const Resource &);
 
-    const std::uint64_t &hits() const;
-    const std::vector<char> &content() const;
-    const std::string &path() const;
-    struct stat stat() const;
+    const std::vector<char> &Content() const;
+    const fs::path &Path() const;
+    const fs::file_time_type &LastWrite() const;
 };
 
 #endif // RESOURCE_H

@@ -21,7 +21,8 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 
 #INL
 HEADERS += \
-    inl/mime_types.h
+    inl/mime_types.h \
+    cache/resource_cache.h
 #INL-END
 
 #CACHE
@@ -31,7 +32,8 @@ SOURCES += \
     misc/string_util.cpp \
     http/response_serializer.cpp \
     io/schedulers/channel.cpp \
-    http/resolution.cpp
+    http/resolution.cpp \
+    cache/resource_cache.cpp
 
 HEADERS += \
     cache/file_descriptor.h \
@@ -46,7 +48,6 @@ HEADERS += \
 
 #HTTP
 SOURCES += \
-    http/cachemanager.cpp \
     http/request.cpp \
     http/response.cpp \
     http/routeutility.cpp \
@@ -57,7 +58,6 @@ SOURCES += \
     io/buffers/utils.cpp
 
 HEADERS += \
-    http/cachemanager.h \
     http/components.h \
     http/header.h \
     http/parser.h \
