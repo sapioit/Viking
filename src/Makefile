@@ -65,6 +65,7 @@ install:
 	cp io/buffers/asyncbuffer.h /usr/include/cppweb/io/buffers/asyncbuffer.h
 	cp io/buffers/datasource.h /usr/include/cppweb/io/buffers/datasource.h
 	cp io/socket/socket.h /usr/include/cppweb/io/socket/socket.h
+	cp io/filesystem.h /usr/include/cppweb/io/filesystem.h
 	cp http/engine.h /usr/include/cppweb/http/engine.h
 	cp http/request.h /usr/include/cppweb/http/request.h
 	cp http/header.h /usr/include/cppweb/http/header.h
