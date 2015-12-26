@@ -19,4 +19,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <misc/settings.h>
 #include <io/filesystem.h>
 
-Settings::Settings() : root_path(fs::current_path()), max_connections(1000), allow_directory_listing(true) {}
+Settings::Settings() : max_connections(1000), allow_directory_listing(true) {}

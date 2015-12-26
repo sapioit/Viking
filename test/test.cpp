@@ -64,7 +64,7 @@ int main() {
   try {
     Web::Server server(1234);
     Settings settings;
-#ifdef __arm__
+#ifndef __arm__
     settings.root_path = "/mnt/exthdd/server";
 #else
     settings.root_path = "/mnt/hdd/store/basic";
@@ -112,8 +112,6 @@ int main() {
           return {std::move(future)};
         });
 
-#ifdef __cpp_lib_experimental_filesystem
-
     server.AddRoute(Http::Method::Get, std::regex{"^([^.]+)$"},
                     [settings](Http::Request req) -> Http::Response {
                       // Matches any directory that doesn't have a dot in its
@@ -125,8 +123,6 @@ int main() {
                       }
                       return list_directory(req, settings.root_path);
                     });
-#endif
-
     server.SetSettings(settings);
     server.Run();
   } catch (std::exception &ex) {
