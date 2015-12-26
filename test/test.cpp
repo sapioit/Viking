@@ -6,8 +6,6 @@
 #include <iomanip>
 #include <experimental/filesystem>
 
-#ifdef __cpp_lib_experimental_filesystem
-
 namespace fs = std::experimental::filesystem;
 
 std::string trim_quotes(std::string str) {
@@ -61,7 +59,7 @@ Http::Response list_directory(Http::Request req, const std::string &root_path) {
     return {Http::StatusCode::NotFound};
   }
 }
-#endif
+
 constexpr long fs_lib_v() {
 #ifdef __cpp_lib_experimental_filesystem
   return __cpp_lib_experimental_filesystem;
@@ -70,6 +68,8 @@ constexpr long fs_lib_v() {
 }
 
 int main() {
+  static_assert(fs_lib_v(),
+                "You need filesystem support in your standard library");
   try {
     Web::Server server(1234);
     Settings settings;
