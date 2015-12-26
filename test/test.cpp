@@ -6,6 +6,8 @@
 #include <iomanip>
 #include <experimental/filesystem>
 
+#ifdef __cpp_lib_experimental_filesystem
+
 namespace fs = std::experimental::filesystem;
 
 std::string trim_quotes(std::string str) {
@@ -58,6 +60,13 @@ Http::Response list_directory(Http::Request req, const std::string &root_path) {
   } catch (...) {
     return {Http::StatusCode::NotFound};
   }
+}
+#endif
+constexpr long fs_lib_v() {
+#ifdef __cpp_lib_experimental_filesystem
+  return __cpp_lib_experimental_filesystem;
+#endif
+  return 0;
 }
 
 int main() {
@@ -112,6 +121,8 @@ int main() {
           return {std::move(future)};
         });
 
+#ifdef __cpp_lib_experimental_filesystem
+
     server.AddRoute(Http::Method::Get, std::regex{"^([^.]+)$"},
                     [settings](Http::Request req) -> Http::Response {
                       // Matches any directory that doesn't have a dot in its
@@ -123,6 +134,7 @@ int main() {
                       }
                       return list_directory(req, settings.root_path);
                     });
+#endif
 
     server.SetSettings(settings);
     server.Run();

@@ -76,18 +76,13 @@ void IO::Scheduler::Run() noexcept {
 
         if (CanRead(event)) {
             if (auto callback_response = read_callback(event.context->socket.get())) {
-                /* We schedule the item in the epoll instance with just the Write flag,
-                 * since it already has the others
-                 */
                 poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
                 auto &front = *callback_response.Front();
                 std::type_index type = typeid(front);
-                if (type == typeid(MemoryBuffer) || type == typeid(UnixFile)) {
+                if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
                     QueueItem(event.context, callback_response, true);
-                } else {
+                else
                     QueueItem(event.context, callback_response, false);
-                    // event.context->flags |= Channel::Barrier;
-                }
             }
             continue;
         }
