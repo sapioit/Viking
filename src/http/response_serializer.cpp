@@ -41,7 +41,6 @@ std::vector<char> ResponseSerializer::MakeHeader(const Http::Response &r) noexce
     for (const auto &pair : r.GetFields())
         response.append(pair.first).append(": ").append(pair.second).append(crlf);
     response.append(crlf);
-    debug(response);
     return {response.begin(), response.end()};
 }
 
