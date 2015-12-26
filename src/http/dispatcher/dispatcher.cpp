@@ -103,8 +103,7 @@ class Dispatcher::DispatcherImpl {
                 ScheduleItem response;
                 Http::Response http_response;
                 http_response.SetFile(unix_file.get());
-                http_response.Set(Http::Header::Fields::Content_Type,
-                                  mime_types[(filesystem::GetExtension(full_path))]);
+                http_response.Set(Http::Header::Fields::Content_Type, Http::Util::GetMimeType(full_path));
                 http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
                 response.PutBack(serializer.MakeHeader(http_response));
                 response.PutBack(std::move(unix_file));

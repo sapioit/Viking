@@ -18,8 +18,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <http/util.h>
 #include <io/filesystem.h>
+#include <inl/mime_types.h>
 #include <misc/storage.h>
+#include <misc/common.h>
 using namespace Http;
+
+static std::string Exec(const std::string &cmd) {
+    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe)
+        return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while (!feof(pipe.get())) {
+        if (fgets(buffer, 128, pipe.get()) != NULL)
+            result += buffer;
+    }
+    return result;
+}
 
 bool Util::IsPassable(const Http::Request &request) noexcept {
     switch (request.method) {
@@ -41,10 +56,9 @@ bool Util::IsPassable(const Http::Request &request) noexcept {
 
 bool Util::IsResource(const Request &request) noexcept {
     fs::path full_path = Storage::GetSettings().root_path + request.url;
-    if (fs::exists(full_path) && fs::is_regular_file(full_path)) {
-        if (filesystem::GetExtension(full_path) != "")
-            return true;
-    }
+    debug(full_path);
+    if (fs::exists(full_path) && fs::is_regular_file(full_path))
+        return true;
     return false;
 }
 
@@ -72,4 +86,24 @@ bool Util::CanHaveBody(Method method) noexcept {
     default:
         return false;
     }
+}
+
+static std::string GetMimeTypeFromShell(fs::path p) noexcept {
+    std::string cmd = "file --mime-type ";
+    cmd.append(p);
+    auto output = Exec(cmd);
+    while (output.size() && std::isspace(output.back()))
+        output = output.substr(0, output.size() - 1);
+    auto c = output.find_first_of(':');
+    if (c != std::string::npos && output.size() > ++c)
+        return output.substr(c + 1);
+    return "";
+}
+
+std::string Util::GetMimeType(fs::path p) noexcept {
+    auto ext = filesystem::GetExtension(p);
+    if (ext.length())
+        return mime_types[ext];
+    else
+        return GetMimeTypeFromShell(p);
 }

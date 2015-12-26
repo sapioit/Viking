@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef UTIL_H
 #define UTIL_H
 #include <http/request.h>
+#include <io/filesystem.h>
 
 namespace Http {
 class Util {
@@ -27,6 +28,7 @@ class Util {
     static bool IsResource(const Request &) noexcept;
     static bool IsComplete(const Request &) noexcept;
     static bool CanHaveBody(Http::Method) noexcept;
+    static std::string GetMimeType(fs::path) noexcept;
 };
 }
 

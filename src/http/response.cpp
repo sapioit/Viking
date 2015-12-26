@@ -115,11 +115,13 @@ Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text
 Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
     type_ = Type::Resource;
     Init();
-    Set(f::Content_Type, mime_types[(filesystem::GetExtension(resource.Path()))]);
+    Set(f::Content_Type,
+        Http::Util::GetMimeType(resource.Path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
 }
 
 Response::Response(Resource &&resource) : code_(StatusCode::OK), resource_(std::move(resource)) {
     type_ = Type::Resource;
     Init();
-    Set(f::Content_Type, mime_types[(filesystem::GetExtension(resource.Path()))]);
+    Set(f::Content_Type,
+        Http::Util::GetMimeType(resource.Path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
 }
