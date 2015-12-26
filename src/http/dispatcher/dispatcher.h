@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <io/schedulers/sched_item.h>
 #include <io/socket/socket.h>
+#include <io/schedulers/channel.h>
 #include <http/resolution.h>
 #include <http/routeutility.h>
 
@@ -41,8 +42,9 @@ class Dispatcher {
     Dispatcher &operator=(Dispatcher &&) noexcept;
 
     void AddRoute(RouteUtility::Route) noexcept;
-    ScheduleItem HandleConnection(const IO::Socket *) noexcept;
+    ScheduleItem HandleConnection(const IO::Channel *);
     std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
+    void WillRemove(const IO::Channel *) noexcept;
 };
 }
 

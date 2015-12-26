@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <inl/mime_types.h>
 #include <misc/date.h>
 #include <misc/storage.h>
+#include <misc/common.h>
 
 #include <sstream>
 #include <utility>
@@ -100,7 +101,10 @@ void Response::Init() {
     Set(f::Cache_Control, "max-age=" + std::to_string(Storage::GetSettings().default_max_age));
 }
 
-Response::Response() : code_(StatusCode::OK) {}
+Response::Response() : code_(StatusCode::OK) {
+    type_ = Type::Text;
+    Init();
+}
 
 Response::Response(StatusCode code) : code_(code) {
     type_ = Type::Text;
