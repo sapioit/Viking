@@ -1,6 +1,6 @@
 # Compiler
-CXX = clang++
-CC = clang
+CXX = g++
+CC = gcc
 CXX_OPTS = -fPIC -std=c++1z -O3 -Wall -Werror
 C_OPTS = -fPIC -O3 -Wall -Werror
 DEBUG_OPTS =
@@ -11,7 +11,6 @@ INCLUDEDIRS = -I.
 PROJECT = cppweb
 
 # Libraries
-LIBS = -lpthread -lstdc++fs
 LDFLAGS = -shared
 LIBNAME = libcppweb.so
 LIBNAME_ABBREVIATED = -lcppweb
@@ -33,7 +32,7 @@ OBJS += $(patsubst ./%.c, ./%.o, $(C_FILES))
 -include $(OBJS:.o=.o.d)
 
 lib: $(OBJS)
-	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LIBS) $(LDFLAGS) $^ -o $(LIBNAME)
+	$(CXX) $(CXX_OPTS) $(DEBUG_OPTS) $(LDFLAGS) $^ -o $(LIBNAME)
 	mkdir -p $(BINFOLDER)
 	mv $(LIBNAME) $(BINFOLDER)
 

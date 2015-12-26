@@ -1,5 +1,5 @@
-CXX = clang++
-CC = clang
+CXX = g++
+CC = gcc
 CXX_OPTS = -fPIC -std=c++1z -O3 -Wall -Werror
 LIBS = -lpthread -lcppweb -lstdc++fs
 TESTAPP_INCLUDEDIRS = -I/usr/include/cppweb/
