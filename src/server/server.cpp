@@ -17,6 +17,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <io/schedulers/io_scheduler.h>
+#include <io/schedulers/channel.h>
 #include <http/dispatcher/dispatcher.h>
 #include <server/server.h>
 #include <misc/storage.h>
@@ -47,20 +48,27 @@ class Server::ServerImpl {
         IgnoreSigpipe();
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = MakeSocket(port_, max_pending_)) {
-            scheduler_ =
-                IO::Scheduler(std::unique_ptr<IO::Socket>(sock),
-                              [this](const IO::Socket *socket) { return dispatcher_.HandleConnection(socket); },
-                              [this](ScheduleItem & schedule_item) -> auto {
-                                  if (schedule_item.IsFrontAsync()) {
-                                      AsyncBuffer<Http::Response> *async_buffer =
-                                          static_cast<AsyncBuffer<Http::Response> *>(schedule_item.Front());
-                                      if (async_buffer->IsReady())
-                                          return dispatcher_.HandleBarrier(async_buffer);
-                                  }
-                                  return std::make_unique<MemoryBuffer>(std::vector<char>());
-                              });
-        } else
+            scheduler_ = IO::Scheduler(std::unique_ptr<IO::Socket>(sock),
+                                       [this](const IO::Channel *ch) {
+                                           try {
+                                               return dispatcher_.HandleConnection(ch);
+                                           } catch (...) {
+                                               throw;
+                                           }
+                                       },
+                                       [this](ScheduleItem & schedule_item) -> auto {
+                                           if (schedule_item.IsFrontAsync()) {
+                                               AsyncBuffer<Http::Response> *async_buffer =
+                                                   static_cast<AsyncBuffer<Http::Response> *>(schedule_item.Front());
+                                               if (async_buffer->IsReady())
+                                                   return dispatcher_.HandleBarrier(async_buffer);
+                                           }
+                                           return std::make_unique<MemoryBuffer>(std::vector<char>());
+                                       },
+                                       [this](const IO::Channel *ch) { dispatcher_.WillRemove(ch); });
+        } else {
             throw Server::PortInUse{port_};
+        }
     }
 
     inline void Run(bool indefinitely) {

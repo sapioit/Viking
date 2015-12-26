@@ -20,9 +20,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 #include <typeindex>
 
+ScheduleItem::ScheduleItem() : keep_file_open(false) {}
+
 ScheduleItem::ScheduleItem(bool keep_file_open) : keep_file_open(keep_file_open) {}
 
-ScheduleItem::ScheduleItem(const std::vector<char> &data) { buffers.push_back(std::make_unique<MemoryBuffer>(data)); }
+ScheduleItem::ScheduleItem(const std::vector<char> &data) : keep_file_open(false) {
+    buffers.push_back(std::make_unique<MemoryBuffer>(data));
+}
 
 ScheduleItem::ScheduleItem(const std::vector<char> &data, bool keep_file_open) : keep_file_open(keep_file_open) {
     buffers.push_back(std::make_unique<MemoryBuffer>(data));
@@ -32,8 +36,9 @@ void ScheduleItem::PutBack(std::unique_ptr<MemoryBuffer> data) { buffers.push_ba
 
 void ScheduleItem::PutBack(std::unique_ptr<UnixFile> file) { buffers.push_back(std::move(file)); }
 
-void ScheduleItem::PutBack(ScheduleItem other_item) {
-    for (auto &buffer : other_item.buffers)
+void ScheduleItem::PutBack(ScheduleItem &&other_item) {
+    keep_file_open = other_item.keep_file_open;
+    for (auto &&buffer : other_item.buffers)
         buffers.push_back(std::move(buffer));
 }
 

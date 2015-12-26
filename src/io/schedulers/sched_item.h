@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class ScheduleItem {
     std::deque<std::unique_ptr<DataSource>> buffers;
-    bool keep_file_open = false;
+    bool keep_file_open;
 
     auto GetFirstIntact() {
         for (auto it = buffers.begin(); it != buffers.end(); ++it)
@@ -37,14 +37,14 @@ class ScheduleItem {
     }
 
     public:
-    ScheduleItem() = default;
+    ScheduleItem();
     virtual ~ScheduleItem() = default;
     ScheduleItem(const ScheduleItem &) = delete;
     ScheduleItem &operator=(const ScheduleItem &) = delete;
     ScheduleItem(ScheduleItem &&) = default;
     ScheduleItem &operator=(ScheduleItem &&) = delete;
     ScheduleItem(bool keep_file_open);
-    ScheduleItem(const std::vector<char> &data);
+    explicit ScheduleItem(const std::vector<char> &data);
     ScheduleItem(const std::vector<char> &data, bool);
 
     template <typename T> ScheduleItem(std::unique_ptr<AsyncBuffer<T>> future) {
@@ -53,7 +53,7 @@ class ScheduleItem {
 
     void PutBack(std::unique_ptr<MemoryBuffer> data);
     void PutBack(std::unique_ptr<UnixFile> file);
-    void PutBack(ScheduleItem);
+    void PutBack(ScheduleItem &&);
 
     void PutAfterFirstIntact(std::unique_ptr<MemoryBuffer> data);
     void PutAfterFirstIntact(std::unique_ptr<UnixFile> file);

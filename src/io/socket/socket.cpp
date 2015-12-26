@@ -77,9 +77,11 @@ void Socket::MakeNonBlocking() const {
                                  "for the file descriptor");
 }
 int Socket::AvailableToRead() const {
-    long count;
-    if (-1 == ioctl(fd_, FIONREAD, &count))
+    int count;
+    if (-1 == ioctl(fd_, FIONREAD, &count)) {
+        debug("ioctl failed, errno " + std::to_string(errno));
         throw InternalSocketError{fd_, this};
+    }
     return count;
 }
 std::unique_ptr<Socket> Socket::Accept() const {
