@@ -40,10 +40,6 @@ Response::Type Response::GetType() const { return type_; }
 void Response::SetType(Response::Type type) noexcept { type_ = type; }
 
 const Resource &Response::GetResource() const { return resource_; }
-void Response::SetResource(const Resource &resource) {
-    resource_ = resource;
-    type_ = Type::Resource;
-}
 
 const std::string &Response::GetText() const { return text_; }
 void Response::SetText(const std::string &text) {
@@ -94,6 +90,7 @@ bool Response::GetKeepAlive() const noexcept {
 }
 
 void Response::Init() {
+    fields_.reserve(256);
     Set(f::Date, Date::Now().ToString());
     Set(f::Connection, "Keep-Alive");
     Set(f::Access_Control_Allow_Origin, "*");
@@ -116,6 +113,12 @@ Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text
 }
 
 Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
+    type_ = Type::Resource;
+    Init();
+    Set(f::Content_Type, mime_types[(filesystem::GetExtension(resource.Path()))]);
+}
+
+Response::Response(Resource &&resource) : code_(StatusCode::OK), resource_(std::move(resource)) {
     type_ = Type::Resource;
     Init();
     Set(f::Content_Type, mime_types[(filesystem::GetExtension(resource.Path()))]);

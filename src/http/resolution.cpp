@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/resolution.h>
 
 using namespace Http;
-Resolution::Resolution(const Http::Response &response) : response(response), type(Type::Sync) {}
+Resolution::Resolution(Http::Response &&r) : response(std::move(r)), type(Type::Sync) {}
 
 Resolution::Resolution(std::future<Response> &&future)
     : future(std::forward<std::future<Http::Response>>(future)), type(Type::Async) {}

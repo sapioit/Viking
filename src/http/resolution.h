@@ -33,7 +33,7 @@ class Resolution {
     Type type;
 
     public:
-    Resolution(const Http::Response &);
+    Resolution(Http::Response &&);
     Resolution(std::future<Http::Response> &&);
 
     Type GetType() const noexcept;

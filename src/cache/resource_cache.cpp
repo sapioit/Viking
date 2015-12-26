@@ -4,6 +4,7 @@
 
 Resource Cache::ResourceCache::Aquire(fs::path p) {
     static std::map<fs::path, Resource> map;
+
     auto r = map.find(p);
     if (!fs::exists(p) && r != map.end()) {
         map.erase(r);

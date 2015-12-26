@@ -64,7 +64,7 @@ int main() {
   try {
     Web::Server server(1234);
     Settings settings;
-#ifndef __arm__
+#ifdef __arm__
     settings.root_path = "/mnt/exthdd/server";
 #else
     settings.root_path = "/mnt/hdd/store/basic";

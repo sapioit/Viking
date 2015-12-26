@@ -54,17 +54,21 @@ class Dispatcher::DispatcherImpl {
     }
 
     inline ScheduleItem HandleConnection(const IO::Socket *connection) noexcept {
-        auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
-            return (*engine.GetSocket()) == (*connection);
-        });
-        if (context_it != pending.end())
-            std::swap(*context_it, pending.back());
-        else
-            pending.emplace_back(connection);
-        auto context = pending.back();
-        if (context().Complete()) {
-            pending.erase(pending.end() - 1);
-            return ProcessRequest(context.GetRequest());
+        try {
+            auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
+                return (*engine.GetSocket()) == (*connection);
+            });
+            if (context_it != pending.end())
+                std::swap(*context_it, pending.back());
+            else
+                pending.emplace_back(connection);
+            auto context = pending.back();
+            if (context().Complete()) {
+                pending.erase(pending.end() - 1);
+                return ProcessRequest(context.GetRequest());
+            }
+        } catch (...) {
+            return {};
         }
         return {};
     }
@@ -89,7 +93,7 @@ class Dispatcher::DispatcherImpl {
         try {
             if (ShouldCopyInMemory(full_path)) {
                 if (auto resource = ResourceCache::Aquire(full_path)) {
-                    Http::Response response{resource};
+                    Http::Response response{std::move(resource)};
                     return {serializer(response), response.GetKeepAlive()};
                 } else
                     throw Http::StatusCode::NotFound;

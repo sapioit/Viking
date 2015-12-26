@@ -50,7 +50,7 @@ Http::Context::Context(const IO::Socket *socket) : socket_(socket), complete_(fa
     };
     settings_.on_url = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = GetMe(parser);
-        me->request_.url = {at, at + length};
+        me->request_.url = UrlDecode({at, at + length});
         return 0;
     };
     settings_.on_header_field = [](http_parser *parser, const char *at, size_t length) -> int {
@@ -92,9 +92,6 @@ Http::Context &Http::Context::operator()() {
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
         complete_ = Http::Util::IsComplete(request_);
         return *this;
-        /* TODO in the future, take the state into account, because we
-             * might not be getting the full header
-             */
     } catch (...) {
         throw;
     }

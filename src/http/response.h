@@ -37,6 +37,7 @@ class Response {
     Response(const std::string &);
     Response(Http::StatusCode, const std::string &);
     Response(const Resource &);
+    Response(Resource &&);
     virtual ~Response() = default;
 
     Version GetVersion() const;
