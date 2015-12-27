@@ -26,7 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <utility>
 #include <mutex>
 
-
 struct handle_use_count {
     std::size_t use_count;
     int handle;

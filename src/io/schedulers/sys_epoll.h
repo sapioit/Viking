@@ -34,7 +34,7 @@ class SysEpoll {
         public:
         IO::Channel *context;
         std::uint32_t description;
-        Event() noexcept = default;
+        Event() : context(nullptr), description(0) {}
         Event(IO::Channel *, std::uint32_t description) noexcept;
         bool operator<(const Event &other) const { return context < other.context; }
         bool operator==(const Event &other) const { return context == other.context; }

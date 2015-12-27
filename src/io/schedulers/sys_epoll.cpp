@@ -82,6 +82,10 @@ void SysEpoll::Remove(const IO::Channel *context) {
     }
 }
 
+template <class T> static void ArrangeEvents(T begin, T end) noexcept {
+    std::partition(begin, end, [](SysEpoll::Event &ev) { return ev.context->socket->IsAcceptor(); });
+}
+
 static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
     std::vector<SysEpoll::Event> epoll_events;
     for (const auto &event : events) {
@@ -91,6 +95,8 @@ static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> 
     return epoll_events;
 }
 std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
+    if (chunk_size == 0)
+        return {};
     std::vector<epoll_event> active_files;
     active_files.resize(chunk_size);
 

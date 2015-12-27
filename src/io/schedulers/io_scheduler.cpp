@@ -40,70 +40,6 @@ class Scheduler::SchedulerImpl {
     Scheduler::BarrierCallback barrier_callback;
     Scheduler::BeforeRemovingCallback before_removing;
 
-    public:
-    SchedulerImpl() = default;
-    SchedulerImpl(std::unique_ptr<Socket> sock, Scheduler::ReadCallback read_callback,
-                  Scheduler::BarrierCallback barrier_callback, Scheduler::BeforeRemovingCallback before_removing)
-        : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
-        try {
-            Add(std::move(sock),
-                static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
-        } catch (const SysEpoll::PollError &) {
-            throw;
-        }
-    }
-
-    void Add(std::unique_ptr<Socket> socket, std::uint32_t flags) {
-        try {
-            auto ctx = std::make_unique<IO::Channel>(std::move(socket));
-            poll.Schedule(ctx.get(), flags);
-            channels.emplace_back(std::move(ctx));
-        } catch (const SysEpoll::PollError &) {
-            throw;
-        }
-    }
-
-    void Run() noexcept {
-        if (channels.size() == 0)
-            return;
-        const auto events = poll.Wait(channels.size());
-        for (const auto &event : events) {
-
-            poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
-
-            if (event.context->socket->IsAcceptor()) {
-                AddNewConnections(event.context);
-                continue;
-            }
-
-            if (event.CanTerminate()) {
-                Remove(event.context);
-                continue;
-            }
-
-            if (event.CanRead()) {
-                try {
-                    if (auto callback_response = read_callback(event.context)) {
-                        poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
-                        auto &front = *callback_response.Front();
-                        std::type_index type = typeid(front);
-                        if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
-                            EnqueueItem(event.context, callback_response, true);
-                        else
-                            EnqueueItem(event.context, callback_response, false);
-                    }
-                } catch (const IO::Socket::ConnectionClosedByPeer &) {
-                    Remove(event.context);
-                }
-            }
-
-            if (event.CanWrite()) {
-                ProcessWrite(event.context);
-                continue;
-            }
-        }
-    }
-
     void AddNewConnections(const Channel *channel) noexcept {
         do {
             try {
@@ -117,6 +53,59 @@ class Scheduler::SchedulerImpl {
             } catch (SysEpoll::PollError &) {
             }
         } while (true);
+    }
+
+    void Remove(Channel *c) noexcept {
+        before_removing(c);
+        poll.Remove(c);
+        channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
+                       channels.end());
+    }
+
+    template <typename T> T CreateOrRemoveConnections(T begin, T end) {
+        auto after_terminate =
+            std::partition(begin, end, [](auto &ev) { return ev.CanTerminate() || ev.context->socket->IsAcceptor(); });
+
+        std::for_each(begin, after_terminate, [this](auto &ev) {
+            if (ev.context->socket->IsAcceptor())
+                this->AddNewConnections(ev.context);
+            if (ev.CanTerminate())
+                this->Remove(ev.context);
+        });
+
+        return after_terminate;
+    }
+
+    public:
+    void Run() noexcept {
+        if (channels.size() == 0)
+            return;
+        auto events = poll.Wait(channels.size());
+
+        auto first_event = CreateOrRemoveConnections(events.begin(), events.end());
+        events.erase(events.begin(), first_event);
+
+        auto last_to_read_from = std::partition(events.begin(), events.end(), [](auto &ev) { return ev.CanRead(); });
+
+        for (auto it = events.begin(); it != last_to_read_from; ++it) {
+            try {
+                if (auto callback_response = read_callback(it->context)) {
+                    poll.Modify(it->context, static_cast<std::uint32_t>(SysEpoll::Write));
+                    auto &front = *callback_response.Front();
+                    std::type_index type = typeid(front);
+                    this->EnqueueItem(it->context, callback_response,
+                                      type == typeid(MemoryBuffer) || type == typeid(UnixFile) ? true : false);
+                }
+            } catch (const IO::Socket::ConnectionClosedByPeer &) {
+                this->Remove(it->context);
+                it->context->flags |= Channel::Tainted;
+            }
+        }
+
+        std::for_each(events.begin(), events.end(), [this](auto &ev) {
+            if (!(ev.context->flags & Channel::Tainted))
+                this->ProcessWrite(ev.context);
+        });
     }
 
     void ProcessWrite(Channel *channel) noexcept {
@@ -209,11 +198,26 @@ class Scheduler::SchedulerImpl {
         back ? c->queue.PutBack(std::move(item)) : c->queue.PutAfterFirstIntact(std::move(item));
     }
 
-    void Remove(Channel *c) noexcept {
-        before_removing(c);
-        poll.Remove(c);
-        channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
-                       channels.end());
+    SchedulerImpl() = default;
+    SchedulerImpl(std::unique_ptr<Socket> sock, Scheduler::ReadCallback read_callback,
+                  Scheduler::BarrierCallback barrier_callback, Scheduler::BeforeRemovingCallback before_removing)
+        : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
+        try {
+            Add(std::move(sock),
+                static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
+        } catch (const SysEpoll::PollError &) {
+            throw;
+        }
+    }
+
+    void Add(std::unique_ptr<Socket> socket, std::uint32_t flags) {
+        try {
+            auto ctx = std::make_unique<IO::Channel>(std::move(socket));
+            poll.Schedule(ctx.get(), flags);
+            channels.emplace_back(std::move(ctx));
+        } catch (const SysEpoll::PollError &) {
+            throw;
+        }
     }
 };
 

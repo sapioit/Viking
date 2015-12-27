@@ -45,6 +45,8 @@ class Dispatcher {
     ScheduleItem HandleConnection(const IO::Channel *);
     std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
     void WillRemove(const IO::Channel *) noexcept;
+
+    template <typename T> void HandleConnections(T, T) noexcept;
 };
 }
 

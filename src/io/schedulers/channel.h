@@ -28,6 +28,8 @@ struct Channel {
     std::unique_ptr<Socket> socket;
     ScheduleItem queue;
     std::vector<std::uint32_t> journal;
+    std::uint8_t flags;
+    static constexpr std::uint8_t Tainted = 1 << 1;
     Channel();
     Channel(std::unique_ptr<Socket> socket);
     Channel(const Channel &) = delete;
