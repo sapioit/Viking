@@ -151,3 +151,5 @@ void Server::Initialize() { impl->Initialize(); }
 void Server::Run(bool indefinitely) { impl->Run(indefinitely); }
 
 void Server::Freeze() { impl->Freeze(); }
+
+std::string Server::GetVersion() const noexcept { return "0.7.8"; }
