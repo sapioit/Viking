@@ -18,8 +18,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <io/schedulers/channel.h>
 
-IO::Channel::Channel() : marked_for_removal(false) {}
+IO::Channel::Channel() {}
 
-IO::Channel::Channel(std::unique_ptr<IO::Socket> socket) : socket(std::move(socket)), marked_for_removal(false) {}
+IO::Channel::Channel(std::unique_ptr<IO::Socket> socket) : socket(std::move(socket)) {}
 
 bool IO::Channel::operator=(const IO::Channel &other) const { return (*socket == *other.socket); }

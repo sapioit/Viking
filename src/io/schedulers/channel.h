@@ -27,7 +27,6 @@ namespace IO {
 struct Channel {
     std::unique_ptr<Socket> socket;
     ScheduleItem queue;
-    bool marked_for_removal;
     std::vector<std::uint32_t> journal;
     Channel();
     Channel(std::unique_ptr<Socket> socket);

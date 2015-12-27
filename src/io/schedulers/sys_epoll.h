@@ -38,6 +38,11 @@ class SysEpoll {
         Event(IO::Channel *, std::uint32_t description) noexcept;
         bool operator<(const Event &other) const { return context < other.context; }
         bool operator==(const Event &other) const { return context == other.context; }
+        inline bool CanWrite() const noexcept { return (description & SysEpoll::Write); }
+        inline bool CanRead() const noexcept { return (description & SysEpoll::Read); }
+        inline bool CanTerminate() const noexcept {
+            return (description & SysEpoll::Termination) || (description & SysEpoll::Error);
+        }
     };
 
     struct PollError : public std::runtime_error {

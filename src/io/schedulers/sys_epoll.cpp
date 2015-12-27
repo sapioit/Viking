@@ -86,6 +86,7 @@ static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> 
     std::vector<SysEpoll::Event> epoll_events;
     for (const auto &event : events) {
         epoll_events.emplace_back(static_cast<IO::Channel *>(event.data.ptr), event.events);
+        epoll_events.back().context->journal.push_back(epoll_events.back().description);
     }
     return epoll_events;
 }
