@@ -68,27 +68,20 @@ class Scheduler::SchedulerImpl {
             return;
         const auto events = poll.Wait(channels.size());
         for (const auto &event : events) {
+
             poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
-            event.context->marked_for_removal = false;
-            if (CanTerminate(event.description)) {
-                event.context->journal.push_back(event.description);
-                Remove(event.context);
-                continue;
-            }
 
             if (event.context->socket->IsAcceptor()) {
-                event.context->journal.push_back(event.description);
                 AddNewConnections(event.context);
                 continue;
             }
 
-            if (CanWrite(event.description)) {
-                event.context->journal.push_back(event.description);
-                ProcessWrite(event.context);
+            if (event.CanTerminate()) {
+                Remove(event.context);
+                continue;
             }
 
-            if (CanRead(event.description)) {
-                event.context->journal.push_back(event.description);
+            if (event.CanRead()) {
                 try {
                     if (auto callback_response = read_callback(event.context)) {
                         poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
@@ -103,10 +96,12 @@ class Scheduler::SchedulerImpl {
                     Remove(event.context);
                 }
             }
+
+            if (event.CanWrite()) {
+                ProcessWrite(event.context);
+                continue;
+            }
         }
-        channels.erase(std::remove_if(channels.begin(), channels.end(), [](auto &ch) {
-                           return ch->marked_for_removal;
-                       }), channels.end());
     }
 
     void AddNewConnections(const Channel *channel) noexcept {
@@ -145,7 +140,7 @@ class Scheduler::SchedulerImpl {
                     } else {
                         /* There is a chance that the channel has pending data right now, so we must not close it yet.
                          * Instead we mark it, and the next time we poll, if it's not in the event list, we remove it */
-                        channel->marked_for_removal = true;
+                        Remove(channel);
                         return;
                     }
                 }
@@ -219,12 +214,6 @@ class Scheduler::SchedulerImpl {
         poll.Remove(c);
         channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
                        channels.end());
-    }
-
-    inline bool CanWrite(std::uint32_t ev) const noexcept { return (ev & SysEpoll::Write); }
-    inline bool CanRead(std::uint32_t ev) const noexcept { return (ev & SysEpoll::Read); }
-    inline bool CanTerminate(std::uint32_t ev) const noexcept {
-        return (ev & SysEpoll::Termination) || (ev & SysEpoll::Error);
     }
 };
 
