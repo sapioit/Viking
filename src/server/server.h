@@ -45,6 +45,7 @@ class Server {
     void Initialize();
     void Run(bool indefinitely = true);
     void Freeze();
+    std::string GetVersion() const noexcept;
     struct PortInUse {
         int port;
     };
