@@ -165,7 +165,7 @@ class Scheduler::SchedulerImpl {
         if (sched_item_type == typeid(MemoryBuffer)) {
             MemoryBuffer *mem_buffer = reinterpret_cast<MemoryBuffer *>(channel->queue.Front());
             try {
-                if (const auto written = channel->socket->WriteSome(mem_buffer->data) > 0) {
+                if (const auto written = channel->socket->WriteSome(mem_buffer->data)) {
                     if (written == mem_buffer->data.size())
                         channel->queue.RemoveFront();
                     else
