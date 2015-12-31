@@ -18,8 +18,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <io/schedulers/channel.h>
 
-IO::Channel::Channel() {}
+IO::Channel::Channel() : data(nullptr), flags(0) {}
 
-IO::Channel::Channel(std::unique_ptr<IO::Socket> socket) : socket(std::move(socket)) {}
+IO::Channel::Channel(std::unique_ptr<IO::Socket> socket) : socket(std::move(socket)), data(nullptr), flags(0) {}
 
 bool IO::Channel::operator=(const IO::Channel &other) const { return (*socket == *other.socket); }
+
+IO::Channel::~Channel()
+{
+    if(on_destroy)
+        on_destroy(this);
+    data = nullptr;
+}

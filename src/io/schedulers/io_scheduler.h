@@ -30,9 +30,9 @@ class Scheduler {
     public:
     typedef ScheduleItem Resolution;
     typedef std::vector<char> DataType;
-    typedef std::function<Resolution(const Channel *)> ReadCallback;
+   // typedef std::function<Resolution(const Channel *)> ReadCallback;
+    typedef std::function<void(std::vector<Channel*>)> ReadCallback;
     typedef std::function<std::unique_ptr<MemoryBuffer>(ScheduleItem &)> BarrierCallback;
-    typedef std::function<void(const Channel *)> BeforeRemovingCallback;
 
     private:
     class SchedulerImpl;
@@ -40,7 +40,7 @@ class Scheduler {
 
     public:
     Scheduler();
-    Scheduler(std::unique_ptr<Socket> sock, ReadCallback, BarrierCallback, BeforeRemovingCallback);
+    Scheduler(std::unique_ptr<Socket> sock, ReadCallback, BarrierCallback);
     ~Scheduler();
 
     Scheduler(const Scheduler &) = delete;
@@ -49,6 +49,7 @@ class Scheduler {
     Scheduler &operator=(Scheduler &&);
 
     void Add(std::unique_ptr<Socket> socket, std::uint32_t flags);
+    void Remove(IO::Channel*) noexcept;
     void Run() noexcept;
 };
 }

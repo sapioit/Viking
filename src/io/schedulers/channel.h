@@ -22,21 +22,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
 #include <io/socket/socket.h>
 #include <io/schedulers/sched_item.h>
+#include <functional>
 
 namespace IO {
 struct Channel {
     std::unique_ptr<Socket> socket;
     ScheduleItem queue;
     std::vector<std::uint32_t> journal;
+    void* data;
     std::uint8_t flags;
     static constexpr std::uint8_t Tainted = 1 << 1;
+    std::function<void(Channel*)> on_destroy;
     Channel();
     Channel(std::unique_ptr<Socket> socket);
     Channel(const Channel &) = delete;
     Channel &operator=(const Channel &) = delete;
     Channel(Channel &&other) = default;
     Channel &operator=(Channel &other) = default;
-    ~Channel() = default;
+    ~Channel();
     bool operator=(const Channel &other) const;
 };
 }

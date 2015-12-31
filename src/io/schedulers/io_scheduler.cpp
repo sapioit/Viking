@@ -27,6 +27,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <typeindex>
 
 using namespace IO;
+template <typename BiIt, typename UnPred> auto gather(BiIt f, BiIt l, BiIt p, UnPred s) -> std::pair<BiIt, BiIt> {
+    return {std::stable_partition(f, p, [s](auto p) { return !s(p); }), std::stable_partition(p, l, s)};
+}
 
 class Scheduler::SchedulerImpl {
     struct SocketNotFound {
@@ -38,30 +41,25 @@ class Scheduler::SchedulerImpl {
     SysEpoll poll;
     Scheduler::ReadCallback read_callback;
     Scheduler::BarrierCallback barrier_callback;
-    Scheduler::BeforeRemovingCallback before_removing;
 
-    void AddNewConnections(const Channel *channel) noexcept {
-        do {
-            try {
-                auto new_connection = channel->socket->Accept();
-                if (*new_connection) {
-                    new_connection->MakeNonBlocking();
-                    Add(std::move(new_connection),
-                        static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
-                } else
-                    break;
-            } catch (SysEpoll::PollError &) {
-            }
-        } while (true);
-    }
-
+    public:
     void Remove(Channel *c) noexcept {
-        before_removing(c);
         poll.Remove(c);
         channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
                        channels.end());
     }
 
+    template <typename T, typename C> void Remove(T begin, T end, C condition) {
+        if (begin == end)
+            return;
+        auto first_ok = std::partition(begin, end, condition);
+        for (auto it = begin; it != first_ok; ++it) {
+            poll.Remove(it->get());
+        }
+        channels.erase(channels.begin(), first_ok);
+    }
+
+    private:
     template <typename T> T CreateOrRemoveConnections(T begin, T end) {
         auto after_terminate =
             std::partition(begin, end, [](auto &ev) { return ev.CanTerminate() || ev.context->socket->IsAcceptor(); });
@@ -76,7 +74,16 @@ class Scheduler::SchedulerImpl {
         return after_terminate;
     }
 
+    template <typename T> auto MakeChannels(T begin, T end) const noexcept {
+        std::vector<Channel *> event_channels;
+        event_channels.reserve(end - begin);
+        std::for_each(begin, end,
+                      [&event_channels](const SysEpoll::Event &ev) { event_channels.push_back(ev.context); });
+        return event_channels;
+    }
+
     public:
+    enum write_result { full, not_full, error, empty };
     void Run() noexcept {
         if (channels.size() == 0)
             return;
@@ -85,64 +92,64 @@ class Scheduler::SchedulerImpl {
         auto first_event = CreateOrRemoveConnections(events.begin(), events.end());
         events.erase(events.begin(), first_event);
 
-        auto last_to_read_from = std::partition(events.begin(), events.end(), [](auto &ev) { return ev.CanRead(); });
+        if (events.size()) {
+            auto last_to_read_from =
+                std::partition(events.begin(), events.end(), [](auto &ev) { return ev.CanRead(); });
 
-        for (auto it = events.begin(); it != last_to_read_from; ++it) {
-            try {
-                if (auto callback_response = read_callback(it->context)) {
-                    poll.Modify(it->context, static_cast<std::uint32_t>(SysEpoll::Write));
-                    auto &front = *callback_response.Front();
-                    std::type_index type = typeid(front);
-                    this->EnqueueItem(it->context, callback_response,
-                                      type == typeid(MemoryBuffer) || type == typeid(UnixFile) ? true : false);
-                }
-            } catch (const IO::Socket::ConnectionClosedByPeer &) {
-                this->Remove(it->context);
-                it->context->flags |= Channel::Tainted;
+            if (events.begin() != last_to_read_from) {
+                auto read_events = MakeChannels(events.begin(), last_to_read_from);
+                read_callback(read_events);
             }
-        }
 
-        std::for_each(events.begin(), events.end(), [this](auto &ev) {
-            if (!(ev.context->flags & Channel::Tainted))
-                this->ProcessWrite(ev.context);
-        });
-    }
+            std::vector<Channel *> to_remove;
+            auto written = true;
+            while (written) {
+                written = false;
+                for (auto it = events.begin(); it != events.end(); ++it) {
+                    if (it->context->flags & Channel::Tainted) {
+                        to_remove.push_back(it->context);
+                        continue;
+                    }
+                    if (it->CanWrite()) {
+                        const write_result result = this->WriteToChannel(it->context);
+                        debug(result);
+                        if(!it->context->queue) {
+                            if (it->context->queue.KeepFileOpen()) {
+                                poll.Modify(it->context, ~static_cast<std::uint32_t>(SysEpoll::Write));
+                                //poll.Modify(it->context, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                            } else {
+                                it->description &= SysEpoll::Write;
+                                to_remove.push_back(it->context);
+                                continue;
+                            }
+                        }
+                        switch (result) {
+                        case full:
+                            it->description &= SysEpoll::Write;
+                            written = true;
+                            break;
+                        case error:
+                            to_remove.push_back(it->context);
+                            continue;
+                        case empty:
+                            it->description &= SysEpoll::Write;
+                            break;
+                        default:
+                            break;
+                        }
 
-    void ProcessWrite(Channel *channel) noexcept {
-        try {
-            bool filled = false;
-            while (channel->queue && !filled) {
-                if (channel->queue.IsFrontAsync()) {
-                    auto new_sync_buffer = barrier_callback(channel->queue);
-                    if (*new_sync_buffer) {
-                        channel->queue.ReplaceFront(std::move(new_sync_buffer));
-                    } else {
-                        poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
-                        return;
                     }
                 }
-                auto result = FillChannel(channel);
-                if (!(channel->queue)) {
-                    if (channel->queue.KeepFileOpen()) {
-                        poll.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
-                        poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
-                    } else {
-                        /* There is a chance that the channel has pending data right now, so we must not close it yet.
-                         * Instead we mark it, and the next time we poll, if it's not in the event list, we remove it */
-                        Remove(channel);
-                        return;
-                    }
-                }
-                filled = result;
             }
-            if (!filled)
-                poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
-        } catch (...) {
-            Remove(channel);
+
+            for (auto ptr : to_remove)
+                Remove(ptr);
         }
     }
 
-    bool FillChannel(Channel *channel) {
+    write_result WriteToChannel(Channel *channel) noexcept {
+        if (!channel->queue)
+            return empty;
         auto &front = *channel->queue.Front();
         std::type_index sched_item_type = typeid(front);
 
@@ -156,11 +163,11 @@ class Scheduler::SchedulerImpl {
                         std::vector<char>(mem_buffer->data.begin() + written, mem_buffer->data.end())
                             .swap(mem_buffer->data);
                 } else {
-                    return true;
+                    return full;
                 }
             } catch (...) {
                 debug("Caught exception when writing a memory buffer");
-                throw WriteError{};
+                return error;
             }
 
         } else if (sched_item_type == typeid(UnixFile)) {
@@ -171,40 +178,65 @@ class Scheduler::SchedulerImpl {
                     if (written == size_left)
                         channel->queue.RemoveFront();
                 } else {
-                    return true;
+                    return full;
                 }
             } catch (const UnixFile::DIY &e) {
                 /* This is how Linux tells you that you'd better do it yourself in userspace.
                  * We need to replace this item with a MemoryBuffer version of this
                  * data, at the right offset.
                  */
-                try {
-                    debug("diy");
-                    auto buffer = From(*e.ptr);
-                    channel->queue.ReplaceFront(std::move(buffer));
-                    return FillChannel(channel);
-                } catch (...) {
-                    throw WriteError{};
-                }
+                debug("diy");
+                auto buffer = From(*e.ptr);
+                channel->queue.ReplaceFront(std::move(buffer));
+                return WriteToChannel(channel);
             } catch (...) {
                 debug("Caught exception when writing a unix file");
-                throw WriteError{};
+                return error;
             }
         }
-        return false;
+        return not_full;
     }
-
-    void EnqueueItem(Channel *c, ScheduleItem &item, bool back) noexcept {
-        back ? c->queue.PutBack(std::move(item)) : c->queue.PutAfterFirstIntact(std::move(item));
+    void ProcessWrite(Channel *channel) noexcept {
+        try {
+            bool filled = false;
+            while (channel->queue && !filled) {
+                if (channel->queue.IsFrontAsync()) {
+                    auto new_sync_buffer = barrier_callback(channel->queue);
+                    if (*new_sync_buffer) {
+                        channel->queue.ReplaceFront(std::move(new_sync_buffer));
+                    } else {
+                        poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                        return;
+                    }
+                }
+                auto result = WriteToChannel(channel);
+                if (!(channel->queue)) {
+                    if (channel->queue.KeepFileOpen()) {
+                        poll.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
+                        poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                    } else {
+                        /* There is a chance that the channel has pending data right now, so we must not close it
+                         * yet.
+                         * Instead we mark it, and the next time we poll, if it's not in the event list, we remove
+                         * it */
+                        Remove(channel);
+                        return;
+                    }
+                }
+                filled = result;
+                poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+            }
+        } catch (...) {
+            Remove(channel);
+        }
     }
 
     SchedulerImpl() = default;
     SchedulerImpl(std::unique_ptr<Socket> sock, Scheduler::ReadCallback read_callback,
-                  Scheduler::BarrierCallback barrier_callback, Scheduler::BeforeRemovingCallback before_removing)
-        : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
+                  Scheduler::BarrierCallback barrier_callback)
+        : read_callback(read_callback), barrier_callback(barrier_callback) {
         try {
-            Add(std::move(sock),
-                static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
+            Add(std::move(sock), SysEpoll::Read | SysEpoll::Write | SysEpoll::Termination);
         } catch (const SysEpoll::PollError &) {
             throw;
         }
@@ -219,6 +251,20 @@ class Scheduler::SchedulerImpl {
             throw;
         }
     }
+
+    void AddNewConnections(const Channel *channel) noexcept {
+        do {
+            try {
+                auto new_connection = channel->socket->Accept();
+                if (*new_connection) {
+                    new_connection->MakeNonBlocking();
+                    Add(std::move(new_connection), SysEpoll::Read | SysEpoll::Write | SysEpoll::Termination);
+                } else
+                    break;
+            } catch (SysEpoll::PollError &) {
+            }
+        } while (true);
+    }
 };
 
 Scheduler::Scheduler() {
@@ -230,9 +276,9 @@ Scheduler::Scheduler() {
 }
 
 Scheduler::Scheduler(std::unique_ptr<Socket> sock, Scheduler::ReadCallback read_callback,
-                     BarrierCallback barrier_callback, BeforeRemovingCallback before_removing) {
+                     BarrierCallback barrier_callback) {
     try {
-        impl = new SchedulerImpl(std::move(sock), read_callback, barrier_callback, before_removing);
+        impl = new SchedulerImpl(std::move(sock), read_callback, barrier_callback);
     } catch (...) {
         throw;
     }
@@ -247,6 +293,8 @@ void Scheduler::Add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
         throw;
     }
 }
+
+void Scheduler::Remove(Channel *c) noexcept { impl->Remove(c); }
 
 void Scheduler::Run() noexcept { impl->Run(); }
 

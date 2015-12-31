@@ -42,9 +42,8 @@ SysEpoll::~SysEpoll() {
 void SysEpoll::Schedule(IO::Channel *context, std::uint32_t flags) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
-    // ev.data.fd = file_descriptor;
     ev.data.ptr = context;
-    ev.events = flags | EPOLLET;
+    ev.events = flags;// | EPOLLET;
     if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->GetFD(), &ev)) {
         if (errno != EEXIST) {
         } else {

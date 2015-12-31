@@ -35,149 +35,38 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 #include <type_traits>
 
-using namespace Web;
-using namespace Cache;
-static ResponseSerializer serializer;
+//using namespace Web;
+//using namespace Cache;
 
-class Dispatcher::DispatcherImpl {
-    RouteUtility::RouteMap routes;
-    std::vector<Http::Context> pending;
+//class Dispatcher::DispatcherImpl {
 
-    public:
-    DispatcherImpl() = default;
+//};
 
-    inline void AddRoute(RouteUtility::Route r) noexcept { routes.push_back(r); }
+//void Dispatcher::AddRoute(RouteUtility::Route route) noexcept { impl->AddRoute(route); }
 
-    inline std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *r) noexcept {
-        auto http_response = r->future.get();
-        return std::make_unique<MemoryBuffer>(serializer(http_response));
-    }
+//ScheduleItem Dispatcher::HandleConnection(const IO::Channel *connection) {
+//    try {
+//        return impl->HandleConnection(connection);
+//    } catch (...) {
+//        throw;
+//    }
+//}
 
-    inline ScheduleItem HandleConnection(const IO::Channel *connection) {
-        try {
-            auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
-                return (*engine.GetSocket()) == (*connection->socket);
-            });
-            if (context_it != pending.end())
-                std::swap(*context_it, pending.back());
-            else
-                pending.emplace_back(connection->socket.get());
-            auto context = pending.back();
-            if (context().Complete()) {
-                RemovePendingContexts(connection);
-                return ProcessRequest(context.GetRequest());
-            }
-        } catch (const IO::Socket::ConnectionClosedByPeer &) {
-            throw;
-        }
-        return {};
-    }
+//std::unique_ptr<MemoryBuffer> Dispatcher::HandleBarrier(AsyncBuffer<Http::Response> *item) noexcept {
+//    return impl->HandleBarrier(item);
+//}
 
-    void RemovePendingContexts(const IO::Channel *ch) noexcept {
-        pending.erase(std::remove_if(pending.begin(), pending.end(), [ch](Http::Context &engine) {
-                          return (*engine.GetSocket()) == (*ch->socket);
-                      }), pending.end());
-    }
+//void Dispatcher::WillRemove(const IO::Channel *s) noexcept { impl->RemovePendingContexts(s); }
 
-    private:
-    inline ScheduleItem ProcessRequest(const Http::Request &r) const noexcept {
-        if (Http::Util::IsResource(r))
-            return TakeResource(r);
-        if (Http::Util::IsPassable(r)) {
-            if (auto user_handler = RouteUtility::GetUserHandler(r, routes))
-                return PassRequest(r, user_handler);
-            else
-                return NotFound();
-        } else {
-            // TODO handle internally
-            return {};
-        }
-    }
+//Dispatcher::Dispatcher() : impl(nullptr) { impl = new DispatcherImpl(); }
 
-    bool ShouldKeepAlive(const Http::Request &r) const noexcept {
-        auto it = r.header.fields.find(Http::Header::Fields::Connection);
-        if (it != r.header.fields.end() && it->second == "Keep-Alive")
-            return true;
-        return false;
-    }
+//Dispatcher::~Dispatcher() { delete impl; }
 
-    inline ScheduleItem TakeResource(const Http::Request &request) const noexcept {
-        auto full_path = Storage::GetSettings().root_path + request.url;
-        try {
-            if (ShouldCopyInMemory(full_path)) {
-                if (auto resource = ResourceCache::Aquire(full_path)) {
-                    Http::Response response{std::move(resource)};
-                    response.Set(Http::Header::Fields::Connection, ShouldKeepAlive(request) ? "Keep-Alive" : "Close");
-                    return {serializer(response), response.GetKeepAlive()};
-                } else {
-                    throw Http::StatusCode::NotFound;
-                }
-            } else {
-                auto unix_file = std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire,
-                                                            Cache::FileDescriptor::Release);
-                ScheduleItem response;
-                Http::Response http_response;
-                http_response.SetFile(unix_file.get());
-                http_response.Set(Http::Header::Fields::Content_Type, Http::Util::GetMimeType(full_path));
-                http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
-                http_response.Set(Http::Header::Fields::Connection, ShouldKeepAlive(request) ? "Keep-Alive" : "Close");
-                response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeHeader(http_response)));
-                response.PutBack(std::move(unix_file));
-                response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeEnding(http_response)));
-                response.SetKeepFileOpen(http_response.GetKeepAlive());
-                return response;
-            }
-        } catch (...) {
-            return NotFound();
-        }
-    }
-
-    inline ScheduleItem PassRequest(const Http::Request &r, RouteUtility::HttpHandler h) const noexcept {
-        Http::Resolution resolution = h(r);
-        if (resolution.GetType() == Http::Resolution::Type::Sync)
-            return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
-        else
-            return {std::make_unique<AsyncBuffer<Http::Response>>(std::move(resolution.GetFuture()))};
-    }
-
-    bool ShouldCopyInMemory(const fs::path &resource_path) const {
-        try {
-            auto page_size = static_cast<std::size_t>(getpagesize());
-            auto file_size = fs::file_size(resource_path);
-            return file_size <= page_size;
-        } catch (...) {
-            throw Http::StatusCode::NotFound;
-        }
-    }
-
-    inline ScheduleItem NotFound() const noexcept { return ScheduleItem{serializer({Http::StatusCode::NotFound})}; }
-};
-
-void Dispatcher::AddRoute(RouteUtility::Route route) noexcept { impl->AddRoute(route); }
-
-ScheduleItem Dispatcher::HandleConnection(const IO::Channel *connection) {
-    try {
-        return impl->HandleConnection(connection);
-    } catch (...) {
-        throw;
-    }
-}
-
-std::unique_ptr<MemoryBuffer> Dispatcher::HandleBarrier(AsyncBuffer<Http::Response> *item) noexcept {
-    return impl->HandleBarrier(item);
-}
-
-void Dispatcher::WillRemove(const IO::Channel *s) noexcept { impl->RemovePendingContexts(s); }
-
-Dispatcher::Dispatcher() : impl(nullptr) { impl = new DispatcherImpl(); }
-
-Dispatcher::~Dispatcher() { delete impl; }
-
-Dispatcher::Dispatcher(Dispatcher &&other) noexcept { *this = std::move(other); }
-Dispatcher &Dispatcher::operator=(Dispatcher &&other) noexcept {
-    if (this != &other) {
-        impl = other.impl;
-        other.impl = nullptr;
-    }
-    return *this;
-}
+//Dispatcher::Dispatcher(Dispatcher &&other) noexcept { *this = std::move(other); }
+//Dispatcher &Dispatcher::operator=(Dispatcher &&other) noexcept {
+//    if (this != &other) {
+//        impl = other.impl;
+//        other.impl = nullptr;
+//    }
+//    return *this;
+//}

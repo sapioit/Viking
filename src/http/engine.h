@@ -39,6 +39,8 @@ class Context {
 
     public:
     Context(const IO::Socket *socket);
+    Context(Context&) = delete;
+    Context&operator=(const Context&) = delete;
     const IO::Socket *GetSocket() const;
     const Request &GetRequest() const noexcept;
     Http::Context &operator()();

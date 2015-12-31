@@ -28,26 +28,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
 #include <functional>
 
-namespace Web {
-class Dispatcher {
-    class DispatcherImpl;
-    DispatcherImpl *impl;
+//namespace Web {
+//class Dispatcher {
+//    class DispatcherImpl;
+//    DispatcherImpl *impl;
 
-    public:
-    Dispatcher();
-    ~Dispatcher();
-    Dispatcher(Dispatcher &) = delete;
-    Dispatcher &operator=(Dispatcher &) = delete;
-    Dispatcher(Dispatcher &&) noexcept;
-    Dispatcher &operator=(Dispatcher &&) noexcept;
+//    public:
+//    Dispatcher();
+//    ~Dispatcher();
+//    Dispatcher(Dispatcher &) = delete;
+//    Dispatcher &operator=(Dispatcher &) = delete;
+//    Dispatcher(Dispatcher &&) noexcept;
+//    Dispatcher &operator=(Dispatcher &&) noexcept;
 
-    void AddRoute(RouteUtility::Route) noexcept;
-    ScheduleItem HandleConnection(const IO::Channel *);
-    std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
-    void WillRemove(const IO::Channel *) noexcept;
+//    void AddRoute(RouteUtility::Route) noexcept;
+//    ScheduleItem HandleConnection(const IO::Channel *);
+//    std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
+//    void WillRemove(const IO::Channel *) noexcept;
 
-    template <typename T> void HandleConnections(T, T) noexcept;
-};
-}
+//    template <typename T> void HandleConnections(T, T) noexcept;
+//};
+//}
 
 #endif // DISPATCHER_H
