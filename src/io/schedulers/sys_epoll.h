@@ -56,8 +56,8 @@ class SysEpoll {
     static constexpr std::uint32_t LevelTriggered = ~EPOLLET;
     static constexpr std::uint32_t Error = EPOLLERR;
     void Schedule(IO::Channel *, std::uint32_t);
-    void Modify(const IO::Channel *, std::uint32_t);
-    void Remove(const IO::Channel *);
+    void modify(const IO::Channel *, std::uint32_t);
+    void remove(const IO::Channel *);
     std::vector<Event> Wait(std::uint32_t = 1000) const;
 
     SysEpoll();

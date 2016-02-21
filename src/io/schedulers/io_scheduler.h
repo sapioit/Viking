@@ -26,30 +26,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <functional>
 
 namespace IO {
-class Scheduler {
+class scheduler {
     public:
     typedef schedule_item Resolution;
     typedef std::vector<char> DataType;
-    typedef std::function<Resolution(const Channel *)> ReadCallback;
-    typedef std::function<std::unique_ptr<MemoryBuffer>(schedule_item &)> BarrierCallback;
-    typedef std::function<void(const Channel *)> BeforeRemovingCallback;
+    typedef std::function<Resolution(const Channel *)> read_cb;
+    typedef std::function<std::unique_ptr<MemoryBuffer>(schedule_item &)> barrier_cb;
+    typedef std::function<void(const Channel *)> before_removing_cb;
 
     private:
-    class SchedulerImpl;
-    SchedulerImpl *impl;
+    class scheduler_impl;
+    scheduler_impl *impl;
 
     public:
-    Scheduler();
-    Scheduler(std::unique_ptr<Socket> sock, ReadCallback, BarrierCallback, BeforeRemovingCallback);
-    ~Scheduler();
+    scheduler();
+    scheduler(std::unique_ptr<Socket> sock, read_cb, barrier_cb, before_removing_cb);
+    ~scheduler();
 
-    Scheduler(const Scheduler &) = delete;
-    Scheduler &operator=(const Scheduler &) = delete;
-    Scheduler(Scheduler &&);
-    Scheduler &operator=(Scheduler &&);
+    scheduler(const scheduler &) = delete;
+    scheduler &operator=(const scheduler &) = delete;
+    scheduler(scheduler &&);
+    scheduler &operator=(scheduler &&);
 
-    void Add(std::unique_ptr<Socket> socket, std::uint32_t flags);
-    void Run() noexcept;
+    void add(std::unique_ptr<Socket> socket, std::uint32_t flags);
+    void run() noexcept;
 };
 }
 

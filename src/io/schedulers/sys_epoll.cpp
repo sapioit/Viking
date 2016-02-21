@@ -48,13 +48,13 @@ void SysEpoll::Schedule(IO::Channel *context, std::uint32_t flags) {
     if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->GetFD(), &ev)) {
         if (errno != EEXIST) {
         } else {
-            Modify(context, flags);
+            modify(context, flags);
         }
     } else
         events_.push_back(ev);
 }
 
-void SysEpoll::Modify(const IO::Channel *context, std::uint32_t flags) {
+void SysEpoll::modify(const IO::Channel *context, std::uint32_t flags) {
     auto *event = FindEvent(context);
     if (event) {
         event->events |= flags;
@@ -64,7 +64,7 @@ void SysEpoll::Modify(const IO::Channel *context, std::uint32_t flags) {
     }
 }
 
-void SysEpoll::Remove(const IO::Channel *context) {
+void SysEpoll::remove(const IO::Channel *context) {
     auto event_it =
         std::find_if(events_.begin(), events_.end(), [context](epoll_event &ev) { return (context == ev.data.ptr); });
 

@@ -37,7 +37,7 @@ class Server::ServerImpl {
     int max_pending_;
     bool stop_requested_;
     dispatcher dispatcher_;
-    IO::Scheduler scheduler_;
+    IO::scheduler scheduler_;
 
     inline void IgnoreSigpipe() { signal(SIGPIPE, SIG_IGN); }
 
@@ -48,7 +48,7 @@ class Server::ServerImpl {
         IgnoreSigpipe();
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = MakeSocket(port_, max_pending_)) {
-            scheduler_ = IO::Scheduler(std::unique_ptr<IO::Socket>(sock),
+            scheduler_ = IO::scheduler(std::unique_ptr<IO::Socket>(sock),
                                        [this](const IO::Channel *ch) {
                                            try {
                                                return dispatcher_.handle_connection(ch);
@@ -73,11 +73,11 @@ class Server::ServerImpl {
 
     inline void Run(bool indefinitely) {
         if (!indefinitely)
-            scheduler_.Run();
+            scheduler_.run();
         else {
             stop_requested_ = false;
             while (!stop_requested_) {
-                scheduler_.Run();
+                scheduler_.run();
             }
         }
     }
