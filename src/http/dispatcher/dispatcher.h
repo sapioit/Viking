@@ -41,10 +41,10 @@ class Dispatcher {
     Dispatcher(Dispatcher &&) noexcept;
     Dispatcher &operator=(Dispatcher &&) noexcept;
 
-    void AddRoute(RouteUtility::Route) noexcept;
-    ScheduleItem HandleConnection(const IO::Channel *);
-    std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *) noexcept;
-    void WillRemove(const IO::Channel *) noexcept;
+    void add_route(RouteUtility::Route) noexcept;
+    ScheduleItem handle_connection(const IO::Channel *);
+    std::unique_ptr<MemoryBuffer> handle_barrier(AsyncBuffer<Http::Response> *) noexcept;
+    void will_remove(const IO::Channel *) noexcept;
 };
 }
 

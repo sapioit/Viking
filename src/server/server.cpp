@@ -51,7 +51,7 @@ class Server::ServerImpl {
             scheduler_ = IO::Scheduler(std::unique_ptr<IO::Socket>(sock),
                                        [this](const IO::Channel *ch) {
                                            try {
-                                               return dispatcher_.HandleConnection(ch);
+                                               return dispatcher_.handle_connection(ch);
                                            } catch (...) {
                                                throw;
                                            }
@@ -61,11 +61,11 @@ class Server::ServerImpl {
                                                AsyncBuffer<Http::Response> *async_buffer =
                                                    static_cast<AsyncBuffer<Http::Response> *>(schedule_item.Front());
                                                if (async_buffer->IsReady())
-                                                   return dispatcher_.HandleBarrier(async_buffer);
+                                                   return dispatcher_.handle_barrier(async_buffer);
                                            }
                                            return std::make_unique<MemoryBuffer>(std::vector<char>());
                                        },
-                                       [this](const IO::Channel *ch) { dispatcher_.WillRemove(ch); });
+                                       [this](const IO::Channel *ch) { dispatcher_.will_remove(ch); });
         } else {
             throw Server::PortInUse{port_};
         }
@@ -86,7 +86,7 @@ class Server::ServerImpl {
 
     inline void AddRoute(const Http::Method &method, std::function<bool(const std::string &)> validator,
                          std::function<Http::Resolution(Http::Request)> function) {
-        dispatcher_.AddRoute(std::make_pair(std::make_pair(method, validator), function));
+        dispatcher_.add_route(std::make_pair(std::make_pair(method, validator), function));
     }
 
     inline void AddRoute(const Http::Method &method, const std::regex &regex,
@@ -99,7 +99,7 @@ class Server::ServerImpl {
                 return false;
             }
         };
-        dispatcher_.AddRoute(std::make_pair(std::make_pair(method, ptr), function));
+        dispatcher_.add_route(std::make_pair(std::make_pair(method, ptr), function));
     }
 
     inline void SetSettings(const Settings &s) {

@@ -46,14 +46,14 @@ class Dispatcher::DispatcherImpl {
 public:
     DispatcherImpl() = default;
 
-    inline void AddRoute(RouteUtility::Route r) noexcept { routes.push_back(r); }
+    inline void add_route(RouteUtility::Route r) noexcept { routes.push_back(r); }
 
-    inline std::unique_ptr<MemoryBuffer> HandleBarrier(AsyncBuffer<Http::Response> *r) noexcept {
+    inline std::unique_ptr<MemoryBuffer> handle_barrier(AsyncBuffer<Http::Response> *r) noexcept {
         auto http_response = r->future.get();
         return std::make_unique<MemoryBuffer>(serializer(http_response));
     }
 
-    inline ScheduleItem HandleConnection(const IO::Channel *connection) {
+    inline ScheduleItem handle_connection(const IO::Channel *connection) {
         try {
             auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
                     return (*engine.GetSocket()) == (*connection->socket);
@@ -85,9 +85,9 @@ private:
             return take_disk_resource(r);
         if (Http::Util::is_passable(r)) {
             if (auto user_handler = RouteUtility::GetUserHandler(r, routes))
-                return PassRequest(r, user_handler);
+                return pass_request(r, user_handler);
             else
-                return NotFound();
+                return not_found();
         } else {
             // TODO handle internally
             return {};
@@ -152,10 +152,10 @@ private:
                 return take_regular_file(request, full_path);
             }
         } catch (...) { }
-        return NotFound();
+        return not_found();
     }
 
-    inline ScheduleItem PassRequest(const Http::Request &r, RouteUtility::HttpHandler h) const noexcept {
+    inline ScheduleItem pass_request(const Http::Request &r, RouteUtility::HttpHandler h) const noexcept {
         Http::Resolution resolution = h(r);
         if (resolution.GetType() == Http::Resolution::Type::Sync)
             return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
@@ -173,24 +173,24 @@ private:
         }
     }
 
-    inline ScheduleItem NotFound() const noexcept { return ScheduleItem{serializer({Http::StatusCode::NotFound})}; }
+    inline ScheduleItem not_found() const noexcept { return ScheduleItem{serializer({Http::StatusCode::NotFound})}; }
 };
 
-void Dispatcher::AddRoute(RouteUtility::Route route) noexcept { impl->AddRoute(route); }
+void Dispatcher::add_route(RouteUtility::Route route) noexcept { impl->add_route(route); }
 
-ScheduleItem Dispatcher::HandleConnection(const IO::Channel *connection) {
+ScheduleItem Dispatcher::handle_connection(const IO::Channel *connection) {
     try {
-        return impl->HandleConnection(connection);
+        return impl->handle_connection(connection);
     } catch (...) {
         throw;
     }
 }
 
-std::unique_ptr<MemoryBuffer> Dispatcher::HandleBarrier(AsyncBuffer<Http::Response> *item) noexcept {
-    return impl->HandleBarrier(item);
+std::unique_ptr<MemoryBuffer> Dispatcher::handle_barrier(AsyncBuffer<Http::Response> *item) noexcept {
+    return impl->handle_barrier(item);
 }
 
-void Dispatcher::WillRemove(const IO::Channel *s) noexcept { impl->remove_pending_contexts(s); }
+void Dispatcher::will_remove(const IO::Channel *s) noexcept { impl->remove_pending_contexts(s); }
 
 Dispatcher::Dispatcher() : impl(nullptr) { impl = new DispatcherImpl(); }
 
