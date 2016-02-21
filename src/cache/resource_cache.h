@@ -3,10 +3,10 @@
 
 #include <misc/resource.h>
 
-namespace Cache {
-class ResourceCache {
+namespace cache {
+class resource_cache {
     public:
-    static Resource Aquire(fs::path p);
+    static resource aquire(fs::path p);
 };
 }
 

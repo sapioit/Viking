@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace Web;
 using namespace io;
-Socket *MakeSocket(int port, int max_pending);
+tcp_socket *MakeSocket(int port, int max_pending);
 
 class Server::ServerImpl {
     int port_;
@@ -49,7 +49,7 @@ class Server::ServerImpl {
         IgnoreSigpipe();
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = MakeSocket(port_, max_pending_)) {
-            scheduler_ = io::scheduler(std::unique_ptr<io::Socket>(sock),
+            scheduler_ = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
                                        [this](const io::channel *ch) {
                                            try {
                                                return dispatcher_.handle_connection(ch);
@@ -109,14 +109,14 @@ class Server::ServerImpl {
     }
 };
 
-io::Socket *MakeSocket(int port, int max_pending) {
+io::tcp_socket *MakeSocket(int port, int max_pending) {
     try {
-        auto sock = new io::Socket(port);
-        sock->Bind();
-        sock->MakeNonBlocking();
-        sock->Listen(max_pending);
+        auto sock = new io::tcp_socket(port);
+        sock->bind();
+        sock->make_non_blocking();
+        sock->listen(max_pending);
         return sock;
-    } catch (const io::Socket::PortInUse &) {
+    } catch (const io::tcp_socket::port_in_use &) {
         return nullptr;
     }
 }

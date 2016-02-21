@@ -36,8 +36,8 @@ class Response {
     Response(StatusCode);
     Response(const std::string &);
     Response(Http::StatusCode, const std::string &);
-    Response(const Resource &);
-    Response(Resource &&);
+    Response(const resource &);
+    Response(resource &&);
     virtual ~Response() = default;
 
     Version GetVersion() const;
@@ -51,8 +51,8 @@ class Response {
     Type GetType() const;
     void SetType(Type type) noexcept;
 
-    const Resource &GetResource() const;
-    void SetResource(const Resource &text);
+    const resource &GetResource() const;
+    void SetResource(const resource &text);
 
     const std::string &GetText() const;
     void SetText(const std::string &);
@@ -69,7 +69,7 @@ class Response {
     Version version_ = {1, 1};
     StatusCode code_;
     Type type_;
-    Resource resource_;
+    resource resource_;
     std::string text_;
     const io::unix_file *file_ = nullptr;
     void Init();

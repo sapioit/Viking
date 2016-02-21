@@ -35,7 +35,7 @@ void Http::Context::AssignMethod(http_method method_numeric) {
         request_.method = method->second;
 }
 
-Http::Context::Context(const io::Socket *socket) : socket_(socket), complete_(false) {
+Http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete_(false) {
     settings_.on_message_begin = [](http_parser *) -> int { return 0; };
     settings_.on_message_complete = [](http_parser *) -> int {
         return 0;
@@ -80,19 +80,19 @@ Http::Context::Context(const io::Socket *socket) : socket_(socket), complete_(fa
     };
 }
 
-const io::Socket *Http::Context::GetSocket() const { return socket_; }
+const io::tcp_socket *Http::Context::GetSocket() const { return socket_; }
 
 const Http::Request &Http::Context::GetRequest() const noexcept { return request_; }
 
 Http::Context &Http::Context::operator()() {
     try {
-        buffer += socket_->ReadSome<std::string>();
+        buffer += socket_->read_some<std::string>();
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
         complete_ = Http::Util::is_complete(request_);
         return *this;
-    } catch (io::Socket::connection_closed_by_peer &) {
+    } catch (io::tcp_socket::connection_closed_by_peer &) {
         throw;
     }
 }

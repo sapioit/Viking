@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <type_traits>
 
 using namespace Web;
-using namespace Cache;
+using namespace cache;
 static ResponseSerializer serializer;
 
 class dispatcher::dispatcher_impl {
@@ -67,7 +67,7 @@ class dispatcher::dispatcher_impl {
                 remove_pending_contexts(connection);
                 return process_request(context.GetRequest());
             }
-        } catch (const io::Socket::connection_closed_by_peer &) {
+        } catch (const io::tcp_socket::connection_closed_by_peer &) {
             throw;
         }
         return {};
@@ -108,7 +108,7 @@ class dispatcher::dispatcher_impl {
     }
 
     inline schedule_item take_file_from_memory(const Http::Request &request, fs::path full_path) const {
-        if (auto resource = ResourceCache::Aquire(full_path)) {
+        if (auto resource = resource_cache::aquire(full_path)) {
             Http::Response response{std::move(resource)};
             response.Set(Http::Header::Fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
             return {serializer(response), response.GetKeepAlive()};
@@ -119,7 +119,7 @@ class dispatcher::dispatcher_impl {
 
     inline schedule_item take_unix_file(const Http::Request &request, fs::path full_path) const {
         auto unix_file =
-            std::make_unique<io::unix_file>(full_path, Cache::FileDescriptor::Aquire, Cache::FileDescriptor::Release);
+            std::make_unique<io::unix_file>(full_path, cache::file_descriptor::aquire, cache::file_descriptor::release);
         schedule_item response;
         Http::Response http_response;
         http_response.SetFile(unix_file.get());

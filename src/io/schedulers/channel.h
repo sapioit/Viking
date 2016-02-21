@@ -25,11 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 namespace io {
 struct channel {
-    std::unique_ptr<Socket> socket;
+    std::unique_ptr<tcp_socket> socket;
     schedule_item queue;
     std::vector<std::uint32_t> journal;
     channel();
-    channel(std::unique_ptr<Socket> socket);
+    channel(std::unique_ptr<tcp_socket> socket);
     channel(const channel &) = delete;
     channel &operator=(const channel &) = delete;
     channel(channel &&other) = default;

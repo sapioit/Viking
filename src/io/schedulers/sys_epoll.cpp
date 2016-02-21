@@ -45,7 +45,7 @@ void epoll::schedule(io::channel *context, std::uint32_t flags) {
     // ev.data.fd = file_descriptor;
     ev.data.ptr = context;
     ev.events = flags | EPOLLET;
-    if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->GetFD(), &ev)) {
+    if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->get_fd(), &ev)) {
         if (errno != EEXIST) {
         } else {
             modify(context, flags);
@@ -58,7 +58,7 @@ void epoll::modify(const io::channel *context, std::uint32_t flags) {
     auto *event = FindEvent(context);
     if (event) {
         event->events |= flags;
-        if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->GetFD(), event)) {
+        if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->get_fd(), event)) {
             // WTF?
         }
     }
@@ -70,8 +70,8 @@ void epoll::remove(const io::channel *context) {
 
     if (event_it != events_.end()) {
         auto *event = std::addressof(*event_it);
-        if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->GetFD(), event))
-            throw poll_error("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
+        if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->get_fd(), event))
+            throw poll_error("Could not remove the file with fd = " + std::to_string(context->socket->get_fd()) +
                              " from the OS queue");
 
         events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {

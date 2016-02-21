@@ -40,7 +40,7 @@ void Response::SetCode(StatusCode code) { code_ = code; }
 Response::Type Response::GetType() const { return type_; }
 void Response::SetType(Response::Type type) noexcept { type_ = type; }
 
-const Resource &Response::GetResource() const { return resource_; }
+const resource &Response::GetResource() const { return resource_; }
 
 const std::string &Response::GetText() const { return text_; }
 void Response::SetText(const std::string &text) {
@@ -77,7 +77,7 @@ std::size_t Response::ContentLength() const {
     if (GetType() == Type::File)
         return file_->size;
     if (GetType() == Type::Resource)
-        return resource_.Content().size();
+        return resource_.content().size();
     if (GetType() == Type::Text)
         return text_.size();
     return 0;
@@ -116,16 +116,16 @@ Response::Response(const std::string &text) : code_(StatusCode::OK), text_({text
     Init();
 }
 
-Response::Response(const Resource &resource) : code_(StatusCode::OK), resource_(resource) {
+Response::Response(const resource &resource) : code_(StatusCode::OK), resource_(resource) {
     type_ = Type::Resource;
     Init();
     Set(f::Content_Type,
-        Http::Util::get_mimetype(resource.Path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
+        Http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
 }
 
-Response::Response(Resource &&resource) : code_(StatusCode::OK), resource_(std::move(resource)) {
+Response::Response(resource &&resource) : code_(StatusCode::OK), resource_(std::move(resource)) {
     type_ = Type::Resource;
     Init();
     Set(f::Content_Type,
-        Http::Util::get_mimetype(resource.Path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
+        Http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
 }

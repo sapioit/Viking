@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 namespace Http {
 class Context {
-    const io::Socket *socket_;
+    const io::tcp_socket *socket_;
     http_parser_settings settings_;
     http_parser parser_;
     Request request_;
@@ -38,8 +38,8 @@ class Context {
     void AssignMethod(http_method method_numeric);
 
     public:
-    Context(const io::Socket *socket);
-    const io::Socket *GetSocket() const;
+    Context(const io::tcp_socket *socket);
+    const io::tcp_socket *GetSocket() const;
     const Request &GetRequest() const noexcept;
     Http::Context &operator()();
     bool Complete() const noexcept;

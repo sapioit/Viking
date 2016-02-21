@@ -100,7 +100,7 @@ static std::string shell_get_mimetype(fs::path p) noexcept {
 }
 
 std::string Util::get_mimetype(fs::path p) noexcept {
-    auto ext = filesystem::GetExtension(p);
+    auto ext = filesystem::get_extension(p);
     if (ext.length())
         return mime_types[ext];
     else

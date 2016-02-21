@@ -20,6 +20,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 io::channel::channel() {}
 
-io::channel::channel(std::unique_ptr<io::Socket> socket) : socket(std::move(socket)) {}
+io::channel::channel(std::unique_ptr<io::tcp_socket> socket) : socket(std::move(socket)) {}
 
 bool io::channel::operator=(const io::channel &other) const { return (*socket == *other.socket); }

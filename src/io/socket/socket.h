@@ -16,51 +16,51 @@
 #include <functional>
 
 namespace io {
-class Socket {
+class tcp_socket {
     public:
-    struct AcceptError {
+    struct accept_error {
         int fd;
-        const Socket *ptr;
+        const tcp_socket *ptr;
     };
-    struct WriteError {
+    struct write_error {
         int fd;
-        const Socket *ptr;
+        const tcp_socket *ptr;
     };
     struct connection_closed_by_peer {
         int fd;
-        const Socket *ptr;
+        const tcp_socket *ptr;
     };
-    struct InternalSocketError {
+    struct internal_error {
         int fd;
-        const Socket *ptr;
+        const tcp_socket *ptr;
     };
-    struct PortInUse {
+    struct port_in_use {
         int port;
     };
 
-    Socket(int);
-    Socket(int port, int);
-    Socket(const Socket &) = delete;
-    Socket(Socket &&other);
-    Socket &operator=(Socket &&other);
-    Socket &operator=(const Socket &) = delete;
-    bool operator<(const Socket &) const;
-    bool operator==(const Socket &) const;
+    tcp_socket(int);
+    tcp_socket(int port, int);
+    tcp_socket(const tcp_socket &) = delete;
+    tcp_socket(tcp_socket &&other);
+    tcp_socket &operator=(tcp_socket &&other);
+    tcp_socket &operator=(const tcp_socket &) = delete;
+    bool operator<(const tcp_socket &) const;
+    bool operator==(const tcp_socket &) const;
     operator bool() const;
-    virtual ~Socket();
-    std::unique_ptr<Socket> Accept() const;
-    inline int GetFD() const { return fd_; }
-    bool IsAcceptor() const;
-    void Bind() const;
-    void MakeNonBlocking() const;
-    void Listen(int pending_max) const;
-    int AvailableToRead() const;
-    bool WasShutDown() const;
-    void Close();
+    virtual ~tcp_socket();
+    std::unique_ptr<tcp_socket> accept() const;
+    inline int get_fd() const { return fd_; }
+    bool is_acceptor() const;
+    void bind() const;
+    void make_non_blocking() const;
+    void listen(int pending_max) const;
+    int available_read() const;
+    bool was_shut_down() const;
+    void close();
 
-    template <typename T> T ReadSome() const {
+    template <typename T> T read_some() const {
         T result;
-        auto available = AvailableToRead();
+        auto available = available_read();
         result.resize(static_cast<std::size_t>(available));
         ssize_t readBytes = ::read(fd_, &result.front(), available);
         if (readBytes == 0)
@@ -70,11 +70,11 @@ class Socket {
         return result;
     }
 
-    template <typename T> std::size_t WriteSome(const T &data) const {
+    template <typename T> std::size_t write_some(const T &data) const {
         auto written = ::send(fd_, static_cast<const void *>(data.data()), data.size(), MSG_NOSIGNAL);
         if (written <= 0) {
             if (!((errno == EAGAIN) || (errno == EWOULDBLOCK)))
-                throw WriteError{fd_, this};
+                throw write_error{fd_, this};
             if (errno == ECONNRESET)
                 throw connection_closed_by_peer{fd_, this};
             if (errno == EPIPE)
@@ -89,7 +89,6 @@ class Socket {
     struct sockaddr_in address_;
     int port_;
 };
-typedef std::reference_wrapper<Socket> SocketRef;
 }
 
 #endif // SOCKET_SOCKET_H

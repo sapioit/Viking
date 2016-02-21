@@ -37,8 +37,8 @@ static_assert(fs_lib_v(), "You need filesystem support in your standard library 
 namespace fs = std::experimental::filesystem;
 
 namespace filesystem {
-std::vector<char> ReadFile(const fs::path &path);
-std::string GetExtension(const std::string &) noexcept;
+std::vector<char> read_file(const fs::path &path);
+std::string get_extension(const std::string &) noexcept;
 }
 
 #endif // FILE_H

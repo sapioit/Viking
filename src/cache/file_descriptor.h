@@ -21,11 +21,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <io/filesystem.h>
 
-namespace Cache {
-class FileDescriptor {
+namespace cache {
+class file_descriptor {
     public:
-    static int Aquire(const std::string &) noexcept;
-    static void Release(int) noexcept;
+    static int aquire(const std::string &) noexcept;
+    static void release(int) noexcept;
 };
 }
 

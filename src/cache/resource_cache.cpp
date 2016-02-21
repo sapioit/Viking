@@ -2,20 +2,20 @@
 #include <misc/common.h>
 #include <map>
 
-Resource Cache::ResourceCache::Aquire(fs::path p) {
-    static std::map<fs::path, Resource> map;
+resource cache::resource_cache::aquire(fs::path p) {
+    static std::map<fs::path, resource> storage;
 
-    auto r = map.find(p);
-    if (!fs::exists(p) && r != map.end()) {
-        map.erase(r);
+    auto r = storage.find(p);
+    if (!fs::exists(p) && r != storage.end()) {
+        storage.erase(r);
         return {};
     }
-    if (r != map.end()) {
-        if (unlikely(fs::last_write_time(p) > r->second.LastWrite()))
-            return map[p] = Resource{p};
+    if (r != storage.end()) {
+        if (unlikely(fs::last_write_time(p) > r->second.last_write()))
+            return storage[p] = resource{p};
         else
             return r->second;
     } else {
-        return map[p] = Resource{p};
+        return storage[p] = resource{p};
     }
 }

@@ -21,13 +21,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <misc/common.h>
 #include <fstream>
 
-std::vector<char> filesystem::ReadFile(const fs::path &path) {
+std::vector<char> filesystem::read_file(const fs::path &path) {
     std::ifstream stream(path, std::ios::binary);
     std::vector<char> fileContents((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
     return fileContents;
 }
 
-std::string filesystem::GetExtension(const std::string &path) noexcept {
+std::string filesystem::get_extension(const std::string &path) noexcept {
     auto dot = path.find_last_of('.');
     auto slash = path.find_last_of('/');
     if (dot != std::string::npos) {

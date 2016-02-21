@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace io;
 
-Socket::Socket(int port) : port_(port) {
+tcp_socket::tcp_socket(int port) : port_(port) {
     if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Could not create socket");
     int opt = 1;
@@ -38,13 +38,13 @@ Socket::Socket(int port) : port_(port) {
     address_.sin_port = htons(port);
 }
 
-Socket::Socket(int fd, int port) : fd_(fd), connection_(true), port_(port) {}
+tcp_socket::tcp_socket(int fd, int port) : fd_(fd), connection_(true), port_(port) {}
 
-Socket::Socket(Socket &&other) : fd_(-1) { *this = std::move(other); }
+tcp_socket::tcp_socket(tcp_socket &&other) : fd_(-1) { *this = std::move(other); }
 
-Socket &Socket::operator=(Socket &&other) {
+tcp_socket &tcp_socket::operator=(tcp_socket &&other) {
     if (this != &other) {
-        Close();
+        close();
         fd_ = other.fd_;
         port_ = other.port_;
         address_ = other.address_;
@@ -54,19 +54,19 @@ Socket &Socket::operator=(Socket &&other) {
     return *this;
 }
 
-void Socket::Bind() const {
+void tcp_socket::bind() const {
     if (::bind(fd_, reinterpret_cast<const struct sockaddr *>(&address_), sizeof(address_)) == -1)
         if (errno == EADDRINUSE)
-            throw PortInUse{port_};
+            throw port_in_use{port_};
 }
 
-void Socket::Listen(int pending_max) const {
+void tcp_socket::listen(int pending_max) const {
     int listen_result = ::listen(fd_, pending_max);
     if (listen_result < 0)
         throw std::runtime_error("Listen failed");
 }
 
-void Socket::MakeNonBlocking() const {
+void tcp_socket::make_non_blocking() const {
     int flags = fcntl(fd_, F_GETFL, 0);
     if (flags == -1)
         throw std::runtime_error("Could not get file descriptor flags");
@@ -76,38 +76,38 @@ void Socket::MakeNonBlocking() const {
         throw std::runtime_error("Could not set the non-blocking flag "
                                  "for the file descriptor");
 }
-int Socket::AvailableToRead() const {
+int tcp_socket::available_read() const {
     int count;
     if (-1 == ioctl(fd_, FIONREAD, &count)) {
         debug("ioctl failed, errno " + std::to_string(errno));
-        throw InternalSocketError{fd_, this};
+        throw internal_error{fd_, this};
     }
     return count;
 }
-std::unique_ptr<Socket> Socket::Accept() const {
+std::unique_ptr<tcp_socket> tcp_socket::accept() const {
     struct sockaddr in_addr;
     socklen_t in_len;
     in_len = sizeof(in_addr);
-    return std::make_unique<Socket>(::accept(fd_, &in_addr, &in_len), port_);
+    return std::make_unique<tcp_socket>(::accept(fd_, &in_addr, &in_len), port_);
 }
 
-bool Socket::IsAcceptor() const { return (!connection_); }
+bool tcp_socket::is_acceptor() const { return (!connection_); }
 
-void Socket::Close() {
+void tcp_socket::close() {
     if (fd_ != -1) {
         ::close(fd_);
         fd_ = -1;
     }
 }
 
-Socket::~Socket() { Close(); }
+tcp_socket::~tcp_socket() { close(); }
 
-bool Socket::WasShutDown() const {
+bool tcp_socket::was_shut_down() const {
     char a;
     return (::recv(fd_, &a, 1, MSG_PEEK) == 0);
 }
 
-bool Socket::operator<(const Socket &other) const { return fd_ < other.fd_; }
-bool Socket::operator==(const Socket &other) const { return fd_ == other.fd_; }
+bool tcp_socket::operator<(const tcp_socket &other) const { return fd_ < other.fd_; }
+bool tcp_socket::operator==(const tcp_socket &other) const { return fd_ == other.fd_; }
 
-Socket::operator bool() const { return fd_ != -1; }
+tcp_socket::operator bool() const { return fd_ != -1; }

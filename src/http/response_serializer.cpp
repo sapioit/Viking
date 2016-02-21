@@ -47,7 +47,7 @@ std::vector<char> ResponseSerializer::MakeHeader(const Http::Response &r) noexce
 std::vector<char> ResponseSerializer::MakeBody(const Http::Response &response) noexcept {
     switch (response.GetType()) {
     case Http::Response::Type::Resource:
-        return response.GetResource().Content();
+        return response.GetResource().content();
     case Http::Response::Type::Text:
         return {response.GetText().begin(), response.GetText().end()};
     default:

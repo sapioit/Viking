@@ -42,7 +42,7 @@ class scheduler::scheduler_impl {
 
     public:
     scheduler_impl() = default;
-    scheduler_impl(std::unique_ptr<Socket> sock, scheduler::read_cb read_callback,
+    scheduler_impl(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback,
                    scheduler::barrier_cb barrier_callback, scheduler::before_removing_cb before_removing)
         : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
         try {
@@ -53,7 +53,7 @@ class scheduler::scheduler_impl {
         }
     }
 
-    void add(std::unique_ptr<Socket> socket, std::uint32_t flags) {
+    void add(std::unique_ptr<tcp_socket> socket, std::uint32_t flags) {
         try {
             auto ctx = std::make_unique<io::channel>(std::move(socket));
             poll.schedule(ctx.get(), flags);
@@ -71,7 +71,7 @@ class scheduler::scheduler_impl {
 
             poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
 
-            if (event.context->socket->IsAcceptor()) {
+            if (event.context->socket->is_acceptor()) {
                 add_new_connections(event.context);
                 continue;
             }
@@ -92,7 +92,7 @@ class scheduler::scheduler_impl {
                         else
                             enqueue_item(event.context, callback_response, false);
                     }
-                } catch (const io::Socket::connection_closed_by_peer &) {
+                } catch (const io::tcp_socket::connection_closed_by_peer &) {
                     remove(event.context);
                 }
             }
@@ -107,9 +107,9 @@ class scheduler::scheduler_impl {
     void add_new_connections(const channel *channel) noexcept {
         do {
             try {
-                auto new_connection = channel->socket->Accept();
+                auto new_connection = channel->socket->accept();
                 if (*new_connection) {
-                    new_connection->MakeNonBlocking();
+                    new_connection->make_non_blocking();
                     add(std::move(new_connection),
                         static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
                 } else
@@ -160,7 +160,7 @@ class scheduler::scheduler_impl {
         if (sched_item_type == typeid(memory_buffer)) {
             memory_buffer *mem_buffer = reinterpret_cast<memory_buffer *>(channel->queue.front());
             try {
-                if (const auto written = channel->socket->WriteSome(mem_buffer->data)) {
+                if (const auto written = channel->socket->write_some(mem_buffer->data)) {
                     if (written == mem_buffer->data.size())
                         channel->queue.remove_front();
                     else
@@ -178,7 +178,7 @@ class scheduler::scheduler_impl {
             io::unix_file *unix_file = reinterpret_cast<io::unix_file *>(channel->queue.front());
             try {
                 auto size_left = unix_file->size_left();
-                if (const auto written = unix_file->send_to_fd(channel->socket->GetFD())) {
+                if (const auto written = unix_file->send_to_fd(channel->socket->get_fd())) {
                     if (written == size_left)
                         channel->queue.remove_front();
                 } else {
@@ -225,7 +225,7 @@ scheduler::scheduler() {
     }
 }
 
-scheduler::scheduler(std::unique_ptr<Socket> sock, scheduler::read_cb read_callback, barrier_cb barrier_callback,
+scheduler::scheduler(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback, barrier_cb barrier_callback,
                      before_removing_cb before_removing) {
     try {
         impl = new scheduler_impl(std::move(sock), read_callback, barrier_callback, before_removing);
@@ -236,7 +236,7 @@ scheduler::scheduler(std::unique_ptr<Socket> sock, scheduler::read_cb read_callb
 
 scheduler::~scheduler() { delete impl; }
 
-void scheduler::add(std::unique_ptr<io::Socket> socket, uint32_t flags) {
+void scheduler::add(std::unique_ptr<io::tcp_socket> socket, uint32_t flags) {
     try {
         impl->add(std::move(socket), flags);
     } catch (const epoll::poll_error &) {

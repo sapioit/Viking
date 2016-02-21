@@ -33,31 +33,31 @@ struct handle_use_count {
     }
 };
 
-static std::map<fs::path, handle_use_count> cache;
+static std::map<fs::path, handle_use_count> storage;
 
-int Cache::FileDescriptor::Aquire(const std::string &path) noexcept {
-    auto it = cache.find(path);
-    if (it != cache.end()) {
+int cache::file_descriptor::aquire(const std::string &path) noexcept {
+    auto it = storage.find(path);
+    if (it != storage.end()) {
         ++(it->second.use_count);
         return it->second.handle;
     } else {
         int fd = ::open(path.c_str(), O_RDONLY);
         if (fd != -1) {
-            cache.emplace(std::make_pair(path, handle_use_count{1, fd}));
+            storage.emplace(std::make_pair(path, handle_use_count{1, fd}));
             return fd;
         }
     }
     return -1;
 }
 
-void Cache::FileDescriptor::Release(int file_descriptor) noexcept {
-    auto it = std::find_if(cache.begin(), cache.end(),
+void cache::file_descriptor::release(int file_descriptor) noexcept {
+    auto it = std::find_if(storage.begin(), storage.end(),
                            [file_descriptor](auto &pair) { return file_descriptor == pair.second.handle; });
-    if (it != cache.end()) {
+    if (it != storage.end()) {
         --(it->second.use_count);
         if (it->second.use_count == 0) {
             ::close(it->second.handle);
-            cache.erase(it->first);
+            storage.erase(it->first);
         }
     }
 }
