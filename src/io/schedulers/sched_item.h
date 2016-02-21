@@ -51,15 +51,15 @@ class schedule_item {
         buffers.emplace_back(std::move(future));
     }
 
-    void put_back(std::unique_ptr<MemoryBuffer> data);
+    void put_back(std::unique_ptr<io::memory_buffer> data);
     void put_back(std::unique_ptr<io::unix_file> file);
     void put_back(schedule_item &&);
 
-    void put_after_first_intact(std::unique_ptr<MemoryBuffer> data);
+    void put_after_first_intact(std::unique_ptr<io::memory_buffer> data);
     void put_after_first_intact(std::unique_ptr<io::unix_file> file);
     void put_after_first_intact(schedule_item);
 
-    void replace_front(std::unique_ptr<MemoryBuffer>) noexcept;
+    void replace_front(std::unique_ptr<io::memory_buffer>) noexcept;
     inline data_source *front() noexcept { return buffers.front().get(); }
     inline const data_source *c_front() const noexcept { return buffers.front().get(); }
     bool is_front_async() const noexcept;

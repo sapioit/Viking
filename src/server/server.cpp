@@ -30,7 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fstream>
 
 using namespace Web;
-io::Socket *MakeSocket(int port, int max_pending);
+using namespace io;
+Socket *MakeSocket(int port, int max_pending);
 
 class Server::ServerImpl {
     int port_;
@@ -49,7 +50,7 @@ class Server::ServerImpl {
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = MakeSocket(port_, max_pending_)) {
             scheduler_ = io::scheduler(std::unique_ptr<io::Socket>(sock),
-                                       [this](const io::Channel *ch) {
+                                       [this](const io::channel *ch) {
                                            try {
                                                return dispatcher_.handle_connection(ch);
                                            } catch (...) {
@@ -63,9 +64,9 @@ class Server::ServerImpl {
                                                if (async_buffer->IsReady())
                                                    return dispatcher_.handle_barrier(async_buffer);
                                            }
-                                           return std::make_unique<MemoryBuffer>(std::vector<char>());
+                                           return std::make_unique<memory_buffer>(std::vector<char>());
                                        },
-                                       [this](const io::Channel *ch) { dispatcher_.will_remove(ch); });
+                                       [this](const io::channel *ch) { dispatcher_.will_remove(ch); });
         } else {
             throw Server::PortInUse{port_};
         }

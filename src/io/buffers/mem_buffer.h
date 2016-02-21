@@ -23,13 +23,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <vector>
 
-struct MemoryBuffer : public data_source {
+namespace io {
+struct memory_buffer : public data_source {
     std::vector<char> data;
     std::size_t initial_size;
 
-    MemoryBuffer(const std::vector<char> &data) : data(data), initial_size(data.size()) {}
+    memory_buffer(const std::vector<char> &data) : data(data), initial_size(data.size()) {}
     virtual operator bool() const noexcept { return data.size() != 0; }
     virtual bool intact() const noexcept { return data.size() == initial_size; }
 };
+}
 
 #endif // MEMBUFFER_H

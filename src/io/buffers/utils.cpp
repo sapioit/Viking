@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sys/mman.h>
 #include <unistd.h>
 
-std::unique_ptr<MemoryBuffer> from(const io::unix_file &file) {
+std::unique_ptr<io::memory_buffer> from(const io::unix_file &file) {
     static constexpr std::size_t max_file_path = 255;
     std::string path;
     path.reserve(max_file_path);
@@ -37,7 +37,7 @@ std::unique_ptr<MemoryBuffer> from(const io::unix_file &file) {
     if (mem_zone == MAP_FAILED)
         throw io::unix_file::bad_file{std::addressof(file)};
     const char *const my_thing = mem_zone + file.offset - pa_offset;
-    auto result = std::make_unique<MemoryBuffer>(std::vector<char>{my_thing, my_thing + length});
+    auto result = std::make_unique<io::memory_buffer>(std::vector<char>{my_thing, my_thing + length});
     ::munmap(mem_zone, at);
     return result;
 }

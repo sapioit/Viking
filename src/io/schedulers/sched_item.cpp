@@ -19,22 +19,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/schedulers/sched_item.h>
 #include <algorithm>
 #include <typeindex>
-
+using namespace io;
 schedule_item::schedule_item() : m_keep_file_open(false) {}
 
 schedule_item::schedule_item(bool keep_file_open) : m_keep_file_open(keep_file_open) {}
 
 schedule_item::schedule_item(const std::vector<char> &data) : m_keep_file_open(false) {
-    buffers.push_back(std::make_unique<MemoryBuffer>(data));
+    buffers.push_back(std::make_unique<memory_buffer>(data));
 }
 
 schedule_item::schedule_item(const std::vector<char> &data, bool keep_file_open) : m_keep_file_open(keep_file_open) {
-    buffers.push_back(std::make_unique<MemoryBuffer>(data));
+    buffers.push_back(std::make_unique<memory_buffer>(data));
 }
 
-void schedule_item::put_back(std::unique_ptr<MemoryBuffer> data) { buffers.push_back(std::move(data)); }
+void schedule_item::put_back(std::unique_ptr<memory_buffer> data) { buffers.push_back(std::move(data)); }
 
-void schedule_item::put_back(std::unique_ptr<io::unix_file> file) { buffers.push_back(std::move(file)); }
+void schedule_item::put_back(std::unique_ptr<unix_file> file) { buffers.push_back(std::move(file)); }
 
 void schedule_item::put_back(schedule_item &&other_item) {
     m_keep_file_open = other_item.m_keep_file_open;
@@ -42,9 +42,9 @@ void schedule_item::put_back(schedule_item &&other_item) {
         buffers.push_back(std::move(buffer));
 }
 
-void schedule_item::put_after_first_intact(std::unique_ptr<MemoryBuffer> data) { buffers.push_front(std::move(data)); }
+void schedule_item::put_after_first_intact(std::unique_ptr<memory_buffer> data) { buffers.push_front(std::move(data)); }
 
-void schedule_item::put_after_first_intact(std::unique_ptr<io::unix_file> file) { buffers.push_front(std::move(file)); }
+void schedule_item::put_after_first_intact(std::unique_ptr<unix_file> file) { buffers.push_front(std::move(file)); }
 
 void schedule_item::put_after_first_intact(schedule_item other_item) {
     buffers.insert(std::find_if(buffers.begin(), buffers.end(), [](auto &ptr) { return ptr->intact(); }),
@@ -52,14 +52,14 @@ void schedule_item::put_after_first_intact(schedule_item other_item) {
                    std::make_move_iterator(other_item.buffers.rend()));
 }
 
-void schedule_item::replace_front(std::unique_ptr<MemoryBuffer> with) noexcept { buffers.front() = std::move(with); }
+void schedule_item::replace_front(std::unique_ptr<memory_buffer> with) noexcept { buffers.front() = std::move(with); }
 
 bool schedule_item::is_front_async() const noexcept {
     if (!buffers_left())
         return false;
     const auto &front = *c_front();
     std::type_index type = typeid(front);
-    if (type == typeid(MemoryBuffer) || type == typeid(io::unix_file))
+    if (type == typeid(memory_buffer) || type == typeid(unix_file))
         return false;
     return true;
 }

@@ -39,7 +39,7 @@ epoll::~epoll() {
         ::close(efd_);
 }
 
-void epoll::schedule(io::Channel *context, std::uint32_t flags) {
+void epoll::schedule(io::channel *context, std::uint32_t flags) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     // ev.data.fd = file_descriptor;
@@ -54,7 +54,7 @@ void epoll::schedule(io::Channel *context, std::uint32_t flags) {
         events_.push_back(ev);
 }
 
-void epoll::modify(const io::Channel *context, std::uint32_t flags) {
+void epoll::modify(const io::channel *context, std::uint32_t flags) {
     auto *event = FindEvent(context);
     if (event) {
         event->events |= flags;
@@ -64,7 +64,7 @@ void epoll::modify(const io::Channel *context, std::uint32_t flags) {
     }
 }
 
-void epoll::remove(const io::Channel *context) {
+void epoll::remove(const io::channel *context) {
     auto event_it =
         std::find_if(events_.begin(), events_.end(), [context](epoll_event &ev) { return (context == ev.data.ptr); });
 
@@ -72,7 +72,7 @@ void epoll::remove(const io::Channel *context) {
         auto *event = std::addressof(*event_it);
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->GetFD(), event))
             throw poll_error("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
-                            " from the OS queue");
+                             " from the OS queue");
 
         events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {
                           return ev.data.fd == event_it->data.fd;
@@ -85,7 +85,7 @@ void epoll::remove(const io::Channel *context) {
 static std::vector<epoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
     std::vector<epoll::Event> epoll_events;
     for (const auto &event : events) {
-        epoll_events.emplace_back(static_cast<io::Channel *>(event.data.ptr), event.events);
+        epoll_events.emplace_back(static_cast<io::channel *>(event.data.ptr), event.events);
         epoll_events.back().context->journal.push_back(epoll_events.back().description);
     }
     return epoll_events;
@@ -107,13 +107,13 @@ std::vector<epoll::Event> epoll::Wait(std::uint32_t chunk_size) const {
     return CreateEvents(active_files);
 }
 
-epoll_event *epoll::FindEvent(const io::Channel *channel) {
+epoll_event *epoll::FindEvent(const io::channel *channel) {
     auto event_it = std::find_if(events_.begin(), events_.end(),
                                  [channel](const epoll_event &ev) { return (channel == ev.data.ptr); });
     return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }
-epoll::Event::Event(io::Channel *context, std::uint32_t description) noexcept : context(context),
-                                                                                   description(description) {}
+epoll::Event::Event(io::channel *context, std::uint32_t description) noexcept : context(context),
+                                                                                description(description) {}
 
 epoll::poll_error::poll_error(const std::string &err) : std::runtime_error(err) {}
 

@@ -8,8 +8,6 @@
 
 namespace fs = std::experimental::filesystem;
 
-
-
 int main() {
   try {
     Web::Server server(1234);

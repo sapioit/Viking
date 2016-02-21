@@ -34,7 +34,7 @@ class scheduler::scheduler_impl {
     };
     struct write_error {};
 
-    std::vector<std::unique_ptr<Channel>> channels;
+    std::vector<std::unique_ptr<channel>> channels;
     epoll poll;
     scheduler::read_cb read_callback;
     scheduler::barrier_cb barrier_callback;
@@ -43,7 +43,7 @@ class scheduler::scheduler_impl {
     public:
     scheduler_impl() = default;
     scheduler_impl(std::unique_ptr<Socket> sock, scheduler::read_cb read_callback,
-                  scheduler::barrier_cb barrier_callback, scheduler::before_removing_cb before_removing)
+                   scheduler::barrier_cb barrier_callback, scheduler::before_removing_cb before_removing)
         : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
         try {
             add(std::move(sock),
@@ -55,7 +55,7 @@ class scheduler::scheduler_impl {
 
     void add(std::unique_ptr<Socket> socket, std::uint32_t flags) {
         try {
-            auto ctx = std::make_unique<io::Channel>(std::move(socket));
+            auto ctx = std::make_unique<io::channel>(std::move(socket));
             poll.schedule(ctx.get(), flags);
             channels.emplace_back(std::move(ctx));
         } catch (const epoll::poll_error &) {
@@ -87,7 +87,7 @@ class scheduler::scheduler_impl {
                         poll.modify(event.context, static_cast<std::uint32_t>(epoll::write));
                         auto &front = *callback_response.front();
                         std::type_index type = typeid(front);
-                        if (type == typeid(MemoryBuffer) || type == typeid(unix_file))
+                        if (type == typeid(memory_buffer) || type == typeid(unix_file))
                             enqueue_item(event.context, callback_response, true);
                         else
                             enqueue_item(event.context, callback_response, false);
@@ -104,7 +104,7 @@ class scheduler::scheduler_impl {
         }
     }
 
-    void add_new_connections(const Channel *channel) noexcept {
+    void add_new_connections(const channel *channel) noexcept {
         do {
             try {
                 auto new_connection = channel->socket->Accept();
@@ -119,7 +119,7 @@ class scheduler::scheduler_impl {
         } while (true);
     }
 
-    void process_write(Channel *channel) noexcept {
+    void process_write(channel *channel) noexcept {
         try {
             bool filled = false;
             while (channel->queue && !filled) {
@@ -153,12 +153,12 @@ class scheduler::scheduler_impl {
         }
     }
 
-    bool fill_channel(Channel *channel) {
+    bool fill_channel(channel *channel) {
         auto &front = *channel->queue.front();
         std::type_index sched_item_type = typeid(front);
 
-        if (sched_item_type == typeid(MemoryBuffer)) {
-            MemoryBuffer *mem_buffer = reinterpret_cast<MemoryBuffer *>(channel->queue.front());
+        if (sched_item_type == typeid(memory_buffer)) {
+            memory_buffer *mem_buffer = reinterpret_cast<memory_buffer *>(channel->queue.front());
             try {
                 if (const auto written = channel->socket->WriteSome(mem_buffer->data)) {
                     if (written == mem_buffer->data.size())
@@ -205,11 +205,11 @@ class scheduler::scheduler_impl {
         return false;
     }
 
-    void enqueue_item(Channel *c, schedule_item &item, bool back) noexcept {
+    void enqueue_item(channel *c, schedule_item &item, bool back) noexcept {
         back ? c->queue.put_back(std::move(item)) : c->queue.put_after_first_intact(std::move(item));
     }
 
-    void remove(Channel *c) noexcept {
+    void remove(channel *c) noexcept {
         before_removing(c);
         poll.remove(c);
         channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
@@ -225,8 +225,8 @@ scheduler::scheduler() {
     }
 }
 
-scheduler::scheduler(std::unique_ptr<Socket> sock, scheduler::read_cb read_callback,
-                     barrier_cb barrier_callback, before_removing_cb before_removing) {
+scheduler::scheduler(std::unique_ptr<Socket> sock, scheduler::read_cb read_callback, barrier_cb barrier_callback,
+                     before_removing_cb before_removing) {
     try {
         impl = new scheduler_impl(std::move(sock), read_callback, barrier_callback, before_removing);
     } catch (...) {
