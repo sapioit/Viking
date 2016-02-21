@@ -30,12 +30,12 @@ using namespace IO;
 
 class scheduler::scheduler_impl {
     struct SocketNotFound {
-        const SysEpoll::Event *event;
+        const epoll::Event *event;
     };
-    struct WriteError {};
+    struct write_error {};
 
     std::vector<std::unique_ptr<Channel>> channels;
-    SysEpoll poll;
+    epoll poll;
     scheduler::read_cb read_callback;
     scheduler::barrier_cb barrier_callback;
     scheduler::before_removing_cb before_removing;
@@ -47,8 +47,8 @@ class scheduler::scheduler_impl {
         : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
         try {
             add(std::move(sock),
-                static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
-        } catch (const SysEpoll::PollError &) {
+                static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
+        } catch (const epoll::poll_error &) {
             throw;
         }
     }
@@ -56,9 +56,9 @@ class scheduler::scheduler_impl {
     void add(std::unique_ptr<Socket> socket, std::uint32_t flags) {
         try {
             auto ctx = std::make_unique<IO::Channel>(std::move(socket));
-            poll.Schedule(ctx.get(), flags);
+            poll.schedule(ctx.get(), flags);
             channels.emplace_back(std::move(ctx));
-        } catch (const SysEpoll::PollError &) {
+        } catch (const epoll::poll_error &) {
             throw;
         }
     }
@@ -69,7 +69,7 @@ class scheduler::scheduler_impl {
         const auto events = poll.Wait(channels.size());
         for (const auto &event : events) {
 
-            poll.modify(event.context, static_cast<std::uint32_t>(SysEpoll::EdgeTriggered));
+            poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
 
             if (event.context->socket->IsAcceptor()) {
                 add_new_connections(event.context);
@@ -84,7 +84,7 @@ class scheduler::scheduler_impl {
             if (event.CanRead()) {
                 try {
                     if (auto callback_response = read_callback(event.context)) {
-                        poll.modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
+                        poll.modify(event.context, static_cast<std::uint32_t>(epoll::write));
                         auto &front = *callback_response.front();
                         std::type_index type = typeid(front);
                         if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
@@ -92,7 +92,7 @@ class scheduler::scheduler_impl {
                         else
                             enqueue_item(event.context, callback_response, false);
                     }
-                } catch (const IO::Socket::ConnectionClosedByPeer &) {
+                } catch (const IO::Socket::connection_closed_by_peer &) {
                     remove(event.context);
                 }
             }
@@ -111,10 +111,10 @@ class scheduler::scheduler_impl {
                 if (*new_connection) {
                     new_connection->MakeNonBlocking();
                     add(std::move(new_connection),
-                        static_cast<std::uint32_t>(SysEpoll::Read) | static_cast<std::uint32_t>(SysEpoll::Termination));
+                        static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
                 } else
                     break;
-            } catch (SysEpoll::PollError &) {
+            } catch (epoll::poll_error &) {
             }
         } while (true);
     }
@@ -128,15 +128,15 @@ class scheduler::scheduler_impl {
                     if (*new_sync_buffer) {
                         channel->queue.replace_front(std::move(new_sync_buffer));
                     } else {
-                        poll.modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                        poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
                         return;
                     }
                 }
                 auto result = fill_channel(channel);
                 if (!(channel->queue)) {
                     if (channel->queue.keep_file_open()) {
-                        poll.modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
-                        poll.modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                        poll.modify(channel, ~static_cast<std::uint32_t>(epoll::write));
+                        poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
                     } else {
                         /* There is a chance that the channel has pending data right now, so we must not close it yet.
                          * Instead we mark it, and the next time we poll, if it's not in the event list, we remove it */
@@ -147,7 +147,7 @@ class scheduler::scheduler_impl {
                 filled = result;
             }
             if (!filled)
-                poll.modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
+                poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
         } catch (...) {
             remove(channel);
         }
@@ -171,7 +171,7 @@ class scheduler::scheduler_impl {
                 }
             } catch (...) {
                 debug("Caught exception when writing a memory buffer");
-                throw WriteError{};
+                throw write_error{};
             }
 
         } else if (sched_item_type == typeid(UnixFile)) {
@@ -191,15 +191,15 @@ class scheduler::scheduler_impl {
                  */
                 try {
                     debug("diy");
-                    auto buffer = From(*e.ptr);
+                    auto buffer = from(*e.ptr);
                     channel->queue.replace_front(std::move(buffer));
                     return fill_channel(channel);
                 } catch (...) {
-                    throw WriteError{};
+                    throw write_error{};
                 }
             } catch (...) {
                 debug("Caught exception when writing a unix file");
-                throw WriteError{};
+                throw write_error{};
             }
         }
         return false;
@@ -239,7 +239,7 @@ scheduler::~scheduler() { delete impl; }
 void scheduler::add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
     try {
         impl->add(std::move(socket), flags);
-    } catch (const SysEpoll::PollError &) {
+    } catch (const epoll::poll_error &) {
         throw;
     }
 }

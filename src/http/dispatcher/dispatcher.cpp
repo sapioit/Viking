@@ -67,7 +67,7 @@ public:
                 remove_pending_contexts(connection);
                 return process_request(context.GetRequest());
             }
-        } catch (const IO::Socket::ConnectionClosedByPeer &) {
+        } catch (const IO::Socket::connection_closed_by_peer &) {
             throw;
         }
         return {};

@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <vector>
 #include <io/schedulers/channel.h>
 
-class SysEpoll {
+class epoll {
     int efd_;
     std::vector<epoll_event> events_;
 
@@ -38,34 +38,34 @@ class SysEpoll {
         Event(IO::Channel *, std::uint32_t description) noexcept;
         bool operator<(const Event &other) const { return context < other.context; }
         bool operator==(const Event &other) const { return context == other.context; }
-        inline bool CanWrite() const noexcept { return (description & SysEpoll::Write); }
-        inline bool CanRead() const noexcept { return (description & SysEpoll::Read); }
+        inline bool CanWrite() const noexcept { return (description & epoll::write); }
+        inline bool CanRead() const noexcept { return (description & epoll::read); }
         inline bool CanTerminate() const noexcept {
-            return (description & SysEpoll::Termination) || (description & SysEpoll::Error);
+            return (description & epoll::termination) || (description & epoll::Error);
         }
     };
 
-    struct PollError : public std::runtime_error {
-        PollError(const std::string &err);
+    struct poll_error : public std::runtime_error {
+        poll_error(const std::string &err);
     };
 
-    static constexpr std::uint32_t Read = EPOLLIN;
-    static constexpr std::uint32_t Write = EPOLLOUT;
-    static constexpr std::uint32_t Termination = EPOLLRDHUP;
-    static constexpr std::uint32_t EdgeTriggered = EPOLLET;
-    static constexpr std::uint32_t LevelTriggered = ~EPOLLET;
+    static constexpr std::uint32_t read = EPOLLIN;
+    static constexpr std::uint32_t write = EPOLLOUT;
+    static constexpr std::uint32_t termination = EPOLLRDHUP;
+    static constexpr std::uint32_t edge_triggered = EPOLLET;
+    static constexpr std::uint32_t level_triggered = ~EPOLLET;
     static constexpr std::uint32_t Error = EPOLLERR;
-    void Schedule(IO::Channel *, std::uint32_t);
+    void schedule(IO::Channel *, std::uint32_t);
     void modify(const IO::Channel *, std::uint32_t);
     void remove(const IO::Channel *);
     std::vector<Event> Wait(std::uint32_t = 1000) const;
 
-    SysEpoll();
-    virtual ~SysEpoll();
-    SysEpoll(const SysEpoll &) = delete;
-    SysEpoll &operator=(const SysEpoll &) = delete;
-    SysEpoll(SysEpoll &&);
-    SysEpoll &operator=(SysEpoll &&);
+    epoll();
+    virtual ~epoll();
+    epoll(const epoll &) = delete;
+    epoll &operator=(const epoll &) = delete;
+    epoll(epoll &&);
+    epoll &operator=(epoll &&);
 };
 
 #endif

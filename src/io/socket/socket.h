@@ -26,7 +26,7 @@ class Socket {
         int fd;
         const Socket *ptr;
     };
-    struct ConnectionClosedByPeer {
+    struct connection_closed_by_peer {
         int fd;
         const Socket *ptr;
     };
@@ -64,7 +64,7 @@ class Socket {
         result.resize(static_cast<std::size_t>(available));
         ssize_t readBytes = ::read(fd_, &result.front(), available);
         if (readBytes == 0)
-            throw ConnectionClosedByPeer{fd_, this};
+            throw connection_closed_by_peer{fd_, this};
         if (readBytes != -1)
             result.resize(static_cast<std::size_t>(readBytes));
         return result;
@@ -76,9 +76,9 @@ class Socket {
             if (!((errno == EAGAIN) || (errno == EWOULDBLOCK)))
                 throw WriteError{fd_, this};
             if (errno == ECONNRESET)
-                throw ConnectionClosedByPeer{fd_, this};
+                throw connection_closed_by_peer{fd_, this};
             if (errno == EPIPE)
-                throw ConnectionClosedByPeer{fd_, this};
+                throw connection_closed_by_peer{fd_, this};
         }
         return written == -1 ? 0 : written;
     }

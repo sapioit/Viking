@@ -25,13 +25,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <errno.h>
 #include <unistd.h>
 
-SysEpoll::SysEpoll() {
+epoll::epoll() {
     efd_ = epoll_create1(0);
     if (efd_ == -1)
         debug("Could not start polling");
 }
 
-SysEpoll::~SysEpoll() {
+epoll::~epoll() {
     /* We only close the epoll file descriptor, because epoll is aware of
      * sockets
      * that get closed */
@@ -39,7 +39,7 @@ SysEpoll::~SysEpoll() {
         ::close(efd_);
 }
 
-void SysEpoll::Schedule(IO::Channel *context, std::uint32_t flags) {
+void epoll::schedule(IO::Channel *context, std::uint32_t flags) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     // ev.data.fd = file_descriptor;
@@ -54,7 +54,7 @@ void SysEpoll::Schedule(IO::Channel *context, std::uint32_t flags) {
         events_.push_back(ev);
 }
 
-void SysEpoll::modify(const IO::Channel *context, std::uint32_t flags) {
+void epoll::modify(const IO::Channel *context, std::uint32_t flags) {
     auto *event = FindEvent(context);
     if (event) {
         event->events |= flags;
@@ -64,14 +64,14 @@ void SysEpoll::modify(const IO::Channel *context, std::uint32_t flags) {
     }
 }
 
-void SysEpoll::remove(const IO::Channel *context) {
+void epoll::remove(const IO::Channel *context) {
     auto event_it =
         std::find_if(events_.begin(), events_.end(), [context](epoll_event &ev) { return (context == ev.data.ptr); });
 
     if (event_it != events_.end()) {
         auto *event = std::addressof(*event_it);
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->GetFD(), event))
-            throw PollError("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
+            throw poll_error("Could not remove the file with fd = " + std::to_string(context->socket->GetFD()) +
                             " from the OS queue");
 
         events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {
@@ -82,15 +82,15 @@ void SysEpoll::remove(const IO::Channel *context) {
     }
 }
 
-static std::vector<SysEpoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
-    std::vector<SysEpoll::Event> epoll_events;
+static std::vector<epoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
+    std::vector<epoll::Event> epoll_events;
     for (const auto &event : events) {
         epoll_events.emplace_back(static_cast<IO::Channel *>(event.data.ptr), event.events);
         epoll_events.back().context->journal.push_back(epoll_events.back().description);
     }
     return epoll_events;
 }
-std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
+std::vector<epoll::Event> epoll::Wait(std::uint32_t chunk_size) const {
     std::vector<epoll_event> active_files;
     active_files.resize(chunk_size);
 
@@ -99,7 +99,7 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
     if (-1 == events_number) {
         active_files.resize(0);
         if (errno != EINTR)
-            throw PollError("Could not poll for events. errno = " + std::to_string(errno));
+            throw poll_error("Could not poll for events. errno = " + std::to_string(errno));
     } else {
         active_files.resize(events_number);
     }
@@ -107,17 +107,17 @@ std::vector<SysEpoll::Event> SysEpoll::Wait(std::uint32_t chunk_size) const {
     return CreateEvents(active_files);
 }
 
-epoll_event *SysEpoll::FindEvent(const IO::Channel *channel) {
+epoll_event *epoll::FindEvent(const IO::Channel *channel) {
     auto event_it = std::find_if(events_.begin(), events_.end(),
                                  [channel](const epoll_event &ev) { return (channel == ev.data.ptr); });
     return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }
-SysEpoll::Event::Event(IO::Channel *context, std::uint32_t description) noexcept : context(context),
+epoll::Event::Event(IO::Channel *context, std::uint32_t description) noexcept : context(context),
                                                                                    description(description) {}
 
-SysEpoll::PollError::PollError(const std::string &err) : std::runtime_error(err) {}
+epoll::poll_error::poll_error(const std::string &err) : std::runtime_error(err) {}
 
-SysEpoll &SysEpoll::operator=(SysEpoll &&other) {
+epoll &epoll::operator=(epoll &&other) {
     if (this != &other) {
         this->efd_ = other.efd_;
         other.efd_ = -1;
@@ -125,4 +125,4 @@ SysEpoll &SysEpoll::operator=(SysEpoll &&other) {
     return *this;
 }
 
-SysEpoll::SysEpoll(SysEpoll &&other) { *this = std::move(other); }
+epoll::epoll(epoll &&other) { *this = std::move(other); }

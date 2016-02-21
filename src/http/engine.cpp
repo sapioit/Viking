@@ -92,7 +92,7 @@ Http::Context &Http::Context::operator()() {
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
         complete_ = Http::Util::is_complete(request_);
         return *this;
-    } catch (IO::Socket::ConnectionClosedByPeer &) {
+    } catch (IO::Socket::connection_closed_by_peer &) {
         throw;
     }
 }

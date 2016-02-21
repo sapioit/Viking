@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sys/mman.h>
 #include <unistd.h>
 
-std::unique_ptr<MemoryBuffer> From(const UnixFile &file) {
+std::unique_ptr<MemoryBuffer> from(const UnixFile &file) {
     static constexpr std::size_t max_file_path = 255;
     std::string path;
     path.reserve(max_file_path);
