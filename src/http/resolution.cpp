@@ -19,13 +19,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/resolution.h>
 
 using namespace http;
-Resolution::Resolution(http::Response &&r) : response(std::move(r)), type(Type::Sync) {}
+resolution::resolution(http::response &&r) : m_response(std::move(r)), m_type(type::Sync) {}
 
-Resolution::Resolution(std::future<Response> &&future)
-    : future(std::forward<std::future<http::Response>>(future)), type(Type::Async) {}
+resolution::resolution(std::future<response> &&future)
+    : future(std::forward<std::future<http::response>>(future)), m_type(type::Async) {}
 
-Resolution::Type Resolution::GetType() const noexcept { return type; }
+resolution::type resolution::GetType() const noexcept { return m_type; }
 
-std::future<Response> &Resolution::GetFuture() noexcept { return future; }
+std::future<response> &resolution::GetFuture() noexcept { return future; }
 
-Response &Resolution::GetResponse() noexcept { return response; }
+response &resolution::GetResponse() noexcept { return m_response; }

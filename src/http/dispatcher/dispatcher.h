@@ -43,7 +43,7 @@ class dispatcher {
 
     void add_route(RouteUtility::route) noexcept;
     schedule_item handle_connection(const io::channel *);
-    std::unique_ptr<io::memory_buffer> handle_barrier(AsyncBuffer<http::Response> *) noexcept;
+    std::unique_ptr<io::memory_buffer> handle_barrier(AsyncBuffer<http::response> *) noexcept;
     void will_remove(const io::channel *) noexcept;
 };
 }

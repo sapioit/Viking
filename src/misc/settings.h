@@ -30,7 +30,7 @@ struct Settings {
     std::uint32_t max_connections;
     std::uint32_t default_max_age = 300;
     bool allow_directory_listing;
-    std::function<http::Resolution(http::Request)> folder_cb;
+    std::function<http::resolution(http::request)> folder_cb;
 };
 
 #endif // SETTINGS_H

@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 #include <regex>
 
-std::function<http::Resolution(http::Request)> RouteUtility::get_user_handler(const http::Request &request,
+std::function<http::resolution(http::request)> RouteUtility::get_user_handler(const http::request &request,
                                                                             const route_map &routes) {
     auto strippedRoute = strip_route(request.url);
     auto result = std::find_if(routes.begin(), routes.end(), [&](const auto &route) -> bool {

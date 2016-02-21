@@ -27,18 +27,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 namespace http {
 
-class Request {
+class request {
     public:
-    http::Method method;
+    http::method method;
     Version version;
     Header header;
     std::string url, body;
 
-    Request() = default;
-    virtual ~Request() = default;
+    request() = default;
+    virtual ~request() = default;
 
     /* For convenience */
-    std::vector<std::string> SplitURL() const;
+    std::vector<std::string> split_url() const;
 };
 }
 

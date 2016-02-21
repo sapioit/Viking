@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <map>
 
 namespace http {
-enum class Method {
+enum class method {
     Delete,
     Get,
     Head,
@@ -48,29 +48,29 @@ enum class Method {
     Unsubscribe
 };
 
-const std::map<const std::string, const Method> MethodMap{std::make_pair("GET", Method::Get),
-                                                          std::make_pair("POST", Method::Post),
-                                                          std::make_pair("PUT", Method::Put),
-                                                          std::make_pair("DELETE", Method::Delete),
-                                                          std::make_pair("Connect", Method::Connect),
-                                                          std::make_pair("HEAD", Method::Head),
-                                                          std::make_pair("OPTIONS", Method::Options),
-                                                          std::make_pair("TRACE", Method::Trace),
-                                                          std::make_pair("COPY", Method::Copy),
-                                                          std::make_pair("LOCK", Method::Lock),
-                                                          std::make_pair("MKCOL", Method::Mkcol),
-                                                          std::make_pair("MOVE", Method::Move),
-                                                          std::make_pair("PROPFIND", Method::Propfind),
-                                                          std::make_pair("PROPPATCH", Method::Proppatch),
-                                                          std::make_pair("UNLOCK", Method::Unlock),
-                                                          std::make_pair("REPORT", Method::Report),
-                                                          std::make_pair("MKACTIVITY", Method::Mkactivity),
-                                                          std::make_pair("CHECKOUT", Method::Checkout),
-                                                          std::make_pair("MERGE", Method::Merge),
-                                                          std::make_pair("M-SEARCH", Method::M_Search),
-                                                          std::make_pair("NOTIFY", Method::Notify),
-                                                          std::make_pair("SUBSCRIBE", Method::Subscribe),
-                                                          std::make_pair("UNSUBSCRIBE", Method::Unsubscribe)};
+const std::map<const std::string, const method> MethodMap{std::make_pair("GET", method::Get),
+                                                          std::make_pair("POST", method::Post),
+                                                          std::make_pair("PUT", method::Put),
+                                                          std::make_pair("DELETE", method::Delete),
+                                                          std::make_pair("Connect", method::Connect),
+                                                          std::make_pair("HEAD", method::Head),
+                                                          std::make_pair("OPTIONS", method::Options),
+                                                          std::make_pair("TRACE", method::Trace),
+                                                          std::make_pair("COPY", method::Copy),
+                                                          std::make_pair("LOCK", method::Lock),
+                                                          std::make_pair("MKCOL", method::Mkcol),
+                                                          std::make_pair("MOVE", method::Move),
+                                                          std::make_pair("PROPFIND", method::Propfind),
+                                                          std::make_pair("PROPPATCH", method::Proppatch),
+                                                          std::make_pair("UNLOCK", method::Unlock),
+                                                          std::make_pair("REPORT", method::Report),
+                                                          std::make_pair("MKACTIVITY", method::Mkactivity),
+                                                          std::make_pair("CHECKOUT", method::Checkout),
+                                                          std::make_pair("MERGE", method::Merge),
+                                                          std::make_pair("M-SEARCH", method::M_Search),
+                                                          std::make_pair("NOTIFY", method::Notify),
+                                                          std::make_pair("SUBSCRIBE", method::Subscribe),
+                                                          std::make_pair("UNSUBSCRIBE", method::Unsubscribe)};
 
 enum StatusCode {
     OK = 200,

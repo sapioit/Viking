@@ -30,7 +30,7 @@ class Context {
     const io::tcp_socket *socket_;
     http_parser_settings settings_;
     http_parser parser_;
-    Request request_;
+    request request_;
     std::string buffer;
     std::string header_field;
     bool complete_;
@@ -40,7 +40,7 @@ class Context {
     public:
     Context(const io::tcp_socket *socket);
     const io::tcp_socket *GetSocket() const;
-    const Request &GetRequest() const noexcept;
+    const request &GetRequest() const noexcept;
     http::Context &operator()();
     bool Complete() const noexcept;
 };

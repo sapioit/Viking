@@ -19,8 +19,8 @@ int main() {
 #endif
     settings.max_connections = 1000;
     server.Initialize();
-    server.AddRoute(http::Method::Get, std::regex{"^\\/adsaf\\/json\\/(\\d+)$"},
-                    [](auto req) -> http::Response {
+    server.AddRoute(http::method::Get, std::regex{"^\\/adsaf\\/json\\/(\\d+)$"},
+                    [](auto req) -> http::response {
                       Json::Value root(Json::arrayValue);
                       Json::Value records(Json::arrayValue);
                       Json::Value val;
@@ -29,7 +29,7 @@ int main() {
                       Json::Value a2(Json::arrayValue);
                       a1.append("1");
                       a1.append("2");
-                      auto url_parts = req.SplitURL();
+                      auto url_parts = req.split_url();
                       a2.append(url_parts.at(2));
                       a2.append("2");
                       records.append(val);
@@ -40,9 +40,9 @@ int main() {
                     });
 
     server.AddRoute(
-        http::Method::Get, std::regex{"^\\/adsaf\\/jsons\\/$"},
-        [](auto) -> http::Resolution {
-          auto future = std::async(std::launch::async, []() -> http::Response {
+        http::method::Get, std::regex{"^\\/adsaf\\/jsons\\/$"},
+        [](auto) -> http::resolution {
+          auto future = std::async(std::launch::async, []() -> http::response {
             Json::Value root(Json::arrayValue);
             Json::Value records(Json::arrayValue);
             Json::Value a1(Json::arrayValue);

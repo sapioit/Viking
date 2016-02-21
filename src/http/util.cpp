@@ -36,17 +36,17 @@ static std::string exec(const std::string &cmd) {
     return result;
 }
 
-bool Util::is_passable(const http::Request &request) noexcept {
+bool Util::is_passable(const http::request &request) noexcept {
     switch (request.method) {
-    case http::Method::Get:
+    case http::method::Get:
         return true;
-    case http::Method::Post:
+    case http::method::Post:
         return true;
-    case http::Method::Put:
+    case http::method::Put:
         return true;
-    case http::Method::Delete:
+    case http::method::Delete:
         return true;
-    case http::Method::Head:
+    case http::method::Head:
         return true;
     default:
         return false;
@@ -54,14 +54,14 @@ bool Util::is_passable(const http::Request &request) noexcept {
     return true;
 }
 
-bool Util::is_disk_resource(const Request &request) noexcept {
+bool Util::is_disk_resource(const request &request) noexcept {
     fs::path full_path = Storage::GetSettings().root_path + request.url;
     if (fs::exists(full_path))
         return true;
     return false;
 }
 
-bool Util::is_complete(const Request &request) noexcept {
+bool Util::is_complete(const request &request) noexcept {
     if (can_have_body(request.method)) {
         auto cl_it = request.header.fields.find(http::Header::Fields::Content_Length);
         if (cl_it != request.header.fields.end()) {
@@ -74,13 +74,13 @@ bool Util::is_complete(const Request &request) noexcept {
     return true;
 }
 
-bool Util::can_have_body(Method method) noexcept {
+bool Util::can_have_body(method method) noexcept {
     switch (method) {
-    case http::Method::Put:
+    case http::method::Put:
         return true;
-    case http::Method::Post:
+    case http::method::Post:
         return true;
-    case http::Method::Options:
+    case http::method::Options:
         return true;
     default:
         return false;

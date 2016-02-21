@@ -27,10 +27,10 @@ class ResponseSerializer {
     ResponseSerializer() = default;
     virtual ~ResponseSerializer() = default;
 
-    std::vector<char> MakeHeader(const http::Response &response) noexcept;
-    std::vector<char> MakeBody(const http::Response &response) noexcept;
-    std::vector<char> MakeEnding(const http::Response &response) noexcept;
-    std::vector<char> operator()(const http::Response &response) noexcept;
+    std::vector<char> MakeHeader(const http::response &response) noexcept;
+    std::vector<char> MakeBody(const http::response &response) noexcept;
+    std::vector<char> MakeEnding(const http::response &response) noexcept;
+    std::vector<char> operator()(const http::response &response) noexcept;
 };
 
 #endif // RESPONSEMANAGER_H

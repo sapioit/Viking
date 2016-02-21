@@ -37,10 +37,10 @@ class Server {
     Server &operator=(const Server &) = delete;
     Server(Server &&);
     Server &operator=(Server &&);
-    void AddRoute(const http::Method &method, const std::function<bool(const std::string &)> validator,
-                  std::function<http::Resolution(http::Request)> function);
-    void AddRoute(const http::Method &method, const std::regex &regex,
-                  std::function<http::Resolution(http::Request)> function);
+    void AddRoute(const http::method &method, const std::function<bool(const std::string &)> validator,
+                  std::function<http::resolution(http::request)> function);
+    void AddRoute(const http::method &method, const std::regex &regex,
+                  std::function<http::resolution(http::request)> function);
     void SetSettings(const Settings &);
     void Initialize();
     void Run(bool indefinitely = true);

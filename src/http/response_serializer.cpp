@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 static constexpr auto crlf = "\r\n";
 static constexpr auto crlfcrlf = "\r\n\r\n";
 
-std::vector<char> ResponseSerializer::MakeHeader(const http::Response &r) noexcept {
+std::vector<char> ResponseSerializer::MakeHeader(const http::response &r) noexcept {
     std::string response;
     response.reserve(256);
     response.append("HTTP/")
@@ -44,22 +44,22 @@ std::vector<char> ResponseSerializer::MakeHeader(const http::Response &r) noexce
     return {response.begin(), response.end()};
 }
 
-std::vector<char> ResponseSerializer::MakeBody(const http::Response &response) noexcept {
+std::vector<char> ResponseSerializer::MakeBody(const http::response &response) noexcept {
     switch (response.GetType()) {
-    case http::Response::Type::Resource:
+    case http::response::Type::Resource:
         return response.GetResource().content();
-    case http::Response::Type::Text:
+    case http::response::Type::Text:
         return {response.GetText().begin(), response.GetText().end()};
     default:
         return {};
     }
 }
 
-std::vector<char> ResponseSerializer::MakeEnding(const http::Response &) noexcept {
+std::vector<char> ResponseSerializer::MakeEnding(const http::response &) noexcept {
     return std::vector<char>(crlfcrlf, crlfcrlf + strlen(crlfcrlf));
 }
 
-std::vector<char> ResponseSerializer::operator()(const http::Response &response) noexcept {
+std::vector<char> ResponseSerializer::operator()(const http::response &response) noexcept {
     auto header = MakeHeader(response);
     auto body = MakeBody(response);
     auto ending = MakeEnding(response);

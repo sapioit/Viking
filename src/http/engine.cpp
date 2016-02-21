@@ -82,7 +82,7 @@ http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete
 
 const io::tcp_socket *http::Context::GetSocket() const { return socket_; }
 
-const http::Request &http::Context::GetRequest() const noexcept { return request_; }
+const http::request &http::Context::GetRequest() const noexcept { return request_; }
 
 http::Context &http::Context::operator()() {
     try {

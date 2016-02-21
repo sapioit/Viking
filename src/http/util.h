@@ -24,10 +24,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace http {
 class Util {
     public:
-    static bool is_passable(const Request &) noexcept;
-    static bool is_disk_resource(const Request &) noexcept;
-    static bool is_complete(const Request &) noexcept;
-    static bool can_have_body(http::Method) noexcept;
+    static bool is_passable(const request &) noexcept;
+    static bool is_disk_resource(const request &) noexcept;
+    static bool is_complete(const request &) noexcept;
+    static bool can_have_body(http::method) noexcept;
     static std::string get_mimetype(fs::path) noexcept;
 };
 }

@@ -22,23 +22,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/response.h>
 #include <future>
 namespace http {
-class Resolution {
-    http::Response response;
-    std::future<http::Response> future;
+class resolution {
+    http::response m_response;
+    std::future<http::response> future;
 
     public:
-    enum Type { Sync, Async };
+    enum type { Sync, Async };
 
     private:
-    Type type;
+    type m_type;
 
     public:
-    Resolution(http::Response &&);
-    Resolution(std::future<http::Response> &&);
+    resolution(http::response &&);
+    resolution(std::future<http::response> &&);
 
-    Type GetType() const noexcept;
-    std::future<http::Response> &GetFuture() noexcept;
-    http::Response &GetResponse() noexcept;
+    type GetType() const noexcept;
+    std::future<http::response> &GetFuture() noexcept;
+    http::response &GetResponse() noexcept;
 };
 }
 
