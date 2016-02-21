@@ -72,7 +72,7 @@ const std::map<const std::string, const method> MethodMap{std::make_pair("GET", 
                                                           std::make_pair("SUBSCRIBE", method::Subscribe),
                                                           std::make_pair("UNSUBSCRIBE", method::Unsubscribe)};
 
-enum StatusCode {
+enum status_code {
     OK = 200,
     Found = 302,
     BadRequest = 400,
@@ -81,12 +81,12 @@ enum StatusCode {
     InternalServerError = 500
 };
 
-const std::map<const StatusCode, const std::string> StatusCodes{
-    std::make_pair(StatusCode::OK, "OK"),
-    std::make_pair(StatusCode::BadRequest, "Bad Request"),
-    std::make_pair(StatusCode::Found, "Found"),
-    std::make_pair(StatusCode::NotFound, "Not Found"),
-    std::make_pair(StatusCode::UnsupportedMediaType, "Unsupported Media Type"),
-    std::make_pair(StatusCode::InternalServerError, "Internal Server Error")};
+const std::map<const status_code, const std::string> StatusCodes{
+    std::make_pair(status_code::OK, "OK"),
+    std::make_pair(status_code::BadRequest, "Bad Request"),
+    std::make_pair(status_code::Found, "Found"),
+    std::make_pair(status_code::NotFound, "Not Found"),
+    std::make_pair(status_code::UnsupportedMediaType, "Unsupported Media Type"),
+    std::make_pair(status_code::InternalServerError, "Internal Server Error")};
 }
 #endif // COMPONENTS

@@ -33,23 +33,23 @@ std::vector<char> ResponseSerializer::MakeHeader(const http::response &r) noexce
     std::string response;
     response.reserve(256);
     response.append("HTTP/")
-        .append(std::to_string(r.GetVersion().major))
+        .append(std::to_string(r.get_version().major))
         .append(".")
-        .append(std::to_string(r.GetVersion().minor));
-    response.append(" ").append(std::to_string(r.GetCode())).append(" ");
-    response.append(http::StatusCodes.at(r.GetCode())).append(crlf);
-    for (const auto &pair : r.GetFields())
+        .append(std::to_string(r.get_version().minor));
+    response.append(" ").append(std::to_string(r.get_code())).append(" ");
+    response.append(http::StatusCodes.at(r.get_code())).append(crlf);
+    for (const auto &pair : r.get_fields())
         response.append(pair.first).append(": ").append(pair.second).append(crlf);
     response.append(crlf);
     return {response.begin(), response.end()};
 }
 
 std::vector<char> ResponseSerializer::MakeBody(const http::response &response) noexcept {
-    switch (response.GetType()) {
-    case http::response::Type::Resource:
-        return response.GetResource().content();
-    case http::response::Type::Text:
-        return {response.GetText().begin(), response.GetText().end()};
+    switch (response.get_type()) {
+    case http::response::type::Resource:
+        return response.get_resource().content();
+    case http::response::type::Text:
+        return {response.get_text().begin(), response.get_text().end()};
     default:
         return {};
     }

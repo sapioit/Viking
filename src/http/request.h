@@ -30,7 +30,7 @@ namespace http {
 class request {
     public:
     http::method method;
-    Version version;
+    version m_version;
     Header header;
     std::string url, body;
 

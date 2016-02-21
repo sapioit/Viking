@@ -41,7 +41,7 @@ class Server {
                   std::function<http::resolution(http::request)> function);
     void AddRoute(const http::method &method, const std::regex &regex,
                   std::function<http::resolution(http::request)> function);
-    void SetSettings(const Settings &);
+    void SetSettings(const configuration &);
     void Initialize();
     void Run(bool indefinitely = true);
     void Freeze();

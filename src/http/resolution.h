@@ -27,7 +27,7 @@ class resolution {
     std::future<http::response> future;
 
     public:
-    enum type { Sync, Async };
+    enum type { sync, async };
 
     private:
     type m_type;
@@ -36,9 +36,9 @@ class resolution {
     resolution(http::response &&);
     resolution(std::future<http::response> &&);
 
-    type GetType() const noexcept;
-    std::future<http::response> &GetFuture() noexcept;
-    http::response &GetResponse() noexcept;
+    type get_type() const noexcept;
+    std::future<http::response> &get_future() noexcept;
+    http::response &get_response() noexcept;
 };
 }
 

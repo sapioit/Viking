@@ -27,48 +27,48 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sstream>
 #include <string>
 
-http::Context *GetMe(http_parser *parser) { return static_cast<http::Context *>(parser->data); }
+http::Context *get_me(http_parser *parser) { return static_cast<http::Context *>(parser->data); }
 
-void http::Context::AssignMethod(http_method method_numeric) {
+void http::Context::assign_method(http_method method_numeric) {
     auto method = http::MethodMap.find(http_method_str(method_numeric));
     if (method != http::MethodMap.end())
-        request_.method = method->second;
+        m_request.method = method->second;
 }
 
-http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete_(false) {
+http::Context::Context(const io::tcp_socket *socket) : m_socket(socket), complete_(false) {
     settings_.on_message_begin = [](http_parser *) -> int { return 0; };
     settings_.on_message_complete = [](http_parser *) -> int {
         return 0;
 
     };
     settings_.on_headers_complete = [](http_parser *parser) -> int {
-        auto me = GetMe(parser);
-        me->request_.version.major = parser->http_major;
-        me->request_.version.minor = parser->http_minor;
-        me->AssignMethod(static_cast<http_method>(parser->method));
+        auto me = get_me(parser);
+        me->m_request.m_version.major = parser->http_major;
+        me->m_request.m_version.minor = parser->http_minor;
+        me->assign_method(static_cast<http_method>(parser->method));
         return 0;
     };
     settings_.on_url = [](http_parser *parser, const char *at, size_t length) -> int {
-        auto me = GetMe(parser);
-        me->request_.url = UrlDecode({at, at + length});
+        auto me = get_me(parser);
+        me->m_request.url = UrlDecode({at, at + length});
         return 0;
     };
     settings_.on_header_field = [](http_parser *parser, const char *at, size_t length) -> int {
-        auto me = GetMe(parser);
+        auto me = get_me(parser);
         me->header_field = std::string{at, at + length};
 
         return 0;
     };
     settings_.on_header_value = [](http_parser *parser, const char *at, size_t length) -> int {
         std::string value(at, at + length);
-        auto me = GetMe(parser);
-        me->request_.header.fields.insert(std::make_pair(me->header_field, value));
+        auto me = get_me(parser);
+        me->m_request.header.fields.insert(std::make_pair(me->header_field, value));
 
         return 0;
     };
     settings_.on_body = [](http_parser *parser, const char *at, size_t length) -> int {
-        auto me = GetMe(parser);
-        me->request_.body += {at, at + length};
+        auto me = get_me(parser);
+        me->m_request.body += {at, at + length};
         /* TODO check if body size is OK, and if yes, then copy it to the request. If not,
          * we should provide the user with a way of getting the body on demand (either async,
          * by returning a future -> implies starting an I/O scheduler async, or by
@@ -80,17 +80,17 @@ http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete
     };
 }
 
-const io::tcp_socket *http::Context::GetSocket() const { return socket_; }
+const io::tcp_socket *http::Context::get_socket() const { return m_socket; }
 
-const http::request &http::Context::GetRequest() const noexcept { return request_; }
+const http::request &http::Context::get_request() const noexcept { return m_request; }
 
 http::Context &http::Context::operator()() {
     try {
-        buffer += socket_->read_some<std::string>();
+        buffer += m_socket->read_some<std::string>();
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
-        complete_ = http::Util::is_complete(request_);
+        complete_ = http::Util::is_complete(m_request);
         return *this;
     } catch (io::tcp_socket::connection_closed_by_peer &) {
         throw;

@@ -103,8 +103,8 @@ class Server::ServerImpl {
         dispatcher_.add_route(std::make_pair(std::make_pair(method, ptr), function));
     }
 
-    inline void SetSettings(const Settings &s) {
-        Storage::SetSettings(s);
+    inline void SetSettings(const configuration &s) {
+        storage::set_config(s);
         max_pending_ = s.max_connections;
     }
 };
@@ -145,7 +145,7 @@ void Server::AddRoute(const http::method &method, const std::regex &regex,
     impl->AddRoute(method, regex, function);
 }
 
-void Server::SetSettings(const Settings &s) { impl->SetSettings(s); }
+void Server::SetSettings(const configuration &s) { impl->SetSettings(s); }
 
 void Server::Initialize() { impl->Initialize(); }
 

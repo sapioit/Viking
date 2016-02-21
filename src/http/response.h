@@ -31,44 +31,44 @@ namespace http {
 using namespace http;
 class response {
     public:
-    enum class Type { Resource, File, Text };
+    enum class type { Resource, File, Text };
     response();
-    response(StatusCode);
+    response(status_code);
     response(const std::string &);
-    response(http::StatusCode, const std::string &);
+    response(http::status_code, const std::string &);
     response(const resource &);
     response(resource &&);
     virtual ~response() = default;
 
-    Version GetVersion() const;
-    void SetVersion(Version);
+    version get_version() const;
+    void set_version(version);
 
-    StatusCode GetCode() const;
-    void SetCode(StatusCode GetCode);
+    status_code get_code() const;
+    void set_code(status_code get_code);
 
-    std::size_t ContentLength() const;
+    std::size_t content_len() const;
 
-    Type GetType() const;
-    void SetType(Type type) noexcept;
+    type get_type() const;
+    void set_type(type type) noexcept;
 
-    const resource &GetResource() const;
-    void SetResource(const resource &text);
+    const resource &get_resource() const;
+    void set_resource(const resource &text);
 
-    const std::string &GetText() const;
-    void SetText(const std::string &);
+    const std::string &get_text() const;
+    void set_text(const std::string &);
 
-    const io::unix_file *GetFile() const;
-    void SetFile(io::unix_file *file) noexcept;
+    const io::unix_file *get_file() const;
+    void set_file(io::unix_file *file) noexcept;
 
-    bool GetKeepAlive() const noexcept;
-    void Set(const std::string &field, const std::string &value) noexcept;
-    const std::vector<std::pair<std::string, std::string>> &GetFields() const noexcept;
+    bool get_keep_alive() const noexcept;
+    void set(const std::string &field, const std::string &value) noexcept;
+    const std::vector<std::pair<std::string, std::string>> &get_fields() const noexcept;
 
     private:
     std::vector<std::pair<std::string, std::string>> fields_;
-    Version version_ = {1, 1};
-    StatusCode code_;
-    Type type_;
+    version version_ = {1, 1};
+    status_code code_;
+    type type_;
     resource resource_;
     std::string text_;
     const io::unix_file *file_ = nullptr;

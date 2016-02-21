@@ -23,8 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <utility>
 #include <thread>
 
-Settings Storage::settings_;
+configuration storage::m_settings;
 
-const Settings &Storage::GetSettings() { return Storage::settings_; }
+const configuration &storage::config() { return storage::m_settings; }
 
-void Storage::SetSettings(const Settings &settings) { Storage::settings_ = settings; }
+void storage::set_config(const configuration &configuration) { storage::m_settings = configuration; }

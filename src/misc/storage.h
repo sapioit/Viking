@@ -21,12 +21,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <misc/settings.h>
 
-class Storage {
-    static Settings settings_;
-
-    public:
-    static const Settings &GetSettings();
-    static void SetSettings(const Settings &);
+class storage {
+    static configuration m_settings;
+public:
+    static const configuration &config();
+    static void set_config(const configuration &);
 };
 
 #endif // STORAGE_H

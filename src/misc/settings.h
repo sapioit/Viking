@@ -22,9 +22,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/request.h>
 #include <http/resolution.h>
 
-struct Settings {
-    Settings();
-    ~Settings() = default;
+struct configuration {
+    configuration();
+    ~configuration() = default;
 
     std::string root_path;
     std::uint32_t max_connections;

@@ -11,7 +11,7 @@ namespace fs = std::experimental::filesystem;
 int main() {
   try {
     Web::Server server(1234);
-    Settings settings;
+    configuration settings;
 #ifdef __arm__
     settings.root_path = "/mnt/exthdd/server";
 #else

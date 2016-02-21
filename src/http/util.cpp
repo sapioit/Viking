@@ -55,7 +55,7 @@ bool Util::is_passable(const http::request &request) noexcept {
 }
 
 bool Util::is_disk_resource(const request &request) noexcept {
-    fs::path full_path = Storage::GetSettings().root_path + request.url;
+    fs::path full_path = storage::config().root_path + request.url;
     if (fs::exists(full_path))
         return true;
     return false;
