@@ -22,15 +22,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/buffers/datasource.h>
 #include <future>
 
-template <typename T> struct AsyncBuffer : public data_source {
+template <typename T> struct async_buffer : public data_source {
     std::future<T> future;
 
     public:
-    AsyncBuffer(std::future<T> future) : future(std::move(future)) {}
+    async_buffer(std::future<T> future) : future(std::move(future)) {}
 
     operator bool() const noexcept { return true; }
     bool intact() const noexcept { return true; }
-    bool IsReady() {
+    bool is_ready() {
         auto result = future.wait_for(std::chrono::seconds(0));
         return (result == std::future_status::ready || result == std::future_status::deferred);
     }

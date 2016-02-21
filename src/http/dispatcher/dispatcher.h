@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
 #include <functional>
 
-namespace Web {
+namespace web {
 class dispatcher {
     class dispatcher_impl;
     dispatcher_impl *impl;
@@ -43,7 +43,7 @@ class dispatcher {
 
     void add_route(route_util::route) noexcept;
     schedule_item handle_connection(const io::channel *);
-    std::unique_ptr<io::memory_buffer> handle_barrier(AsyncBuffer<http::response> *) noexcept;
+    std::unique_ptr<io::memory_buffer> handle_barrier(async_buffer<http::response> *) noexcept;
     void will_remove(const io::channel *) noexcept;
 };
 }

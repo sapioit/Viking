@@ -29,69 +29,69 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <signal.h>
 #include <fstream>
 
-using namespace Web;
+using namespace web;
 using namespace io;
-tcp_socket *MakeSocket(int port, int max_pending);
+tcp_socket *make_socket(int port, int max_pending);
 
-class Server::ServerImpl {
-    int port_;
-    int max_pending_;
-    bool stop_requested_;
-    dispatcher dispatcher_;
-    io::scheduler scheduler_;
+class server::server_impl {
+    int m_port;
+    int m_max_pending;
+    bool m_stop_requested;
+    dispatcher m_dispatcher;
+    io::scheduler m_scheduler;
 
-    inline void IgnoreSigpipe() { signal(SIGPIPE, SIG_IGN); }
+    inline void ignore_sigpipe() { signal(SIGPIPE, SIG_IGN); }
 
     public:
-    ServerImpl(int port) : port_(port), stop_requested_(false) {}
+    server_impl(int port) : m_port(port), m_stop_requested(false) {}
 
-    inline void Initialize() {
-        IgnoreSigpipe();
+    inline void init() {
+        ignore_sigpipe();
         debug("Pid = " + std::to_string(getpid()));
-        if (auto sock = MakeSocket(port_, max_pending_)) {
-            scheduler_ = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
-                                       [this](const io::channel *ch) {
-                                           try {
-                                               return dispatcher_.handle_connection(ch);
-                                           } catch (...) {
-                                               throw;
-                                           }
-                                       },
-                                       [this](schedule_item & schedule_item) -> auto {
-                                           if (schedule_item.is_front_async()) {
-                                               AsyncBuffer<http::response> *async_buffer =
-                                                   static_cast<AsyncBuffer<http::response> *>(schedule_item.front());
-                                               if (async_buffer->IsReady())
-                                                   return dispatcher_.handle_barrier(async_buffer);
-                                           }
-                                           return std::make_unique<memory_buffer>(std::vector<char>());
-                                       },
-                                       [this](const io::channel *ch) { dispatcher_.will_remove(ch); });
+        if (auto sock = make_socket(m_port, m_max_pending)) {
+            m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
+                                        [this](const io::channel *ch) {
+                                            try {
+                                                return m_dispatcher.handle_connection(ch);
+                                            } catch (...) {
+                                                throw;
+                                            }
+                                        },
+                                        [this](schedule_item & schedule_item) -> auto {
+                                            if (schedule_item.is_front_async()) {
+                                                async_buffer<http::response> *buffer =
+                                                    static_cast<async_buffer<http::response> *>(schedule_item.front());
+                                                if (buffer->is_ready())
+                                                    return m_dispatcher.handle_barrier(buffer);
+                                            }
+                                            return std::make_unique<memory_buffer>(std::vector<char>{});
+                                        },
+                                        [this](const io::channel *ch) { m_dispatcher.will_remove(ch); });
         } else {
-            throw Server::PortInUse{port_};
+            throw server::port_in_use{m_port};
         }
     }
 
-    inline void Run(bool indefinitely) {
+    inline void run(bool indefinitely) {
         if (!indefinitely)
-            scheduler_.run();
+            m_scheduler.run();
         else {
-            stop_requested_ = false;
-            while (!stop_requested_) {
-                scheduler_.run();
+            m_stop_requested = false;
+            while (!m_stop_requested) {
+                m_scheduler.run();
             }
         }
     }
 
-    inline void Freeze() { stop_requested_ = true; }
+    inline void freeze() { m_stop_requested = true; }
 
-    inline void AddRoute(const http::method &method, std::function<bool(const std::string &)> validator,
-                         std::function<http::resolution(http::request)> function) {
-        dispatcher_.add_route(std::make_pair(std::make_pair(method, validator), function));
+    inline void add_route(const http::method &method, std::function<bool(const std::string &)> validator,
+                          std::function<http::resolution(http::request)> function) {
+        m_dispatcher.add_route(std::make_pair(std::make_pair(method, validator), function));
     }
 
-    inline void AddRoute(const http::method &method, const std::regex &regex,
-                         std::function<http::resolution(http::request)> function) {
+    inline void add_route(const http::method &method, const std::regex &regex,
+                          std::function<http::resolution(http::request)> function) {
 
         auto ptr = [regex](auto string) {
             try {
@@ -100,16 +100,16 @@ class Server::ServerImpl {
                 return false;
             }
         };
-        dispatcher_.add_route(std::make_pair(std::make_pair(method, ptr), function));
+        m_dispatcher.add_route(std::make_pair(std::make_pair(method, ptr), function));
     }
 
-    inline void SetSettings(const configuration &s) {
+    inline void set_config(const configuration &s) {
         storage::set_config(s);
-        max_pending_ = s.max_connections;
+        m_max_pending = s.max_connections;
     }
 };
 
-io::tcp_socket *MakeSocket(int port, int max_pending) {
+io::tcp_socket *make_socket(int port, int max_pending) {
     try {
         auto sock = new io::tcp_socket(port);
         sock->bind();
@@ -121,11 +121,11 @@ io::tcp_socket *MakeSocket(int port, int max_pending) {
     }
 }
 
-Server::Server(int port) { impl = new ServerImpl(port); }
+server::server(int port) { impl = new server_impl(port); }
 
-Server::~Server() { delete impl; }
+server::~server() { delete impl; }
 
-Server &Server::operator=(Server &&other) {
+server &server::operator=(server &&other) {
     if (this != &other) {
         impl = other.impl;
         other.impl = nullptr;
@@ -133,24 +133,24 @@ Server &Server::operator=(Server &&other) {
     return *this;
 }
 
-Server::Server(Server &&other) { *this = std::move(other); }
+server::server(server &&other) { *this = std::move(other); }
 
-void Server::AddRoute(const http::method &method, std::function<bool(const std::string &)> validator,
-                      std::function<http::resolution(http::request)> function) {
-    impl->AddRoute(method, validator, function);
+void server::add_route(const http::method &method, std::function<bool(const std::string &)> validator,
+                       std::function<http::resolution(http::request)> function) {
+    impl->add_route(method, validator, function);
 }
 
-void Server::AddRoute(const http::method &method, const std::regex &regex,
-                      std::function<http::resolution(http::request)> function) {
-    impl->AddRoute(method, regex, function);
+void server::add_route(const http::method &method, const std::regex &regex,
+                       std::function<http::resolution(http::request)> function) {
+    impl->add_route(method, regex, function);
 }
 
-void Server::SetSettings(const configuration &s) { impl->SetSettings(s); }
+void server::set_config(const configuration &s) { impl->set_config(s); }
 
-void Server::Initialize() { impl->Initialize(); }
+void server::init() { impl->init(); }
 
-void Server::Run(bool indefinitely) { impl->Run(indefinitely); }
+void server::run(bool indefinitely) { impl->run(indefinitely); }
 
-void Server::Freeze() { impl->Freeze(); }
+void server::freeze() { impl->freeze(); }
 
-std::string Server::GetVersion() const noexcept { return "0.7.8"; }
+std::string server::get_version() const noexcept { return "0.7.8"; }

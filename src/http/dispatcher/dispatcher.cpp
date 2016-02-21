@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 #include <type_traits>
 
-using namespace Web;
+using namespace web;
 using namespace cache;
 static response_serializer serializer;
 
@@ -48,7 +48,7 @@ class dispatcher::dispatcher_impl {
 
     inline void add_route(route_util::route r) noexcept { routes.push_back(r); }
 
-    inline std::unique_ptr<io::memory_buffer> handle_barrier(AsyncBuffer<http::response> *r) noexcept {
+    inline std::unique_ptr<io::memory_buffer> handle_barrier(async_buffer<http::response> *r) noexcept {
         auto http_response = r->future.get();
         return std::make_unique<io::memory_buffer>(serializer(http_response));
     }
@@ -159,7 +159,7 @@ class dispatcher::dispatcher_impl {
         if (resolution.get_type() == http::resolution::type::sync)
             return {serializer(resolution.get_response()), resolution.get_response().get_keep_alive()};
         else
-            return {std::make_unique<AsyncBuffer<http::response>>(std::move(resolution.get_future()))};
+            return {std::make_unique<async_buffer<http::response>>(std::move(resolution.get_future()))};
     }
 
     bool should_copy(const fs::path &resource_path) const {
@@ -185,7 +185,7 @@ schedule_item dispatcher::handle_connection(const io::channel *connection) {
     }
 }
 
-std::unique_ptr<io::memory_buffer> dispatcher::handle_barrier(AsyncBuffer<http::response> *item) noexcept {
+std::unique_ptr<io::memory_buffer> dispatcher::handle_barrier(async_buffer<http::response> *item) noexcept {
     return impl->handle_barrier(item);
 }
 

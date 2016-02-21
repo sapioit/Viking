@@ -25,28 +25,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <vector>
 #include <regex>
 
-namespace Web {
-class Server {
-    class ServerImpl;
-    ServerImpl *impl;
+namespace web {
+class server {
+    class server_impl;
+    server_impl *impl;
 
     public:
-    Server(int);
-    ~Server();
-    Server(const Server &) = delete;
-    Server &operator=(const Server &) = delete;
-    Server(Server &&);
-    Server &operator=(Server &&);
-    void AddRoute(const http::method &method, const std::function<bool(const std::string &)> validator,
-                  std::function<http::resolution(http::request)> function);
-    void AddRoute(const http::method &method, const std::regex &regex,
-                  std::function<http::resolution(http::request)> function);
-    void SetSettings(const configuration &);
-    void Initialize();
-    void Run(bool indefinitely = true);
-    void Freeze();
-    std::string GetVersion() const noexcept;
-    struct PortInUse {
+    server(int);
+    ~server();
+    server(const server &) = delete;
+    server &operator=(const server &) = delete;
+    server(server &&);
+    server &operator=(server &&);
+    void add_route(const http::method &method, const std::function<bool(const std::string &)> validator,
+                   std::function<http::resolution(http::request)> function);
+    void add_route(const http::method &method, const std::regex &regex,
+                   std::function<http::resolution(http::request)> function);
+    void set_config(const configuration &);
+    void init();
+    void run(bool indefinitely = true);
+    void freeze();
+    std::string get_version() const noexcept;
+    struct port_in_use {
         int port;
     };
 };

@@ -47,7 +47,7 @@ class schedule_item {
     explicit schedule_item(const std::vector<char> &data);
     schedule_item(const std::vector<char> &data, bool);
 
-    template <typename T> schedule_item(std::unique_ptr<AsyncBuffer<T>> future) {
+    template <typename T> schedule_item(std::unique_ptr<async_buffer<T>> future) {
         buffers.emplace_back(std::move(future));
     }
 
