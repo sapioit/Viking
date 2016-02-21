@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace IO {
 struct Channel {
     std::unique_ptr<Socket> socket;
-    ScheduleItem queue;
+    schedule_item queue;
     std::vector<std::uint32_t> journal;
     Channel();
     Channel(std::unique_ptr<Socket> socket);

@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <functional>
 #include <string>
 
-struct UnixFile : public DataSource {
+struct UnixFile : public data_source {
     int fd = -1;
     off64_t size = 0;
     off64_t offset = 0;

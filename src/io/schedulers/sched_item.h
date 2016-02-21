@@ -25,9 +25,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/buffers/mem_buffer.h>
 #include <io/buffers/asyncbuffer.h>
 
-class ScheduleItem {
-    std::deque<std::unique_ptr<DataSource>> buffers;
-    bool keep_file_open;
+class schedule_item {
+    std::deque<std::unique_ptr<data_source>> buffers;
+    bool m_keep_file_open;
 
     auto GetFirstIntact() {
         for (auto it = buffers.begin(); it != buffers.end(); ++it)
@@ -37,36 +37,36 @@ class ScheduleItem {
     }
 
     public:
-    ScheduleItem();
-    virtual ~ScheduleItem() = default;
-    ScheduleItem(const ScheduleItem &) = delete;
-    ScheduleItem &operator=(const ScheduleItem &) = delete;
-    ScheduleItem(ScheduleItem &&) = default;
-    ScheduleItem &operator=(ScheduleItem &&) = delete;
-    ScheduleItem(bool keep_file_open);
-    explicit ScheduleItem(const std::vector<char> &data);
-    ScheduleItem(const std::vector<char> &data, bool);
+    schedule_item();
+    virtual ~schedule_item() = default;
+    schedule_item(const schedule_item &) = delete;
+    schedule_item &operator=(const schedule_item &) = delete;
+    schedule_item(schedule_item &&) = default;
+    schedule_item &operator=(schedule_item &&) = delete;
+    schedule_item(bool keep_file_open);
+    explicit schedule_item(const std::vector<char> &data);
+    schedule_item(const std::vector<char> &data, bool);
 
-    template <typename T> ScheduleItem(std::unique_ptr<AsyncBuffer<T>> future) {
+    template <typename T> schedule_item(std::unique_ptr<AsyncBuffer<T>> future) {
         buffers.emplace_back(std::move(future));
     }
 
-    void PutBack(std::unique_ptr<MemoryBuffer> data);
-    void PutBack(std::unique_ptr<UnixFile> file);
-    void PutBack(ScheduleItem &&);
+    void put_back(std::unique_ptr<MemoryBuffer> data);
+    void put_back(std::unique_ptr<UnixFile> file);
+    void put_back(schedule_item &&);
 
-    void PutAfterFirstIntact(std::unique_ptr<MemoryBuffer> data);
-    void PutAfterFirstIntact(std::unique_ptr<UnixFile> file);
-    void PutAfterFirstIntact(ScheduleItem);
+    void put_after_first_intact(std::unique_ptr<MemoryBuffer> data);
+    void put_after_first_intact(std::unique_ptr<UnixFile> file);
+    void put_after_first_intact(schedule_item);
 
-    void ReplaceFront(std::unique_ptr<MemoryBuffer>) noexcept;
-    inline DataSource *Front() noexcept { return buffers.front().get(); }
-    inline const DataSource *CFront() const noexcept { return buffers.front().get(); }
-    bool IsFrontAsync() const noexcept;
-    inline void RemoveFront() noexcept { buffers.erase(buffers.begin()); }
-    inline bool KeepFileOpen() const noexcept { return keep_file_open; }
-    inline void SetKeepFileOpen(bool close) { keep_file_open = close; }
-    std::size_t BuffersLeft() const noexcept;
+    void replace_front(std::unique_ptr<MemoryBuffer>) noexcept;
+    inline data_source *front() noexcept { return buffers.front().get(); }
+    inline const data_source *c_front() const noexcept { return buffers.front().get(); }
+    bool is_front_async() const noexcept;
+    inline void remove_front() noexcept { buffers.erase(buffers.begin()); }
+    inline bool keep_file_open() const noexcept { return this->m_keep_file_open; }
+    inline void set_keep_file_open(bool close) { this->m_keep_file_open = close; }
+    std::size_t buffers_left() const noexcept;
     operator bool() const noexcept;
 };
 

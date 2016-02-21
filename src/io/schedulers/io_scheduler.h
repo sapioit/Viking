@@ -28,10 +28,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace IO {
 class Scheduler {
     public:
-    typedef ScheduleItem Resolution;
+    typedef schedule_item Resolution;
     typedef std::vector<char> DataType;
     typedef std::function<Resolution(const Channel *)> ReadCallback;
-    typedef std::function<std::unique_ptr<MemoryBuffer>(ScheduleItem &)> BarrierCallback;
+    typedef std::function<std::unique_ptr<MemoryBuffer>(schedule_item &)> BarrierCallback;
     typedef std::function<void(const Channel *)> BeforeRemovingCallback;
 
     private:

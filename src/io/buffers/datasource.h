@@ -19,9 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef DATASOURCE_H
 #define DATASOURCE_H
 
-struct DataSource {
-    DataSource() = default;
-    virtual ~DataSource() = default;
+struct data_source {
+    data_source() = default;
+    virtual ~data_source() = default;
     virtual operator bool() const noexcept = 0;
     virtual bool Intact() const noexcept = 0;
 };

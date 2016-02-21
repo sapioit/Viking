@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <vector>
 
-struct MemoryBuffer : public DataSource {
+struct MemoryBuffer : public data_source {
     std::vector<char> data;
     std::size_t initial_size;
 

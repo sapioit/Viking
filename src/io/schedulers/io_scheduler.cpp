@@ -85,7 +85,7 @@ class Scheduler::SchedulerImpl {
                 try {
                     if (auto callback_response = read_callback(event.context)) {
                         poll.Modify(event.context, static_cast<std::uint32_t>(SysEpoll::Write));
-                        auto &front = *callback_response.Front();
+                        auto &front = *callback_response.front();
                         std::type_index type = typeid(front);
                         if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
                             EnqueueItem(event.context, callback_response, true);
@@ -123,10 +123,10 @@ class Scheduler::SchedulerImpl {
         try {
             bool filled = false;
             while (channel->queue && !filled) {
-                if (channel->queue.IsFrontAsync()) {
+                if (channel->queue.is_front_async()) {
                     auto new_sync_buffer = barrier_callback(channel->queue);
                     if (*new_sync_buffer) {
-                        channel->queue.ReplaceFront(std::move(new_sync_buffer));
+                        channel->queue.replace_front(std::move(new_sync_buffer));
                     } else {
                         poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
                         return;
@@ -134,7 +134,7 @@ class Scheduler::SchedulerImpl {
                 }
                 auto result = FillChannel(channel);
                 if (!(channel->queue)) {
-                    if (channel->queue.KeepFileOpen()) {
+                    if (channel->queue.keep_file_open()) {
                         poll.Modify(channel, ~static_cast<std::uint32_t>(SysEpoll::Write));
                         poll.Modify(channel, static_cast<std::uint32_t>(SysEpoll::LevelTriggered));
                     } else {
@@ -154,15 +154,15 @@ class Scheduler::SchedulerImpl {
     }
 
     bool FillChannel(Channel *channel) {
-        auto &front = *channel->queue.Front();
+        auto &front = *channel->queue.front();
         std::type_index sched_item_type = typeid(front);
 
         if (sched_item_type == typeid(MemoryBuffer)) {
-            MemoryBuffer *mem_buffer = reinterpret_cast<MemoryBuffer *>(channel->queue.Front());
+            MemoryBuffer *mem_buffer = reinterpret_cast<MemoryBuffer *>(channel->queue.front());
             try {
                 if (const auto written = channel->socket->WriteSome(mem_buffer->data)) {
                     if (written == mem_buffer->data.size())
-                        channel->queue.RemoveFront();
+                        channel->queue.remove_front();
                     else
                         std::vector<char>(mem_buffer->data.begin() + written, mem_buffer->data.end())
                             .swap(mem_buffer->data);
@@ -175,12 +175,12 @@ class Scheduler::SchedulerImpl {
             }
 
         } else if (sched_item_type == typeid(UnixFile)) {
-            UnixFile *unix_file = reinterpret_cast<UnixFile *>(channel->queue.Front());
+            UnixFile *unix_file = reinterpret_cast<UnixFile *>(channel->queue.front());
             try {
                 auto size_left = unix_file->SizeLeft();
                 if (const auto written = unix_file->SendTo(channel->socket->GetFD())) {
                     if (written == size_left)
-                        channel->queue.RemoveFront();
+                        channel->queue.remove_front();
                 } else {
                     return true;
                 }
@@ -192,7 +192,7 @@ class Scheduler::SchedulerImpl {
                 try {
                     debug("diy");
                     auto buffer = From(*e.ptr);
-                    channel->queue.ReplaceFront(std::move(buffer));
+                    channel->queue.replace_front(std::move(buffer));
                     return FillChannel(channel);
                 } catch (...) {
                     throw WriteError{};
@@ -205,8 +205,8 @@ class Scheduler::SchedulerImpl {
         return false;
     }
 
-    void EnqueueItem(Channel *c, ScheduleItem &item, bool back) noexcept {
-        back ? c->queue.PutBack(std::move(item)) : c->queue.PutAfterFirstIntact(std::move(item));
+    void EnqueueItem(Channel *c, schedule_item &item, bool back) noexcept {
+        back ? c->queue.put_back(std::move(item)) : c->queue.put_after_first_intact(std::move(item));
     }
 
     void Remove(Channel *c) noexcept {

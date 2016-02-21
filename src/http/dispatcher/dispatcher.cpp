@@ -39,12 +39,12 @@ using namespace Web;
 using namespace Cache;
 static ResponseSerializer serializer;
 
-class Dispatcher::DispatcherImpl {
+class dispatcher::dispatcher_impl {
     RouteUtility::RouteMap routes;
     std::vector<Http::Context> pending;
 
 public:
-    DispatcherImpl() = default;
+    dispatcher_impl() = default;
 
     inline void add_route(RouteUtility::Route r) noexcept { routes.push_back(r); }
 
@@ -53,7 +53,7 @@ public:
         return std::make_unique<MemoryBuffer>(serializer(http_response));
     }
 
-    inline ScheduleItem handle_connection(const IO::Channel *connection) {
+    inline schedule_item handle_connection(const IO::Channel *connection) {
         try {
             auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
                     return (*engine.GetSocket()) == (*connection->socket);
@@ -80,7 +80,7 @@ public:
     }
 
 private:
-    inline ScheduleItem process_request(const Http::Request &r) const noexcept {
+    inline schedule_item process_request(const Http::Request &r) const noexcept {
         if (Http::Util::is_disk_resource(r))
             return take_disk_resource(r);
         if (Http::Util::is_passable(r)) {
@@ -101,13 +101,13 @@ private:
         return false;
     }
 
-    inline ScheduleItem take_folder(const Http::Request &request) const {
+    inline schedule_item take_folder(const Http::Request &request) const {
         auto& folder_cb = Storage::GetSettings().folder_cb;
         auto resolution = folder_cb(request);
         return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
     }
 
-    inline ScheduleItem take_file_from_memory(const Http::Request& request, fs::path full_path) const {
+    inline schedule_item take_file_from_memory(const Http::Request& request, fs::path full_path) const {
         if (auto resource = ResourceCache::Aquire(full_path)) {
             Http::Response response{std::move(resource)};
             response.Set(Http::Header::Fields::Connection,
@@ -118,24 +118,24 @@ private:
         }
     }
 
-    inline ScheduleItem take_unix_file(const Http::Request& request, fs::path full_path) const {
+    inline schedule_item take_unix_file(const Http::Request& request, fs::path full_path) const {
         auto unix_file = std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire,
                                                     Cache::FileDescriptor::Release);
-        ScheduleItem response;
+        schedule_item response;
         Http::Response http_response;
         http_response.SetFile(unix_file.get());
         http_response.Set(Http::Header::Fields::Content_Type, Http::Util::get_mimetype(full_path));
         http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
         http_response.Set(Http::Header::Fields::Connection,
                           should_keep_alive(request) ? "Keep-Alive" : "Close");
-        response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeHeader(http_response)));
-        response.PutBack(std::move(unix_file));
-        response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeEnding(http_response)));
-        response.SetKeepFileOpen(http_response.GetKeepAlive());
+        response.put_back(std::make_unique<MemoryBuffer>(serializer.MakeHeader(http_response)));
+        response.put_back(std::move(unix_file));
+        response.put_back(std::make_unique<MemoryBuffer>(serializer.MakeEnding(http_response)));
+        response.set_keep_file_open(http_response.GetKeepAlive());
         return response;
     }
 
-    inline ScheduleItem take_regular_file(const Http::Request &request, fs::path full_path) const {
+    inline schedule_item take_regular_file(const Http::Request &request, fs::path full_path) const {
         if (should_copy(full_path)) {
             return take_file_from_memory(request, full_path);
         } else {
@@ -143,7 +143,7 @@ private:
         }
     }
 
-    inline ScheduleItem take_disk_resource(const Http::Request &request) const noexcept {
+    inline schedule_item take_disk_resource(const Http::Request &request) const noexcept {
         auto full_path = Storage::GetSettings().root_path + request.url;
         try {
             if (fs::is_directory(full_path)) {
@@ -155,7 +155,7 @@ private:
         return not_found();
     }
 
-    inline ScheduleItem pass_request(const Http::Request &r, RouteUtility::HttpHandler h) const noexcept {
+    inline schedule_item pass_request(const Http::Request &r, RouteUtility::HttpHandler h) const noexcept {
         Http::Resolution resolution = h(r);
         if (resolution.GetType() == Http::Resolution::Type::Sync)
             return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
@@ -173,12 +173,12 @@ private:
         }
     }
 
-    inline ScheduleItem not_found() const noexcept { return ScheduleItem{serializer({Http::StatusCode::NotFound})}; }
+    inline schedule_item not_found() const noexcept { return schedule_item{serializer({Http::StatusCode::NotFound})}; }
 };
 
-void Dispatcher::add_route(RouteUtility::Route route) noexcept { impl->add_route(route); }
+void dispatcher::add_route(RouteUtility::Route route) noexcept { impl->add_route(route); }
 
-ScheduleItem Dispatcher::handle_connection(const IO::Channel *connection) {
+schedule_item dispatcher::handle_connection(const IO::Channel *connection) {
     try {
         return impl->handle_connection(connection);
     } catch (...) {
@@ -186,18 +186,18 @@ ScheduleItem Dispatcher::handle_connection(const IO::Channel *connection) {
     }
 }
 
-std::unique_ptr<MemoryBuffer> Dispatcher::handle_barrier(AsyncBuffer<Http::Response> *item) noexcept {
+std::unique_ptr<MemoryBuffer> dispatcher::handle_barrier(AsyncBuffer<Http::Response> *item) noexcept {
     return impl->handle_barrier(item);
 }
 
-void Dispatcher::will_remove(const IO::Channel *s) noexcept { impl->remove_pending_contexts(s); }
+void dispatcher::will_remove(const IO::Channel *s) noexcept { impl->remove_pending_contexts(s); }
 
-Dispatcher::Dispatcher() : impl(nullptr) { impl = new DispatcherImpl(); }
+dispatcher::dispatcher() : impl(nullptr) { impl = new dispatcher_impl(); }
 
-Dispatcher::~Dispatcher() { delete impl; }
+dispatcher::~dispatcher() { delete impl; }
 
-Dispatcher::Dispatcher(Dispatcher &&other) noexcept { *this = std::move(other); }
-Dispatcher &Dispatcher::operator=(Dispatcher &&other) noexcept {
+dispatcher::dispatcher(dispatcher &&other) noexcept { *this = std::move(other); }
+dispatcher &dispatcher::operator=(dispatcher &&other) noexcept {
     if (this != &other) {
         impl = other.impl;
         other.impl = nullptr;

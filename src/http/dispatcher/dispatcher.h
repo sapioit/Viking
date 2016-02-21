@@ -29,20 +29,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <functional>
 
 namespace Web {
-class Dispatcher {
-    class DispatcherImpl;
-    DispatcherImpl *impl;
+class dispatcher {
+    class dispatcher_impl;
+    dispatcher_impl *impl;
 
     public:
-    Dispatcher();
-    ~Dispatcher();
-    Dispatcher(Dispatcher &) = delete;
-    Dispatcher &operator=(Dispatcher &) = delete;
-    Dispatcher(Dispatcher &&) noexcept;
-    Dispatcher &operator=(Dispatcher &&) noexcept;
+    dispatcher();
+    ~dispatcher();
+    dispatcher(dispatcher &) = delete;
+    dispatcher &operator=(dispatcher &) = delete;
+    dispatcher(dispatcher &&) noexcept;
+    dispatcher &operator=(dispatcher &&) noexcept;
 
     void add_route(RouteUtility::Route) noexcept;
-    ScheduleItem handle_connection(const IO::Channel *);
+    schedule_item handle_connection(const IO::Channel *);
     std::unique_ptr<MemoryBuffer> handle_barrier(AsyncBuffer<Http::Response> *) noexcept;
     void will_remove(const IO::Channel *) noexcept;
 };

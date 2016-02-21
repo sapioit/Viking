@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/buffers/datasource.h>
 #include <future>
 
-template <typename T> struct AsyncBuffer : public DataSource {
+template <typename T> struct AsyncBuffer : public data_source {
     std::future<T> future;
 
     public:

@@ -36,7 +36,7 @@ class Server::ServerImpl {
     int port_;
     int max_pending_;
     bool stop_requested_;
-    Dispatcher dispatcher_;
+    dispatcher dispatcher_;
     IO::Scheduler scheduler_;
 
     inline void IgnoreSigpipe() { signal(SIGPIPE, SIG_IGN); }
@@ -56,10 +56,10 @@ class Server::ServerImpl {
                                                throw;
                                            }
                                        },
-                                       [this](ScheduleItem & schedule_item) -> auto {
-                                           if (schedule_item.IsFrontAsync()) {
+                                       [this](schedule_item & schedule_item) -> auto {
+                                           if (schedule_item.is_front_async()) {
                                                AsyncBuffer<Http::Response> *async_buffer =
-                                                   static_cast<AsyncBuffer<Http::Response> *>(schedule_item.Front());
+                                                   static_cast<AsyncBuffer<Http::Response> *>(schedule_item.front());
                                                if (async_buffer->IsReady())
                                                    return dispatcher_.handle_barrier(async_buffer);
                                            }
