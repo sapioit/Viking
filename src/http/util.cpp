@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <misc/common.h>
 using namespace Http;
 
-static std::string Exec(const std::string &cmd) {
+static std::string exec(const std::string &cmd) {
     std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
     if (!pipe)
         return "";
@@ -36,7 +36,7 @@ static std::string Exec(const std::string &cmd) {
     return result;
 }
 
-bool Util::IsPassable(const Http::Request &request) noexcept {
+bool Util::is_passable(const Http::Request &request) noexcept {
     switch (request.method) {
     case Http::Method::Get:
         return true;
@@ -54,15 +54,15 @@ bool Util::IsPassable(const Http::Request &request) noexcept {
     return true;
 }
 
-bool Util::IsResource(const Request &request) noexcept {
+bool Util::is_disk_resource(const Request &request) noexcept {
     fs::path full_path = Storage::GetSettings().root_path + request.url;
-    if (fs::exists(full_path) && fs::is_regular_file(full_path))
+    if (fs::exists(full_path))
         return true;
     return false;
 }
 
-bool Util::IsComplete(const Request &request) noexcept {
-    if (CanHaveBody(request.method)) {
+bool Util::is_complete(const Request &request) noexcept {
+    if (can_have_body(request.method)) {
         auto cl_it = request.header.fields.find(Http::Header::Fields::Content_Length);
         if (cl_it != request.header.fields.end()) {
             auto content_length = static_cast<std::size_t>(std::atoi(cl_it->second.c_str()));
@@ -74,7 +74,7 @@ bool Util::IsComplete(const Request &request) noexcept {
     return true;
 }
 
-bool Util::CanHaveBody(Method method) noexcept {
+bool Util::can_have_body(Method method) noexcept {
     switch (method) {
     case Http::Method::Put:
         return true;
@@ -87,10 +87,10 @@ bool Util::CanHaveBody(Method method) noexcept {
     }
 }
 
-static std::string GetMimeTypeFromShell(fs::path p) noexcept {
+static std::string shell_get_mimetype(fs::path p) noexcept {
     std::string cmd = "file --mime-type ";
     cmd.append(p);
-    auto output = Exec(cmd);
+    auto output = exec(cmd);
     while (output.size() && std::isspace(output.back()))
         output = output.substr(0, output.size() - 1);
     auto c = output.find_first_of(':');
@@ -99,10 +99,10 @@ static std::string GetMimeTypeFromShell(fs::path p) noexcept {
     return "";
 }
 
-std::string Util::GetMimeType(fs::path p) noexcept {
+std::string Util::get_mimetype(fs::path p) noexcept {
     auto ext = filesystem::GetExtension(p);
     if (ext.length())
         return mime_types[ext];
     else
-        return GetMimeTypeFromShell(p);
+        return shell_get_mimetype(p);
 }

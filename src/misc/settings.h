@@ -19,18 +19,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef SETTINGS_H
 #define SETTINGS_H
 #include <string>
+#include <http/request.h>
+#include <http/resolution.h>
 
 struct Settings {
     Settings();
     ~Settings() = default;
-    Settings(const Settings &) = default;
-    Settings(Settings &&) = default;
-    Settings &operator=(const Settings &) = default;
 
     std::string root_path;
     std::uint32_t max_connections;
     std::uint32_t default_max_age = 300;
     bool allow_directory_listing;
+    std::function<Http::Resolution(Http::Request)> folder_cb;
 };
 
 #endif // SETTINGS_H

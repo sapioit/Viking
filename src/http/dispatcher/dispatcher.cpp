@@ -43,7 +43,7 @@ class Dispatcher::DispatcherImpl {
     RouteUtility::RouteMap routes;
     std::vector<Http::Context> pending;
 
-    public:
+public:
     DispatcherImpl() = default;
 
     inline void AddRoute(RouteUtility::Route r) noexcept { routes.push_back(r); }
@@ -56,8 +56,8 @@ class Dispatcher::DispatcherImpl {
     inline ScheduleItem HandleConnection(const IO::Channel *connection) {
         try {
             auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
-                return (*engine.GetSocket()) == (*connection->socket);
-            });
+                    return (*engine.GetSocket()) == (*connection->socket);
+        });
             if (context_it != pending.end())
                 std::swap(*context_it, pending.back());
             else
@@ -79,11 +79,11 @@ class Dispatcher::DispatcherImpl {
                       }), pending.end());
     }
 
-    private:
+private:
     inline ScheduleItem ProcessRequest(const Http::Request &r) const noexcept {
-        if (Http::Util::IsResource(r))
-            return TakeResource(r);
-        if (Http::Util::IsPassable(r)) {
+        if (Http::Util::is_disk_resource(r))
+            return TakeDiskResource(r);
+        if (Http::Util::is_passable(r)) {
             if (auto user_handler = RouteUtility::GetUserHandler(r, routes))
                 return PassRequest(r, user_handler);
             else
@@ -101,35 +101,49 @@ class Dispatcher::DispatcherImpl {
         return false;
     }
 
-    inline ScheduleItem TakeResource(const Http::Request &request) const noexcept {
+    inline ScheduleItem TakeFolder(const Http::Request &request) const {
+        auto& folder_cb = Storage::GetSettings().folder_cb;
+        auto resolution = folder_cb(request);
+        return {serializer(resolution.GetResponse()), resolution.GetResponse().GetKeepAlive()};
+    }
+
+    inline ScheduleItem TakeRegularFile(const Http::Request &request, fs::path full_path) const {
+        if (ShouldCopyInMemory(full_path)) {
+            if (auto resource = ResourceCache::Aquire(full_path)) {
+                Http::Response response{std::move(resource)};
+                response.Set(Http::Header::Fields::Connection,
+                             ShouldKeepAlive(request) ? "Keep-Alive" : "Close");
+                return {serializer(response), response.GetKeepAlive()};
+            } else {
+                throw Http::StatusCode::NotFound;
+            }
+        } else {
+            auto unix_file = std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire,
+                                                        Cache::FileDescriptor::Release);
+            ScheduleItem response;
+            Http::Response http_response;
+            http_response.SetFile(unix_file.get());
+            http_response.Set(Http::Header::Fields::Content_Type, Http::Util::get_mimetype(full_path));
+            http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
+            http_response.Set(Http::Header::Fields::Connection,
+                              ShouldKeepAlive(request) ? "Keep-Alive" : "Close");
+            response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeHeader(http_response)));
+            response.PutBack(std::move(unix_file));
+            response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeEnding(http_response)));
+            response.SetKeepFileOpen(http_response.GetKeepAlive());
+            return response;
+        }
+    }
+    inline ScheduleItem TakeDiskResource(const Http::Request &request) const noexcept {
         auto full_path = Storage::GetSettings().root_path + request.url;
         try {
-            if (ShouldCopyInMemory(full_path)) {
-                if (auto resource = ResourceCache::Aquire(full_path)) {
-                    Http::Response response{std::move(resource)};
-                    response.Set(Http::Header::Fields::Connection, ShouldKeepAlive(request) ? "Keep-Alive" : "Close");
-                    return {serializer(response), response.GetKeepAlive()};
-                } else {
-                    throw Http::StatusCode::NotFound;
-                }
-            } else {
-                auto unix_file = std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire,
-                                                            Cache::FileDescriptor::Release);
-                ScheduleItem response;
-                Http::Response http_response;
-                http_response.SetFile(unix_file.get());
-                http_response.Set(Http::Header::Fields::Content_Type, Http::Util::GetMimeType(full_path));
-                http_response.Set(Http::Header::Fields::Content_Length, std::to_string(unix_file->size));
-                http_response.Set(Http::Header::Fields::Connection, ShouldKeepAlive(request) ? "Keep-Alive" : "Close");
-                response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeHeader(http_response)));
-                response.PutBack(std::move(unix_file));
-                response.PutBack(std::make_unique<MemoryBuffer>(serializer.MakeEnding(http_response)));
-                response.SetKeepFileOpen(http_response.GetKeepAlive());
-                return response;
+            if (fs::is_directory(full_path)) {
+                return TakeFolder(request);
+            } else if (fs::is_regular_file(full_path)) {
+                return TakeRegularFile(request, full_path);
             }
-        } catch (...) {
-            return NotFound();
-        }
+        } catch (...) { }
+        return NotFound();
     }
 
     inline ScheduleItem PassRequest(const Http::Request &r, RouteUtility::HttpHandler h) const noexcept {

@@ -24,11 +24,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace Http {
 class Util {
     public:
-    static bool IsPassable(const Request &) noexcept;
-    static bool IsResource(const Request &) noexcept;
-    static bool IsComplete(const Request &) noexcept;
-    static bool CanHaveBody(Http::Method) noexcept;
-    static std::string GetMimeType(fs::path) noexcept;
+    static bool is_passable(const Request &) noexcept;
+    static bool is_disk_resource(const Request &) noexcept;
+    static bool is_complete(const Request &) noexcept;
+    static bool can_have_body(Http::Method) noexcept;
+    static std::string get_mimetype(fs::path) noexcept;
 };
 }
 

@@ -18,5 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <misc/settings.h>
 #include <io/filesystem.h>
+#include <http/directory_listing.h>
 
-Settings::Settings() : max_connections(1000), allow_directory_listing(true) {}
+Settings::Settings() : max_connections(1000), allow_directory_listing(true), folder_cb(Http::list_directory) {}
