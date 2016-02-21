@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef VERSION_H
 #define VERSION_H
 
-namespace Http {
+namespace http {
 struct Version {
     unsigned short major, minor;
 };

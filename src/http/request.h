@@ -25,11 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string>
 #include <vector>
 
-namespace Http {
+namespace http {
 
 class Request {
     public:
-    Http::Method method;
+    http::Method method;
     Version version;
     Header header;
     std::string url, body;

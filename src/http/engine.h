@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/parser.h>
 #include <string>
 
-namespace Http {
+namespace http {
 class Context {
     const io::tcp_socket *socket_;
     http_parser_settings settings_;
@@ -41,7 +41,7 @@ class Context {
     Context(const io::tcp_socket *socket);
     const io::tcp_socket *GetSocket() const;
     const Request &GetRequest() const noexcept;
-    Http::Context &operator()();
+    http::Context &operator()();
     bool Complete() const noexcept;
 };
 };

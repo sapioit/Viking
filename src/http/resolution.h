@@ -21,10 +21,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <http/response.h>
 #include <future>
-namespace Http {
+namespace http {
 class Resolution {
-    Http::Response response;
-    std::future<Http::Response> future;
+    http::Response response;
+    std::future<http::Response> future;
 
     public:
     enum Type { Sync, Async };
@@ -33,12 +33,12 @@ class Resolution {
     Type type;
 
     public:
-    Resolution(Http::Response &&);
-    Resolution(std::future<Http::Response> &&);
+    Resolution(http::Response &&);
+    Resolution(std::future<http::Response> &&);
 
     Type GetType() const noexcept;
-    std::future<Http::Response> &GetFuture() noexcept;
-    Http::Response &GetResponse() noexcept;
+    std::future<http::Response> &GetFuture() noexcept;
+    http::Response &GetResponse() noexcept;
 };
 }
 

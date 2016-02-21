@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <inl/mime_types.h>
 #include <misc/storage.h>
 #include <misc/common.h>
-using namespace Http;
+using namespace http;
 
 static std::string exec(const std::string &cmd) {
     std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
@@ -36,17 +36,17 @@ static std::string exec(const std::string &cmd) {
     return result;
 }
 
-bool Util::is_passable(const Http::Request &request) noexcept {
+bool Util::is_passable(const http::Request &request) noexcept {
     switch (request.method) {
-    case Http::Method::Get:
+    case http::Method::Get:
         return true;
-    case Http::Method::Post:
+    case http::Method::Post:
         return true;
-    case Http::Method::Put:
+    case http::Method::Put:
         return true;
-    case Http::Method::Delete:
+    case http::Method::Delete:
         return true;
-    case Http::Method::Head:
+    case http::Method::Head:
         return true;
     default:
         return false;
@@ -63,7 +63,7 @@ bool Util::is_disk_resource(const Request &request) noexcept {
 
 bool Util::is_complete(const Request &request) noexcept {
     if (can_have_body(request.method)) {
-        auto cl_it = request.header.fields.find(Http::Header::Fields::Content_Length);
+        auto cl_it = request.header.fields.find(http::Header::Fields::Content_Length);
         if (cl_it != request.header.fields.end()) {
             auto content_length = static_cast<std::size_t>(std::atoi(cl_it->second.c_str()));
             if (request.body.size() < content_length)
@@ -76,11 +76,11 @@ bool Util::is_complete(const Request &request) noexcept {
 
 bool Util::can_have_body(Method method) noexcept {
     switch (method) {
-    case Http::Method::Put:
+    case http::Method::Put:
         return true;
-    case Http::Method::Post:
+    case http::Method::Post:
         return true;
-    case Http::Method::Options:
+    case http::Method::Options:
         return true;
     default:
         return false;
@@ -100,7 +100,7 @@ static std::string shell_get_mimetype(fs::path p) noexcept {
 }
 
 std::string Util::get_mimetype(fs::path p) noexcept {
-    auto ext = filesystem::get_extension(p);
+    auto ext = io::get_extension(p);
     if (ext.length())
         return mime_types[ext];
     else

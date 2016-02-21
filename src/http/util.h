@@ -21,13 +21,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/request.h>
 #include <io/filesystem.h>
 
-namespace Http {
+namespace http {
 class Util {
     public:
     static bool is_passable(const Request &) noexcept;
     static bool is_disk_resource(const Request &) noexcept;
     static bool is_complete(const Request &) noexcept;
-    static bool can_have_body(Http::Method) noexcept;
+    static bool can_have_body(http::Method) noexcept;
     static std::string get_mimetype(fs::path) noexcept;
 };
 }

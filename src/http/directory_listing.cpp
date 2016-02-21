@@ -35,11 +35,11 @@ static std::string url_encode(const std::string &value) {
     return escaped.str();
 }
 
-Http::Response Http::list_directory(const Http::Request &req) {
+http::Response http::list_directory(const http::Request &req) {
     auto root_path = Storage::GetSettings().root_path;
     try {
         if (req.url.back() != '/') {
-            Http::Response r{Http::StatusCode::Found};
+            http::Response r{http::StatusCode::Found};
             r.Set("Location", req.url + '/');
             return r;
         }
@@ -53,10 +53,10 @@ Http::Response Http::list_directory(const Http::Request &req) {
             stream << trim_quotes(p.filename());
             stream << "</a><br/>";
         }
-        Http::Response r{stream.str()};
+        http::Response r{stream.str()};
         r.Set("Content-Type", "text/html; charset=utf-8");
         return r;
     } catch (...) {
-        return {Http::StatusCode::NotFound};
+        return {http::StatusCode::NotFound};
     }
 }

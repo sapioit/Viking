@@ -28,15 +28,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 class RouteUtility {
     public:
     typedef std::function<bool(std::string)> RouteValidator;
-    typedef std::pair<Http::Method, RouteValidator> MethodRouteValidatorPair;
-    typedef std::function<Http::Resolution(Http::Request)> HttpHandler;
-    typedef std::pair<MethodRouteValidatorPair, HttpHandler> Route;
+    typedef std::pair<http::Method, RouteValidator> MethodRouteValidatorPair;
+    typedef std::function<http::Resolution(http::Request)> HttpHandler;
+    typedef std::pair<MethodRouteValidatorPair, HttpHandler> route;
 
-    typedef std::vector<Route> RouteMap;
+    typedef std::vector<route> route_map;
 
-    static HttpHandler GetUserHandler(const Http::Request &request, const RouteMap &routes);
+    static HttpHandler get_user_handler(const http::Request &request, const route_map &routes);
 
-    static std::string StripRoute(const std::string &URI);
+    static std::string strip_route(const std::string &);
 };
 
 #endif // ROUTESMANAGER_H

@@ -21,6 +21,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/request.h>
 #include <misc/string_util.h>
 #include <regex>
-using namespace Http;
+using namespace http;
 
 std::vector<std::string> Request::SplitURL() const { return Split(url, '/'); }

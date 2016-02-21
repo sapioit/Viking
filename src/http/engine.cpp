@@ -27,15 +27,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sstream>
 #include <string>
 
-Http::Context *GetMe(http_parser *parser) { return static_cast<Http::Context *>(parser->data); }
+http::Context *GetMe(http_parser *parser) { return static_cast<http::Context *>(parser->data); }
 
-void Http::Context::AssignMethod(http_method method_numeric) {
-    auto method = Http::MethodMap.find(http_method_str(method_numeric));
-    if (method != Http::MethodMap.end())
+void http::Context::AssignMethod(http_method method_numeric) {
+    auto method = http::MethodMap.find(http_method_str(method_numeric));
+    if (method != http::MethodMap.end())
         request_.method = method->second;
 }
 
-Http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete_(false) {
+http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete_(false) {
     settings_.on_message_begin = [](http_parser *) -> int { return 0; };
     settings_.on_message_complete = [](http_parser *) -> int {
         return 0;
@@ -80,23 +80,23 @@ Http::Context::Context(const io::tcp_socket *socket) : socket_(socket), complete
     };
 }
 
-const io::tcp_socket *Http::Context::GetSocket() const { return socket_; }
+const io::tcp_socket *http::Context::GetSocket() const { return socket_; }
 
-const Http::Request &Http::Context::GetRequest() const noexcept { return request_; }
+const http::Request &http::Context::GetRequest() const noexcept { return request_; }
 
-Http::Context &Http::Context::operator()() {
+http::Context &http::Context::operator()() {
     try {
         buffer += socket_->read_some<std::string>();
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
-        complete_ = Http::Util::is_complete(request_);
+        complete_ = http::Util::is_complete(request_);
         return *this;
     } catch (io::tcp_socket::connection_closed_by_peer &) {
         throw;
     }
 }
 
-bool Http::Context::Complete() const noexcept { return complete_; }
+bool http::Context::Complete() const noexcept { return complete_; }
 
 #endif

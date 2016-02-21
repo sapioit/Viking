@@ -27,15 +27,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string>
 #include <future>
 
-namespace Http {
-using namespace Http;
+namespace http {
+using namespace http;
 class Response {
     public:
     enum class Type { Resource, File, Text };
     Response();
     Response(StatusCode);
     Response(const std::string &);
-    Response(Http::StatusCode, const std::string &);
+    Response(http::StatusCode, const std::string &);
     Response(const resource &);
     Response(resource &&);
     virtual ~Response() = default;

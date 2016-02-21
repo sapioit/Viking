@@ -59,8 +59,8 @@ class Server::ServerImpl {
                                        },
                                        [this](schedule_item & schedule_item) -> auto {
                                            if (schedule_item.is_front_async()) {
-                                               AsyncBuffer<Http::Response> *async_buffer =
-                                                   static_cast<AsyncBuffer<Http::Response> *>(schedule_item.front());
+                                               AsyncBuffer<http::Response> *async_buffer =
+                                                   static_cast<AsyncBuffer<http::Response> *>(schedule_item.front());
                                                if (async_buffer->IsReady())
                                                    return dispatcher_.handle_barrier(async_buffer);
                                            }
@@ -85,13 +85,13 @@ class Server::ServerImpl {
 
     inline void Freeze() { stop_requested_ = true; }
 
-    inline void AddRoute(const Http::Method &method, std::function<bool(const std::string &)> validator,
-                         std::function<Http::Resolution(Http::Request)> function) {
+    inline void AddRoute(const http::Method &method, std::function<bool(const std::string &)> validator,
+                         std::function<http::Resolution(http::Request)> function) {
         dispatcher_.add_route(std::make_pair(std::make_pair(method, validator), function));
     }
 
-    inline void AddRoute(const Http::Method &method, const std::regex &regex,
-                         std::function<Http::Resolution(Http::Request)> function) {
+    inline void AddRoute(const http::Method &method, const std::regex &regex,
+                         std::function<http::Resolution(http::Request)> function) {
 
         auto ptr = [regex](auto string) {
             try {
@@ -135,13 +135,13 @@ Server &Server::operator=(Server &&other) {
 
 Server::Server(Server &&other) { *this = std::move(other); }
 
-void Server::AddRoute(const Http::Method &method, std::function<bool(const std::string &)> validator,
-                      std::function<Http::Resolution(Http::Request)> function) {
+void Server::AddRoute(const http::Method &method, std::function<bool(const std::string &)> validator,
+                      std::function<http::Resolution(http::Request)> function) {
     impl->AddRoute(method, validator, function);
 }
 
-void Server::AddRoute(const Http::Method &method, const std::regex &regex,
-                      std::function<Http::Resolution(Http::Request)> function) {
+void Server::AddRoute(const http::Method &method, const std::regex &regex,
+                      std::function<http::Resolution(http::Request)> function) {
     impl->AddRoute(method, regex, function);
 }
 

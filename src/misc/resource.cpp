@@ -28,6 +28,6 @@ resource::resource(const fs::path &path, const std::vector<char> &content)
     : _path(path), _content(content), _last_write(fs::last_write_time(path)) {}
 
 resource::resource(const fs::path &path)
-    : _path(path), _content(filesystem::read_file(path)), _last_write(fs::last_write_time(path)) {}
+    : _path(path), _content(io::read_file(path)), _last_write(fs::last_write_time(path)) {}
 
 resource::operator bool() { return (_content.size() != 0); }

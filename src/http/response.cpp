@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <iterator>
 #include <algorithm>
 
-using namespace Http;
+using namespace http;
 
 StatusCode Response::GetCode() const { return code_; }
 void Response::SetCode(StatusCode code) { code_ = code; }
@@ -68,7 +68,7 @@ void Response::Set(const std::string &field, const std::string &value) noexcept 
 
 const std::vector<std::pair<std::string, std::string>> &Response::GetFields() const noexcept { return fields_; }
 
-using f = Http::Header::Fields;
+using f = http::Header::Fields;
 
 std::size_t Response::ContentLength() const {
     auto it = std::find_if(fields_.begin(), fields_.end(), [](auto pair) { return pair.first == f::Content_Length; });
@@ -120,12 +120,12 @@ Response::Response(const resource &resource) : code_(StatusCode::OK), resource_(
     type_ = Type::Resource;
     Init();
     Set(f::Content_Type,
-        Http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
+        http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
 }
 
 Response::Response(resource &&resource) : code_(StatusCode::OK), resource_(std::move(resource)) {
     type_ = Type::Resource;
     Init();
     Set(f::Content_Type,
-        Http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
+        http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
 }

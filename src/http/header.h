@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/components.h>
 #include <unordered_map>
 
-namespace Http {
+namespace http {
 struct Header {
     Header() = default;
     ~Header() = default;

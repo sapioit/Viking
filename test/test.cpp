@@ -19,8 +19,8 @@ int main() {
 #endif
     settings.max_connections = 1000;
     server.Initialize();
-    server.AddRoute(Http::Method::Get, std::regex{"^\\/adsaf\\/json\\/(\\d+)$"},
-                    [](auto req) -> Http::Response {
+    server.AddRoute(http::Method::Get, std::regex{"^\\/adsaf\\/json\\/(\\d+)$"},
+                    [](auto req) -> http::Response {
                       Json::Value root(Json::arrayValue);
                       Json::Value records(Json::arrayValue);
                       Json::Value val;
@@ -40,9 +40,9 @@ int main() {
                     });
 
     server.AddRoute(
-        Http::Method::Get, std::regex{"^\\/adsaf\\/jsons\\/$"},
-        [](auto) -> Http::Resolution {
-          auto future = std::async(std::launch::async, []() -> Http::Response {
+        http::Method::Get, std::regex{"^\\/adsaf\\/jsons\\/$"},
+        [](auto) -> http::Resolution {
+          auto future = std::async(std::launch::async, []() -> http::Response {
             Json::Value root(Json::arrayValue);
             Json::Value records(Json::arrayValue);
             Json::Value a1(Json::arrayValue);

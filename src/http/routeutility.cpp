@@ -22,9 +22,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 #include <regex>
 
-std::function<Http::Resolution(Http::Request)> RouteUtility::GetUserHandler(const Http::Request &request,
-                                                                            const RouteMap &routes) {
-    auto strippedRoute = StripRoute(request.url);
+std::function<http::Resolution(http::Request)> RouteUtility::get_user_handler(const http::Request &request,
+                                                                            const route_map &routes) {
+    auto strippedRoute = strip_route(request.url);
     auto result = std::find_if(routes.begin(), routes.end(), [&](const auto &route) -> bool {
         return request.method == route.first.first && route.first.second(strippedRoute);
     });
@@ -36,7 +36,7 @@ std::function<Http::Resolution(Http::Request)> RouteUtility::GetUserHandler(cons
     return nullptr;
 }
 
-std::string RouteUtility::StripRoute(const std::string &URI) {
+std::string RouteUtility::strip_route(const std::string &URI) {
     auto firstSlash = URI.find_first_of('/');
     return {URI.begin() + firstSlash, URI.end()};
 }
