@@ -57,8 +57,8 @@ class Response {
     const std::string &GetText() const;
     void SetText(const std::string &);
 
-    const IO::unix_file *GetFile() const;
-    void SetFile(IO::unix_file *file) noexcept;
+    const io::unix_file *GetFile() const;
+    void SetFile(io::unix_file *file) noexcept;
 
     bool GetKeepAlive() const noexcept;
     void Set(const std::string &field, const std::string &value) noexcept;
@@ -71,7 +71,7 @@ class Response {
     Type type_;
     Resource resource_;
     std::string text_;
-    const IO::unix_file *file_ = nullptr;
+    const io::unix_file *file_ = nullptr;
     void Init();
 };
 };

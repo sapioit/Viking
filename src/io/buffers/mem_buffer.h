@@ -29,7 +29,7 @@ struct MemoryBuffer : public data_source {
 
     MemoryBuffer(const std::vector<char> &data) : data(data), initial_size(data.size()) {}
     virtual operator bool() const noexcept { return data.size() != 0; }
-    virtual bool Intact() const noexcept { return data.size() == initial_size; }
+    virtual bool intact() const noexcept { return data.size() == initial_size; }
 };
 
 #endif // MEMBUFFER_H

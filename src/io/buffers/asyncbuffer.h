@@ -29,7 +29,7 @@ template <typename T> struct AsyncBuffer : public data_source {
     AsyncBuffer(std::future<T> future) : future(std::move(future)) {}
 
     operator bool() const noexcept { return true; }
-    bool Intact() const noexcept { return true; }
+    bool intact() const noexcept { return true; }
     bool IsReady() {
         auto result = future.wait_for(std::chrono::seconds(0));
         return (result == std::future_status::ready || result == std::future_status::deferred);

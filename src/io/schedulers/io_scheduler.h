@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/buffers/mem_buffer.h>
 #include <functional>
 
-namespace IO {
+namespace io {
 class scheduler {
     public:
     typedef schedule_item Resolution;

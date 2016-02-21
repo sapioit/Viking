@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/socket/socket.h>
 #include <io/schedulers/sched_item.h>
 
-namespace IO {
+namespace io {
 struct Channel {
     std::unique_ptr<Socket> socket;
     schedule_item queue;

@@ -53,7 +53,7 @@ public:
         return std::make_unique<MemoryBuffer>(serializer(http_response));
     }
 
-    inline schedule_item handle_connection(const IO::Channel *connection) {
+    inline schedule_item handle_connection(const io::Channel *connection) {
         try {
             auto context_it = std::find_if(pending.begin(), pending.end(), [connection](Http::Context &engine) {
                     return (*engine.GetSocket()) == (*connection->socket);
@@ -67,13 +67,13 @@ public:
                 remove_pending_contexts(connection);
                 return process_request(context.GetRequest());
             }
-        } catch (const IO::Socket::connection_closed_by_peer &) {
+        } catch (const io::Socket::connection_closed_by_peer &) {
             throw;
         }
         return {};
     }
 
-    void remove_pending_contexts(const IO::Channel *ch) noexcept {
+    void remove_pending_contexts(const io::Channel *ch) noexcept {
         pending.erase(std::remove_if(pending.begin(), pending.end(), [ch](Http::Context &engine) {
                           return (*engine.GetSocket()) == (*ch->socket);
                       }), pending.end());
@@ -119,7 +119,7 @@ private:
     }
 
     inline schedule_item take_unix_file(const Http::Request& request, fs::path full_path) const {
-        auto unix_file = std::make_unique<IO::unix_file>(full_path, Cache::FileDescriptor::Aquire,
+        auto unix_file = std::make_unique<io::unix_file>(full_path, Cache::FileDescriptor::Aquire,
                                                     Cache::FileDescriptor::Release);
         schedule_item response;
         Http::Response http_response;
@@ -178,7 +178,7 @@ private:
 
 void dispatcher::add_route(RouteUtility::Route route) noexcept { impl->add_route(route); }
 
-schedule_item dispatcher::handle_connection(const IO::Channel *connection) {
+schedule_item dispatcher::handle_connection(const io::Channel *connection) {
     try {
         return impl->handle_connection(connection);
     } catch (...) {
@@ -190,7 +190,7 @@ std::unique_ptr<MemoryBuffer> dispatcher::handle_barrier(AsyncBuffer<Http::Respo
     return impl->handle_barrier(item);
 }
 
-void dispatcher::will_remove(const IO::Channel *s) noexcept { impl->remove_pending_contexts(s); }
+void dispatcher::will_remove(const io::Channel *s) noexcept { impl->remove_pending_contexts(s); }
 
 dispatcher::dispatcher() : impl(nullptr) { impl = new dispatcher_impl(); }
 

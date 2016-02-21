@@ -30,14 +30,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fstream>
 
 using namespace Web;
-IO::Socket *MakeSocket(int port, int max_pending);
+io::Socket *MakeSocket(int port, int max_pending);
 
 class Server::ServerImpl {
     int port_;
     int max_pending_;
     bool stop_requested_;
     dispatcher dispatcher_;
-    IO::scheduler scheduler_;
+    io::scheduler scheduler_;
 
     inline void IgnoreSigpipe() { signal(SIGPIPE, SIG_IGN); }
 
@@ -48,8 +48,8 @@ class Server::ServerImpl {
         IgnoreSigpipe();
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = MakeSocket(port_, max_pending_)) {
-            scheduler_ = IO::scheduler(std::unique_ptr<IO::Socket>(sock),
-                                       [this](const IO::Channel *ch) {
+            scheduler_ = io::scheduler(std::unique_ptr<io::Socket>(sock),
+                                       [this](const io::Channel *ch) {
                                            try {
                                                return dispatcher_.handle_connection(ch);
                                            } catch (...) {
@@ -65,7 +65,7 @@ class Server::ServerImpl {
                                            }
                                            return std::make_unique<MemoryBuffer>(std::vector<char>());
                                        },
-                                       [this](const IO::Channel *ch) { dispatcher_.will_remove(ch); });
+                                       [this](const io::Channel *ch) { dispatcher_.will_remove(ch); });
         } else {
             throw Server::PortInUse{port_};
         }
@@ -108,14 +108,14 @@ class Server::ServerImpl {
     }
 };
 
-IO::Socket *MakeSocket(int port, int max_pending) {
+io::Socket *MakeSocket(int port, int max_pending) {
     try {
-        auto sock = new IO::Socket(port);
+        auto sock = new io::Socket(port);
         sock->Bind();
         sock->MakeNonBlocking();
         sock->Listen(max_pending);
         return sock;
-    } catch (const IO::Socket::PortInUse &) {
+    } catch (const io::Socket::PortInUse &) {
         return nullptr;
     }
 }

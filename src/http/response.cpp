@@ -48,8 +48,8 @@ void Response::SetText(const std::string &text) {
     type_ = Type::Text;
 }
 
-const IO::unix_file *Response::GetFile() const { return file_; }
-void Response::SetFile(IO::unix_file *file) noexcept {
+const io::unix_file *Response::GetFile() const { return file_; }
+void Response::SetFile(io::unix_file *file) noexcept {
     file_ = file;
     type_ = Type::File;
 }

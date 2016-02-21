@@ -25,15 +25,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <functional>
 #include <string>
 
-namespace IO {
+namespace io {
 struct unix_file : public data_source {
     int fd = -1;
     off64_t size = 0;
     off64_t offset = 0;
 
     public:
-    typedef std::function<int(const std::string &)> AquireFunction;
-    typedef std::function<void(int)> ReleaseFunction;
+    typedef std::function<int(const std::string &)> aquire_func;
+    typedef std::function<void(int)> release_func;
 
     private:
     std::function<int(const std::string &)> aquire_func_;
@@ -41,34 +41,34 @@ struct unix_file : public data_source {
     void close();
 
     public:
-    struct Error {
+    struct error {
         std::string path;
-        Error() = default;
-        virtual ~Error() = default;
-        Error(const std::string &path) : path(path) {}
+        error() = default;
+        virtual ~error() = default;
+        error(const std::string &path) : path(path) {}
     };
-    struct BadFile {
+    struct bad_file {
         const unix_file *ptr;
     };
 
-    struct DIY {
+    struct diy {
         const unix_file *ptr;
     };
-    struct BrokenPipe {
+    struct broken_pipe {
         const unix_file *ptr;
     };
 
     unix_file() = default;
     virtual ~unix_file();
-    unix_file(const std::string &, AquireFunction a, ReleaseFunction r);
+    unix_file(const std::string &, aquire_func a, release_func r);
     unix_file(unix_file &&);
     unix_file &operator=(unix_file &&);
     unix_file(const unix_file &) = delete;
     unix_file &operator=(const unix_file &) = delete;
     virtual operator bool() const noexcept;
-    virtual bool Intact() const noexcept;
-    std::uint64_t SendTo(int);
-    std::uint64_t SizeLeft() const noexcept;
+    virtual bool intact() const noexcept;
+    std::uint64_t send_to_fd(int);
+    std::uint64_t size_left() const noexcept;
 };
 }
 

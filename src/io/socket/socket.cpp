@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <system_error>
 #include <assert.h>
 
-using namespace IO;
+using namespace io;
 
 Socket::Socket(int port) : port_(port) {
     if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)

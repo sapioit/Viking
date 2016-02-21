@@ -27,15 +27,15 @@ class epoll {
     int efd_;
     std::vector<epoll_event> events_;
 
-    epoll_event *FindEvent(const IO::Channel *socket);
+    epoll_event *FindEvent(const io::Channel *socket);
 
     public:
     struct Event {
         public:
-        IO::Channel *context;
+        io::Channel *context;
         std::uint32_t description;
         Event() noexcept = default;
-        Event(IO::Channel *, std::uint32_t description) noexcept;
+        Event(io::Channel *, std::uint32_t description) noexcept;
         bool operator<(const Event &other) const { return context < other.context; }
         bool operator==(const Event &other) const { return context == other.context; }
         inline bool CanWrite() const noexcept { return (description & epoll::write); }
@@ -55,9 +55,9 @@ class epoll {
     static constexpr std::uint32_t edge_triggered = EPOLLET;
     static constexpr std::uint32_t level_triggered = ~EPOLLET;
     static constexpr std::uint32_t Error = EPOLLERR;
-    void schedule(IO::Channel *, std::uint32_t);
-    void modify(const IO::Channel *, std::uint32_t);
-    void remove(const IO::Channel *);
+    void schedule(io::Channel *, std::uint32_t);
+    void modify(const io::Channel *, std::uint32_t);
+    void remove(const io::Channel *);
     std::vector<Event> Wait(std::uint32_t = 1000) const;
 
     epoll();

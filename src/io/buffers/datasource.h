@@ -23,7 +23,7 @@ struct data_source {
     data_source() = default;
     virtual ~data_source() = default;
     virtual operator bool() const noexcept = 0;
-    virtual bool Intact() const noexcept = 0;
+    virtual bool intact() const noexcept = 0;
 };
 
 #endif // DATASOURCE_H

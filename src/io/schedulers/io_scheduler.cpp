@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <utility>
 #include <typeindex>
 
-using namespace IO;
+using namespace io;
 
 class scheduler::scheduler_impl {
     struct SocketNotFound {
@@ -55,7 +55,7 @@ class scheduler::scheduler_impl {
 
     void add(std::unique_ptr<Socket> socket, std::uint32_t flags) {
         try {
-            auto ctx = std::make_unique<IO::Channel>(std::move(socket));
+            auto ctx = std::make_unique<io::Channel>(std::move(socket));
             poll.schedule(ctx.get(), flags);
             channels.emplace_back(std::move(ctx));
         } catch (const epoll::poll_error &) {
@@ -92,7 +92,7 @@ class scheduler::scheduler_impl {
                         else
                             enqueue_item(event.context, callback_response, false);
                     }
-                } catch (const IO::Socket::connection_closed_by_peer &) {
+                } catch (const io::Socket::connection_closed_by_peer &) {
                     remove(event.context);
                 }
             }
@@ -174,17 +174,17 @@ class scheduler::scheduler_impl {
                 throw write_error{};
             }
 
-        } else if (sched_item_type == typeid(IO::unix_file)) {
-            IO::unix_file *unix_file = reinterpret_cast<IO::unix_file *>(channel->queue.front());
+        } else if (sched_item_type == typeid(io::unix_file)) {
+            io::unix_file *unix_file = reinterpret_cast<io::unix_file *>(channel->queue.front());
             try {
-                auto size_left = unix_file->SizeLeft();
-                if (const auto written = unix_file->SendTo(channel->socket->GetFD())) {
+                auto size_left = unix_file->size_left();
+                if (const auto written = unix_file->send_to_fd(channel->socket->GetFD())) {
                     if (written == size_left)
                         channel->queue.remove_front();
                 } else {
                     return true;
                 }
-            } catch (const unix_file::DIY &e) {
+            } catch (const unix_file::diy &e) {
                 /* This is how Linux tells you that you'd better do it yourself in userspace.
                  * We need to replace this item with a MemoryBuffer version of this
                  * data, at the right offset.
@@ -236,7 +236,7 @@ scheduler::scheduler(std::unique_ptr<Socket> sock, scheduler::read_cb read_callb
 
 scheduler::~scheduler() { delete impl; }
 
-void scheduler::add(std::unique_ptr<IO::Socket> socket, uint32_t flags) {
+void scheduler::add(std::unique_ptr<io::Socket> socket, uint32_t flags) {
     try {
         impl->add(std::move(socket), flags);
     } catch (const epoll::poll_error &) {

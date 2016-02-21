@@ -23,6 +23,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/buffers/mem_buffer.h>
 #include <io/buffers/unix_file.h>
 
-std::unique_ptr<MemoryBuffer> from(const IO::unix_file &);
+std::unique_ptr<MemoryBuffer> from(const io::unix_file &);
 
 #endif // UTILS_H

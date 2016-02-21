@@ -15,7 +15,7 @@
 #include <vector>
 #include <functional>
 
-namespace IO {
+namespace io {
 class Socket {
     public:
     struct AcceptError {

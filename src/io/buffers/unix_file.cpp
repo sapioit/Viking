@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fcntl.h>
 #include <io/filesystem.h>
 
-using namespace IO;
+using namespace io;
 
 void unix_file::close() {
     if (-1 != fd) {
@@ -46,41 +46,41 @@ unix_file &unix_file::operator=(unix_file &&other) {
     return *this;
 }
 
-bool unix_file::Intact() const noexcept { return offset == 0; }
+bool unix_file::intact() const noexcept { return offset == 0; }
 
 unix_file::operator bool() const noexcept { return !(offset == size); }
 
-unix_file::unix_file(const std::string &path, AquireFunction a, ReleaseFunction r) : aquire_func_(a), release_func_(r) {
+unix_file::unix_file(const std::string &path, aquire_func a, release_func r) : aquire_func_(a), release_func_(r) {
     fd = aquire_func_(path);
     if (-1 == fd)
-        throw Error{path};
+        throw error{path};
     struct stat64 stat;
     if (-1 == ::stat64(path.c_str(), &stat)) {
-        throw Error{path};
+        throw error{path};
     }
     size = stat.st_size;
 }
 
-std::uint64_t unix_file::SendTo(int other_file) {
-    const ssize_t ret = ::sendfile64(other_file, fd, std::addressof(offset), SizeLeft());
+std::uint64_t unix_file::send_to_fd(int other_file) {
+    const ssize_t ret = ::sendfile64(other_file, fd, std::addressof(offset), size_left());
     if (ret == -1) {
         switch (errno) {
         case EAGAIN:
             return 0;
         case EINVAL:
-            throw DIY{this};
+            throw diy{this};
             break;
         case EBADF:
-            throw BadFile{this};
+            throw bad_file{this};
             break;
         case EIO:
-            throw BadFile{this};
+            throw bad_file{this};
             break;
         case EFAULT:
             // WTF
             break;
         case EPIPE:
-            throw BrokenPipe{this};
+            throw broken_pipe{this};
         default:
             break;
         }
@@ -88,4 +88,4 @@ std::uint64_t unix_file::SendTo(int other_file) {
     return ret;
 }
 
-std::uint64_t unix_file::SizeLeft() const noexcept { return static_cast<std::size_t>(size - offset); }
+std::uint64_t unix_file::size_left() const noexcept { return static_cast<std::size_t>(size - offset); }
