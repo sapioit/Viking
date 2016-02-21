@@ -41,7 +41,7 @@ static ResponseSerializer serializer;
 
 class dispatcher::dispatcher_impl {
     RouteUtility::route_map routes;
-    std::vector<http::Context> pending;
+    std::vector<http::context> pending;
 
     public:
     dispatcher_impl() = default;
@@ -55,7 +55,7 @@ class dispatcher::dispatcher_impl {
 
     inline schedule_item handle_connection(const io::channel *connection) {
         try {
-            auto context_it = std::find_if(pending.begin(), pending.end(), [connection](http::Context &engine) {
+            auto context_it = std::find_if(pending.begin(), pending.end(), [connection](http::context &engine) {
                 return (*engine.get_socket()) == (*connection->socket);
             });
             if (context_it != pending.end())
@@ -63,7 +63,7 @@ class dispatcher::dispatcher_impl {
             else
                 pending.emplace_back(connection->socket.get());
             auto context = pending.back();
-            if (context().Complete()) {
+            if (context().complete()) {
                 remove_pending_contexts(connection);
                 return process_request(context.get_request());
             }
@@ -74,7 +74,7 @@ class dispatcher::dispatcher_impl {
     }
 
     void remove_pending_contexts(const io::channel *ch) noexcept {
-        pending.erase(std::remove_if(pending.begin(), pending.end(), [ch](http::Context &engine) {
+        pending.erase(std::remove_if(pending.begin(), pending.end(), [ch](http::context &engine) {
                           return (*engine.get_socket()) == (*ch->socket);
                       }), pending.end());
     }

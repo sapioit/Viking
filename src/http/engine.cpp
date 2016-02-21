@@ -27,15 +27,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sstream>
 #include <string>
 
-http::Context *get_me(http_parser *parser) { return static_cast<http::Context *>(parser->data); }
+http::context *get_me(http_parser *parser) { return static_cast<http::context *>(parser->data); }
 
-void http::Context::assign_method(http_method method_numeric) {
+void http::context::assign_method(http_method method_numeric) {
     auto method = http::MethodMap.find(http_method_str(method_numeric));
     if (method != http::MethodMap.end())
         m_request.method = method->second;
 }
 
-http::Context::Context(const io::tcp_socket *socket) : m_socket(socket), complete_(false) {
+http::context::context(const io::tcp_socket *socket) : m_socket(socket), complete_(false) {
     settings_.on_message_begin = [](http_parser *) -> int { return 0; };
     settings_.on_message_complete = [](http_parser *) -> int {
         return 0;
@@ -80,11 +80,11 @@ http::Context::Context(const io::tcp_socket *socket) : m_socket(socket), complet
     };
 }
 
-const io::tcp_socket *http::Context::get_socket() const { return m_socket; }
+const io::tcp_socket *http::context::get_socket() const { return m_socket; }
 
-const http::request &http::Context::get_request() const noexcept { return m_request; }
+const http::request &http::context::get_request() const noexcept { return m_request; }
 
-http::Context &http::Context::operator()() {
+http::context &http::context::operator()() {
     try {
         buffer += m_socket->read_some<std::string>();
         parser_.data = reinterpret_cast<void *>(this);
@@ -97,6 +97,6 @@ http::Context &http::Context::operator()() {
     }
 }
 
-bool http::Context::Complete() const noexcept { return complete_; }
+bool http::context::complete() const noexcept { return complete_; }
 
 #endif

@@ -31,7 +31,7 @@ namespace http {
 using namespace http;
 class response {
     public:
-    enum class type { Resource, File, Text };
+    enum class type { resource, file, text };
     response();
     response(status_code);
     response(const std::string &);
@@ -72,7 +72,7 @@ class response {
     resource resource_;
     std::string text_;
     const io::unix_file *file_ = nullptr;
-    void Init();
+    void init();
 };
 };
 
