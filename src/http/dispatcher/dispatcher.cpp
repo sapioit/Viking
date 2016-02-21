@@ -37,16 +37,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace Web;
 using namespace cache;
-static ResponseSerializer serializer;
+static response_serializer serializer;
 
 class dispatcher::dispatcher_impl {
-    RouteUtility::route_map routes;
+    route_util::route_map routes;
     std::vector<http::context> pending;
 
     public:
     dispatcher_impl() = default;
 
-    inline void add_route(RouteUtility::route r) noexcept { routes.push_back(r); }
+    inline void add_route(route_util::route r) noexcept { routes.push_back(r); }
 
     inline std::unique_ptr<io::memory_buffer> handle_barrier(AsyncBuffer<http::response> *r) noexcept {
         auto http_response = r->future.get();
@@ -84,7 +84,7 @@ class dispatcher::dispatcher_impl {
         if (http::Util::is_disk_resource(r))
             return take_disk_resource(r);
         if (http::Util::is_passable(r)) {
-            if (auto user_handler = RouteUtility::get_user_handler(r, routes))
+            if (auto user_handler = route_util::get_user_handler(r, routes))
                 return pass_request(r, user_handler);
             else
                 return not_found();
@@ -126,9 +126,9 @@ class dispatcher::dispatcher_impl {
         http_response.set(http::header::fields::Content_Type, http::Util::get_mimetype(full_path));
         http_response.set(http::header::fields::Content_Length, std::to_string(unix_file->size));
         http_response.set(http::header::fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
-        response.put_back(std::make_unique<io::memory_buffer>(serializer.MakeHeader(http_response)));
+        response.put_back(std::make_unique<io::memory_buffer>(serializer.make_header(http_response)));
         response.put_back(std::move(unix_file));
-        response.put_back(std::make_unique<io::memory_buffer>(serializer.MakeEnding(http_response)));
+        response.put_back(std::make_unique<io::memory_buffer>(serializer.make_ending(http_response)));
         response.set_keep_file_open(http_response.get_keep_alive());
         return response;
     }
@@ -154,7 +154,7 @@ class dispatcher::dispatcher_impl {
         return not_found();
     }
 
-    inline schedule_item pass_request(const http::request &r, RouteUtility::HttpHandler h) const noexcept {
+    inline schedule_item pass_request(const http::request &r, route_util::http_handler h) const noexcept {
         http::resolution resolution = h(r);
         if (resolution.get_type() == http::resolution::type::sync)
             return {serializer(resolution.get_response()), resolution.get_response().get_keep_alive()};
@@ -175,7 +175,7 @@ class dispatcher::dispatcher_impl {
     inline schedule_item not_found() const noexcept { return schedule_item{serializer({http::status_code::NotFound})}; }
 };
 
-void dispatcher::add_route(RouteUtility::route route) noexcept { impl->add_route(route); }
+void dispatcher::add_route(route_util::route route) noexcept { impl->add_route(route); }
 
 schedule_item dispatcher::handle_connection(const io::channel *connection) {
     try {

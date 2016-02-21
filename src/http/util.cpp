@@ -36,7 +36,7 @@ static std::string exec(const std::string &cmd) {
     return result;
 }
 
-bool Util::is_passable(const http::request &request) noexcept {
+bool util::is_passable(const http::request &request) noexcept {
     switch (request.method) {
     case http::method::Get:
         return true;
@@ -54,14 +54,14 @@ bool Util::is_passable(const http::request &request) noexcept {
     return true;
 }
 
-bool Util::is_disk_resource(const request &request) noexcept {
+bool util::is_disk_resource(const request &request) noexcept {
     fs::path full_path = storage::config().root_path + request.url;
     if (fs::exists(full_path))
         return true;
     return false;
 }
 
-bool Util::is_complete(const request &request) noexcept {
+bool util::is_complete(const request &request) noexcept {
     if (can_have_body(request.method)) {
         auto cl_it = request.m_header.get_fields_c().find(http::header::fields::Content_Length);
         if (cl_it != request.m_header.get_fields_c().end()) {
@@ -74,7 +74,7 @@ bool Util::is_complete(const request &request) noexcept {
     return true;
 }
 
-bool Util::can_have_body(method method) noexcept {
+bool util::can_have_body(method method) noexcept {
     switch (method) {
     case http::method::Put:
         return true;
@@ -99,7 +99,7 @@ static std::string shell_get_mimetype(fs::path p) noexcept {
     return "";
 }
 
-std::string Util::get_mimetype(fs::path p) noexcept {
+std::string util::get_mimetype(fs::path p) noexcept {
     auto ext = io::get_extension(p);
     if (ext.length())
         return mime_types[ext];

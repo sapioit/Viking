@@ -22,14 +22,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/response.h>
 #include <http/request.h>
 
-class ResponseSerializer {
+class response_serializer {
     public:
-    ResponseSerializer() = default;
-    virtual ~ResponseSerializer() = default;
+    response_serializer() = default;
+    virtual ~response_serializer() = default;
 
-    std::vector<char> MakeHeader(const http::response &response) noexcept;
-    std::vector<char> MakeBody(const http::response &response) noexcept;
-    std::vector<char> MakeEnding(const http::response &response) noexcept;
+    std::vector<char> make_header(const http::response &response) noexcept;
+    std::vector<char> make_body(const http::response &response) noexcept;
+    std::vector<char> make_ending(const http::response &response) noexcept;
     std::vector<char> operator()(const http::response &response) noexcept;
 };
 

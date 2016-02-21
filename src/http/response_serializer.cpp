@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 static constexpr auto crlf = "\r\n";
 static constexpr auto crlfcrlf = "\r\n\r\n";
 
-std::vector<char> ResponseSerializer::MakeHeader(const http::response &r) noexcept {
+std::vector<char> response_serializer::make_header(const http::response &r) noexcept {
     std::string response;
     response.reserve(256);
     response.append("HTTP/")
@@ -44,7 +44,7 @@ std::vector<char> ResponseSerializer::MakeHeader(const http::response &r) noexce
     return {response.begin(), response.end()};
 }
 
-std::vector<char> ResponseSerializer::MakeBody(const http::response &response) noexcept {
+std::vector<char> response_serializer::make_body(const http::response &response) noexcept {
     switch (response.get_type()) {
     case http::response::type::resource:
         return response.get_resource().content();
@@ -55,14 +55,14 @@ std::vector<char> ResponseSerializer::MakeBody(const http::response &response) n
     }
 }
 
-std::vector<char> ResponseSerializer::MakeEnding(const http::response &) noexcept {
+std::vector<char> response_serializer::make_ending(const http::response &) noexcept {
     return std::vector<char>(crlfcrlf, crlfcrlf + strlen(crlfcrlf));
 }
 
-std::vector<char> ResponseSerializer::operator()(const http::response &response) noexcept {
-    auto header = MakeHeader(response);
-    auto body = MakeBody(response);
-    auto ending = MakeEnding(response);
+std::vector<char> response_serializer::operator()(const http::response &response) noexcept {
+    auto header = make_header(response);
+    auto body = make_body(response);
+    auto ending = make_ending(response);
 
     std::vector<char> buffer;
     buffer.reserve(getpagesize());
