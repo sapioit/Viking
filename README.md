@@ -1,4 +1,4 @@
-#C++ Web Development Framework v0.7.8
+#C++ Web Development Framework v0.7.9
 
 The main goal of this project is to create a way of developing complex and highly scalable web applications (and not only) in C++, on Linux.
 
