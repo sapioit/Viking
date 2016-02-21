@@ -81,9 +81,9 @@ class dispatcher::dispatcher_impl {
 
     private:
     inline schedule_item process_request(const http::request &r) const noexcept {
-        if (http::Util::is_disk_resource(r))
+        if (http::util::is_disk_resource(r))
             return take_disk_resource(r);
-        if (http::Util::is_passable(r)) {
+        if (http::util::is_passable(r)) {
             if (auto user_handler = route_util::get_user_handler(r, routes))
                 return pass_request(r, user_handler);
             else
@@ -123,7 +123,7 @@ class dispatcher::dispatcher_impl {
         schedule_item response;
         http::response http_response;
         http_response.set_file(unix_file.get());
-        http_response.set(http::header::fields::Content_Type, http::Util::get_mimetype(full_path));
+        http_response.set(http::header::fields::Content_Type, http::util::get_mimetype(full_path));
         http_response.set(http::header::fields::Content_Length, std::to_string(unix_file->size));
         http_response.set(http::header::fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
         response.put_back(std::make_unique<io::memory_buffer>(serializer.make_header(http_response)));

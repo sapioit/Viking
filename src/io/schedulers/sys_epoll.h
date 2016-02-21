@@ -27,20 +27,20 @@ class epoll {
     int efd_;
     std::vector<epoll_event> events_;
 
-    epoll_event *FindEvent(const io::channel *socket);
+    epoll_event *find_event(const io::channel *socket);
 
     public:
-    struct Event {
+    struct event {
         public:
         io::channel *context;
         std::uint32_t description;
-        Event() noexcept = default;
-        Event(io::channel *, std::uint32_t description) noexcept;
-        bool operator<(const Event &other) const { return context < other.context; }
-        bool operator==(const Event &other) const { return context == other.context; }
-        inline bool CanWrite() const noexcept { return (description & epoll::write); }
-        inline bool CanRead() const noexcept { return (description & epoll::read); }
-        inline bool CanTerminate() const noexcept {
+        event() noexcept = default;
+        event(io::channel *, std::uint32_t description) noexcept;
+        bool operator<(const event &other) const { return context < other.context; }
+        bool operator==(const event &other) const { return context == other.context; }
+        inline bool can_write() const noexcept { return (description & epoll::write); }
+        inline bool can_read() const noexcept { return (description & epoll::read); }
+        inline bool can_terminate() const noexcept {
             return (description & epoll::termination) || (description & epoll::Error);
         }
     };
@@ -58,7 +58,7 @@ class epoll {
     void schedule(io::channel *, std::uint32_t);
     void modify(const io::channel *, std::uint32_t);
     void remove(const io::channel *);
-    std::vector<Event> Wait(std::uint32_t = 1000) const;
+    std::vector<event> await(std::uint32_t = 1000) const;
 
     epoll();
     virtual ~epoll();

@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/filesystem.h>
 
 namespace http {
-class Util {
+class util {
     public:
     static bool is_passable(const request &) noexcept;
     static bool is_disk_resource(const request &) noexcept;

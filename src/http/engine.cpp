@@ -50,7 +50,7 @@ http::context::context(const io::tcp_socket *socket) : m_socket(socket), complet
     };
     settings_.on_url = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = get_me(parser);
-        me->m_request.url = UrlDecode({at, at + length});
+        me->m_request.url = url_decode({at, at + length});
         return 0;
     };
     settings_.on_header_field = [](http_parser *parser, const char *at, size_t length) -> int {
@@ -90,7 +90,7 @@ http::context &http::context::operator()() {
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
-        complete_ = http::Util::is_complete(m_request);
+        complete_ = http::util::is_complete(m_request);
         return *this;
     } catch (io::tcp_socket::connection_closed_by_peer &) {
         throw;

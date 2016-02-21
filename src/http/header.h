@@ -27,12 +27,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace http {
 class header {
     std::unordered_map<std::string, std::string> m_fields;
-public:
+
+    public:
     header() = default;
     ~header() = default;
     bool operator==(const header &other) { return m_fields == other.m_fields; }
-    auto& get_fields() noexcept { return m_fields; }
-    auto const& get_fields_c() const noexcept { return m_fields; }
+    auto &get_fields() noexcept { return m_fields; }
+    auto const &get_fields_c() const noexcept { return m_fields; }
 
     // Common
     struct fields {

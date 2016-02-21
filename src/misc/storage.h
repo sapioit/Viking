@@ -23,7 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class storage {
     static configuration m_settings;
-public:
+
+    public:
     static const configuration &config();
     static void set_config(const configuration &);
 };

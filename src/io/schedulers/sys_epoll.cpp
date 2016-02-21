@@ -55,7 +55,7 @@ void epoll::schedule(io::channel *context, std::uint32_t flags) {
 }
 
 void epoll::modify(const io::channel *context, std::uint32_t flags) {
-    auto *event = FindEvent(context);
+    auto *event = find_event(context);
     if (event) {
         event->events |= flags;
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->get_fd(), event)) {
@@ -82,15 +82,15 @@ void epoll::remove(const io::channel *context) {
     }
 }
 
-static std::vector<epoll::Event> CreateEvents(const std::vector<epoll_event> &events) noexcept {
-    std::vector<epoll::Event> epoll_events;
+static std::vector<epoll::event> create_events(const std::vector<epoll_event> &events) noexcept {
+    std::vector<epoll::event> epoll_events;
     for (const auto &event : events) {
         epoll_events.emplace_back(static_cast<io::channel *>(event.data.ptr), event.events);
         epoll_events.back().context->journal.push_back(epoll_events.back().description);
     }
     return epoll_events;
 }
-std::vector<epoll::Event> epoll::Wait(std::uint32_t chunk_size) const {
+std::vector<epoll::event> epoll::await(std::uint32_t chunk_size) const {
     std::vector<epoll_event> active_files;
     active_files.resize(chunk_size);
 
@@ -104,15 +104,15 @@ std::vector<epoll::Event> epoll::Wait(std::uint32_t chunk_size) const {
         active_files.resize(events_number);
     }
 
-    return CreateEvents(active_files);
+    return create_events(active_files);
 }
 
-epoll_event *epoll::FindEvent(const io::channel *channel) {
+epoll_event *epoll::find_event(const io::channel *channel) {
     auto event_it = std::find_if(events_.begin(), events_.end(),
                                  [channel](const epoll_event &ev) { return (channel == ev.data.ptr); });
     return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
 }
-epoll::Event::Event(io::channel *context, std::uint32_t description) noexcept : context(context),
+epoll::event::event(io::channel *context, std::uint32_t description) noexcept : context(context),
                                                                                 description(description) {}
 
 epoll::poll_error::poll_error(const std::string &err) : std::runtime_error(err) {}

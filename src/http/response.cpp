@@ -71,7 +71,8 @@ const std::vector<std::pair<std::string, std::string>> &response::get_fields() c
 using f = http::header::fields;
 
 std::size_t response::content_len() const {
-    auto it = std::find_if(get_fields().begin(), get_fields().end(), [](auto pair) { return pair.first == f::Content_Length; });
+    auto it = std::find_if(get_fields().begin(), get_fields().end(),
+                           [](auto pair) { return pair.first == f::Content_Length; });
     if (it != get_fields().end())
         return std::stoi(it->second);
     if (get_type() == type::file)
@@ -119,13 +120,11 @@ response::response(const std::string &text) : code_(status_code::OK), text_({tex
 response::response(const resource &resource) : code_(status_code::OK), resource_(resource) {
     type_ = type::resource;
     init();
-    set(f::Content_Type,
-        http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
+    set(f::Content_Type, http::util::get_mimetype(resource.path()));
 }
 
 response::response(resource &&resource) : code_(status_code::OK), resource_(std::move(resource)) {
     type_ = type::resource;
     init();
-    set(f::Content_Type,
-        http::Util::get_mimetype(resource.path())); // mime_types[(filesystem::GetExtension(resource.Path()))]);
+    set(f::Content_Type, http::util::get_mimetype(resource.path()));
 }

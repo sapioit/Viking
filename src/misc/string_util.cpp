@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sstream>
 #include <iomanip>
 
-std::vector<std::string> Split(const std::string &source, char delimiter) noexcept {
+std::vector<std::string> split(const std::string &source, char delimiter) noexcept {
     std::vector<std::string> result;
     std::istringstream ss(source);
     std::string tok;
@@ -31,44 +31,35 @@ std::vector<std::string> Split(const std::string &source, char delimiter) noexce
     return result;
 }
 
-std::string charToHex(unsigned char c) {
+std::string char_to_hex(unsigned char c) {
     short i = c;
-
     std::stringstream s;
-
     s << "%" << std::setw(2) << std::setfill('0') << std::hex << i;
-
     return s.str();
 }
 
-unsigned char hexToChar(const std::string &str) {
+unsigned char hex_to_char(const std::string &str) {
     short c = 0;
-
     if (!str.empty()) {
         std::istringstream in(str);
-
         in >> std::hex >> c;
-
         if (in.fail()) {
             throw std::runtime_error("stream decode failure");
         }
     }
-
     return static_cast<unsigned char>(c);
 }
 
-std::string UrlDecode(const std::string &toDecode) {
+std::string url_decode(const std::string &to_decode) {
     std::ostringstream out;
-
-    for (std::string::size_type i = 0; i < toDecode.length(); ++i) {
-        if (toDecode.at(i) == '%') {
-            std::string str(toDecode.substr(i + 1, 2));
-            out << hexToChar(str);
+    for (std::string::size_type i = 0; i < to_decode.length(); ++i) {
+        if (to_decode.at(i) == '%') {
+            std::string str(to_decode.substr(i + 1, 2));
+            out << hex_to_char(str);
             i += 2;
         } else {
-            out << toDecode.at(i);
+            out << to_decode.at(i);
         }
     }
-
     return out.str();
 }

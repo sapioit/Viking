@@ -30,7 +30,7 @@ using namespace io;
 
 class scheduler::scheduler_impl {
     struct SocketNotFound {
-        const epoll::Event *event;
+        const epoll::event *event;
     };
     struct write_error {};
 
@@ -66,38 +66,21 @@ class scheduler::scheduler_impl {
     void run() noexcept {
         if (channels.size() == 0)
             return;
-        const auto events = poll.Wait(channels.size());
+        const auto events = poll.await(channels.size());
         for (const auto &event : events) {
-
             poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
-
             if (event.context->socket->is_acceptor()) {
                 add_new_connections(event.context);
                 continue;
             }
-
-            if (event.CanTerminate()) {
+            if (event.can_terminate()) {
                 remove(event.context);
                 continue;
             }
-
-            if (event.CanRead()) {
-                try {
-                    if (auto callback_response = read_callback(event.context)) {
-                        poll.modify(event.context, static_cast<std::uint32_t>(epoll::write));
-                        auto &front = *callback_response.front();
-                        std::type_index type = typeid(front);
-                        if (type == typeid(memory_buffer) || type == typeid(unix_file))
-                            enqueue_item(event.context, callback_response, true);
-                        else
-                            enqueue_item(event.context, callback_response, false);
-                    }
-                } catch (const io::tcp_socket::connection_closed_by_peer &) {
-                    remove(event.context);
-                }
+            if (event.can_read()) {
+                process_read(event.context);
             }
-
-            if (event.CanWrite()) {
+            if (event.can_write()) {
                 process_write(event.context);
                 continue;
             }
@@ -119,9 +102,25 @@ class scheduler::scheduler_impl {
         } while (true);
     }
 
+    void process_read(channel *channel) noexcept {
+        try {
+            if (auto callback_response = read_callback(channel)) {
+                poll.modify(channel, static_cast<std::uint32_t>(epoll::write));
+                auto &front = *callback_response.front();
+                std::type_index type = typeid(front);
+                if (type == typeid(memory_buffer) || type == typeid(unix_file))
+                    enqueue_item(channel, callback_response, true);
+                else
+                    enqueue_item(channel, callback_response, false);
+            }
+        } catch (const io::tcp_socket::connection_closed_by_peer &) {
+            remove(channel);
+        }
+    }
+
     void process_write(channel *channel) noexcept {
         try {
-            bool filled = false;
+            auto filled = false;
             while (channel->queue && !filled) {
                 if (channel->queue.is_front_async()) {
                     auto new_sync_buffer = barrier_callback(channel->queue);
