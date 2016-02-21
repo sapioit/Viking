@@ -68,11 +68,11 @@ void response::set(const std::string &field, const std::string &value) noexcept 
 
 const std::vector<std::pair<std::string, std::string>> &response::get_fields() const noexcept { return fields_; }
 
-using f = http::Header::Fields;
+using f = http::header::fields;
 
 std::size_t response::content_len() const {
-    auto it = std::find_if(fields_.begin(), fields_.end(), [](auto pair) { return pair.first == f::Content_Length; });
-    if (it != fields_.end())
+    auto it = std::find_if(get_fields().begin(), get_fields().end(), [](auto pair) { return pair.first == f::Content_Length; });
+    if (it != get_fields().end())
         return std::stoi(it->second);
     if (get_type() == type::file)
         return file_->size;

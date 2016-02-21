@@ -25,14 +25,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <unordered_map>
 
 namespace http {
-struct Header {
-    Header() = default;
-    ~Header() = default;
-    bool operator==(const Header &other) { return fields == other.fields; }
-    std::unordered_map<std::string, std::string> fields;
+class header {
+    std::unordered_map<std::string, std::string> m_fields;
+public:
+    header() = default;
+    ~header() = default;
+    bool operator==(const header &other) { return m_fields == other.m_fields; }
+    auto& get_fields() noexcept { return m_fields; }
+    auto const& get_fields_c() const noexcept { return m_fields; }
 
     // Common
-    struct Fields {
+    struct fields {
         constexpr static auto Permanent = "Permanent";
         constexpr static auto If_Modified_Since = "If-Modified-Since";
         constexpr static auto Cache_Control = "Cache-Control";

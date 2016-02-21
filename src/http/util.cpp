@@ -63,8 +63,8 @@ bool Util::is_disk_resource(const request &request) noexcept {
 
 bool Util::is_complete(const request &request) noexcept {
     if (can_have_body(request.method)) {
-        auto cl_it = request.header.fields.find(http::Header::Fields::Content_Length);
-        if (cl_it != request.header.fields.end()) {
+        auto cl_it = request.m_header.get_fields_c().find(http::header::fields::Content_Length);
+        if (cl_it != request.m_header.get_fields_c().end()) {
             auto content_length = static_cast<std::size_t>(std::atoi(cl_it->second.c_str()));
             if (request.body.size() < content_length)
                 return false;

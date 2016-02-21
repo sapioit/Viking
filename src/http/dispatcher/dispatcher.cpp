@@ -95,8 +95,8 @@ class dispatcher::dispatcher_impl {
     }
 
     bool should_keep_alive(const http::request &r) const noexcept {
-        auto it = r.header.fields.find(http::Header::Fields::Connection);
-        if (it != r.header.fields.end() && it->second == "Keep-Alive")
+        auto it = r.m_header.get_fields_c().find(http::header::fields::Connection);
+        if (it != r.m_header.get_fields_c().end() && it->second == "Keep-Alive")
             return true;
         return false;
     }
@@ -110,7 +110,7 @@ class dispatcher::dispatcher_impl {
     inline schedule_item take_file_from_memory(const http::request &request, fs::path full_path) const {
         if (auto resource = resource_cache::aquire(full_path)) {
             http::response response{std::move(resource)};
-            response.set(http::Header::Fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
+            response.set(http::header::fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
             return {serializer(response), response.get_keep_alive()};
         } else {
             throw http::status_code::NotFound;
@@ -123,9 +123,9 @@ class dispatcher::dispatcher_impl {
         schedule_item response;
         http::response http_response;
         http_response.set_file(unix_file.get());
-        http_response.set(http::Header::Fields::Content_Type, http::Util::get_mimetype(full_path));
-        http_response.set(http::Header::Fields::Content_Length, std::to_string(unix_file->size));
-        http_response.set(http::Header::Fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
+        http_response.set(http::header::fields::Content_Type, http::Util::get_mimetype(full_path));
+        http_response.set(http::header::fields::Content_Length, std::to_string(unix_file->size));
+        http_response.set(http::header::fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
         response.put_back(std::make_unique<io::memory_buffer>(serializer.MakeHeader(http_response)));
         response.put_back(std::move(unix_file));
         response.put_back(std::make_unique<io::memory_buffer>(serializer.MakeEnding(http_response)));

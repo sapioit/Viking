@@ -62,7 +62,7 @@ http::context::context(const io::tcp_socket *socket) : m_socket(socket), complet
     settings_.on_header_value = [](http_parser *parser, const char *at, size_t length) -> int {
         std::string value(at, at + length);
         auto me = get_me(parser);
-        me->m_request.header.fields.insert(std::make_pair(me->header_field, value));
+        me->m_request.m_header.get_fields().insert(std::make_pair(me->header_field, value));
 
         return 0;
     };

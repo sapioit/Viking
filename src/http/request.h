@@ -31,7 +31,7 @@ class request {
     public:
     http::method method;
     version m_version;
-    Header header;
+    header m_header;
     std::string url, body;
 
     request() = default;
