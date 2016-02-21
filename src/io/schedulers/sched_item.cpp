@@ -34,7 +34,7 @@ schedule_item::schedule_item(const std::vector<char> &data, bool keep_file_open)
 
 void schedule_item::put_back(std::unique_ptr<MemoryBuffer> data) { buffers.push_back(std::move(data)); }
 
-void schedule_item::put_back(std::unique_ptr<UnixFile> file) { buffers.push_back(std::move(file)); }
+void schedule_item::put_back(std::unique_ptr<IO::unix_file> file) { buffers.push_back(std::move(file)); }
 
 void schedule_item::put_back(schedule_item &&other_item) {
     m_keep_file_open = other_item.m_keep_file_open;
@@ -44,7 +44,7 @@ void schedule_item::put_back(schedule_item &&other_item) {
 
 void schedule_item::put_after_first_intact(std::unique_ptr<MemoryBuffer> data) { buffers.push_front(std::move(data)); }
 
-void schedule_item::put_after_first_intact(std::unique_ptr<UnixFile> file) { buffers.push_front(std::move(file)); }
+void schedule_item::put_after_first_intact(std::unique_ptr<IO::unix_file> file) { buffers.push_front(std::move(file)); }
 
 void schedule_item::put_after_first_intact(schedule_item other_item) {
     buffers.insert(std::find_if(buffers.begin(), buffers.end(), [](auto &ptr) { return ptr->Intact(); }),
@@ -59,7 +59,7 @@ bool schedule_item::is_front_async() const noexcept {
         return false;
     const auto &front = *c_front();
     std::type_index type = typeid(front);
-    if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
+    if (type == typeid(MemoryBuffer) || type == typeid(IO::unix_file))
         return false;
     return true;
 }

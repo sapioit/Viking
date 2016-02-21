@@ -25,7 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <functional>
 #include <string>
 
-struct UnixFile : public data_source {
+namespace IO {
+struct unix_file : public data_source {
     int fd = -1;
     off64_t size = 0;
     off64_t offset = 0;
@@ -37,7 +38,7 @@ struct UnixFile : public data_source {
     private:
     std::function<int(const std::string &)> aquire_func_;
     std::function<void(int)> release_func_;
-    void Close();
+    void close();
 
     public:
     struct Error {
@@ -47,27 +48,28 @@ struct UnixFile : public data_source {
         Error(const std::string &path) : path(path) {}
     };
     struct BadFile {
-        const UnixFile *ptr;
+        const unix_file *ptr;
     };
 
     struct DIY {
-        const UnixFile *ptr;
+        const unix_file *ptr;
     };
     struct BrokenPipe {
-        const UnixFile *ptr;
+        const unix_file *ptr;
     };
 
-    UnixFile() = default;
-    virtual ~UnixFile();
-    UnixFile(const std::string &, AquireFunction a, ReleaseFunction r);
-    UnixFile(UnixFile &&);
-    UnixFile &operator=(UnixFile &&);
-    UnixFile(const UnixFile &) = delete;
-    UnixFile &operator=(const UnixFile &) = delete;
+    unix_file() = default;
+    virtual ~unix_file();
+    unix_file(const std::string &, AquireFunction a, ReleaseFunction r);
+    unix_file(unix_file &&);
+    unix_file &operator=(unix_file &&);
+    unix_file(const unix_file &) = delete;
+    unix_file &operator=(const unix_file &) = delete;
     virtual operator bool() const noexcept;
     virtual bool Intact() const noexcept;
     std::uint64_t SendTo(int);
     std::uint64_t SizeLeft() const noexcept;
 };
+}
 
 #endif // UNIX_FILE_H

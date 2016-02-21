@@ -23,19 +23,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fcntl.h>
 #include <io/filesystem.h>
 
-void UnixFile::Close() {
+using namespace IO;
+
+void unix_file::close() {
     if (-1 != fd) {
         release_func_(fd);
     }
 }
 
-UnixFile::~UnixFile() { Close(); }
+unix_file::~unix_file() { close(); }
 
-UnixFile::UnixFile(UnixFile &&other) : fd(-1) { *this = std::move(other); }
+unix_file::unix_file(unix_file &&other) : fd(-1) { *this = std::move(other); }
 
-UnixFile &UnixFile::operator=(UnixFile &&other) {
+unix_file &unix_file::operator=(unix_file &&other) {
     if (this != &other) {
-        Close();
+        close();
         fd = other.fd;
         other.fd = -1;
         offset = other.offset;
@@ -44,11 +46,11 @@ UnixFile &UnixFile::operator=(UnixFile &&other) {
     return *this;
 }
 
-bool UnixFile::Intact() const noexcept { return offset == 0; }
+bool unix_file::Intact() const noexcept { return offset == 0; }
 
-UnixFile::operator bool() const noexcept { return !(offset == size); }
+unix_file::operator bool() const noexcept { return !(offset == size); }
 
-UnixFile::UnixFile(const std::string &path, AquireFunction a, ReleaseFunction r) : aquire_func_(a), release_func_(r) {
+unix_file::unix_file(const std::string &path, AquireFunction a, ReleaseFunction r) : aquire_func_(a), release_func_(r) {
     fd = aquire_func_(path);
     if (-1 == fd)
         throw Error{path};
@@ -59,7 +61,7 @@ UnixFile::UnixFile(const std::string &path, AquireFunction a, ReleaseFunction r)
     size = stat.st_size;
 }
 
-std::uint64_t UnixFile::SendTo(int other_file) {
+std::uint64_t unix_file::SendTo(int other_file) {
     const ssize_t ret = ::sendfile64(other_file, fd, std::addressof(offset), SizeLeft());
     if (ret == -1) {
         switch (errno) {
@@ -86,4 +88,4 @@ std::uint64_t UnixFile::SendTo(int other_file) {
     return ret;
 }
 
-std::uint64_t UnixFile::SizeLeft() const noexcept { return static_cast<std::size_t>(size - offset); }
+std::uint64_t unix_file::SizeLeft() const noexcept { return static_cast<std::size_t>(size - offset); }

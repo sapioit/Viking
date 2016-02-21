@@ -87,7 +87,7 @@ class scheduler::scheduler_impl {
                         poll.modify(event.context, static_cast<std::uint32_t>(epoll::write));
                         auto &front = *callback_response.front();
                         std::type_index type = typeid(front);
-                        if (type == typeid(MemoryBuffer) || type == typeid(UnixFile))
+                        if (type == typeid(MemoryBuffer) || type == typeid(unix_file))
                             enqueue_item(event.context, callback_response, true);
                         else
                             enqueue_item(event.context, callback_response, false);
@@ -174,8 +174,8 @@ class scheduler::scheduler_impl {
                 throw write_error{};
             }
 
-        } else if (sched_item_type == typeid(UnixFile)) {
-            UnixFile *unix_file = reinterpret_cast<UnixFile *>(channel->queue.front());
+        } else if (sched_item_type == typeid(IO::unix_file)) {
+            IO::unix_file *unix_file = reinterpret_cast<IO::unix_file *>(channel->queue.front());
             try {
                 auto size_left = unix_file->SizeLeft();
                 if (const auto written = unix_file->SendTo(channel->socket->GetFD())) {
@@ -184,7 +184,7 @@ class scheduler::scheduler_impl {
                 } else {
                     return true;
                 }
-            } catch (const UnixFile::DIY &e) {
+            } catch (const unix_file::DIY &e) {
                 /* This is how Linux tells you that you'd better do it yourself in userspace.
                  * We need to replace this item with a MemoryBuffer version of this
                  * data, at the right offset.

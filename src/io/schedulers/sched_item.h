@@ -52,11 +52,11 @@ class schedule_item {
     }
 
     void put_back(std::unique_ptr<MemoryBuffer> data);
-    void put_back(std::unique_ptr<UnixFile> file);
+    void put_back(std::unique_ptr<IO::unix_file> file);
     void put_back(schedule_item &&);
 
     void put_after_first_intact(std::unique_ptr<MemoryBuffer> data);
-    void put_after_first_intact(std::unique_ptr<UnixFile> file);
+    void put_after_first_intact(std::unique_ptr<IO::unix_file> file);
     void put_after_first_intact(schedule_item);
 
     void replace_front(std::unique_ptr<MemoryBuffer>) noexcept;

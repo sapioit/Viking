@@ -119,7 +119,7 @@ private:
     }
 
     inline schedule_item take_unix_file(const Http::Request& request, fs::path full_path) const {
-        auto unix_file = std::make_unique<UnixFile>(full_path, Cache::FileDescriptor::Aquire,
+        auto unix_file = std::make_unique<IO::unix_file>(full_path, Cache::FileDescriptor::Aquire,
                                                     Cache::FileDescriptor::Release);
         schedule_item response;
         Http::Response http_response;
