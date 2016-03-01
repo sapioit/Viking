@@ -41,7 +41,7 @@ static response_serializer serializer;
 
 class dispatcher::dispatcher_impl {
     route_util::route_map routes;
-    std::vector<http::context> pending;
+    // std::vector<http::context> pending;
 
     public:
     dispatcher_impl() = default;
@@ -53,30 +53,22 @@ class dispatcher::dispatcher_impl {
         return std::make_unique<io::memory_buffer>(serializer(http_response));
     }
 
-    inline schedule_item handle_connection(const io::channel *connection) {
+    inline schedule_item handle_connection(io::channel *connection) {
         try {
-            auto context_it = std::find_if(pending.begin(), pending.end(), [connection](http::context &engine) {
-                return (*engine.get_socket()) == (*connection->socket);
-            });
-            if (context_it != pending.end())
-                std::swap(*context_it, pending.back());
-            else
-                pending.emplace_back(connection->socket.get());
-            auto context = pending.back();
-            if (context().complete()) {
-                remove_pending_contexts(connection);
-                return process_request(context.get_request());
+            if (connection->state == nullptr)
+                connection->state = new http::context(connection->socket.get());
+            auto http_ctx = static_cast<http::context *>(connection->state);
+            (*http_ctx)();
+            if (http_ctx->complete()) {
+                auto to_return = process_request(http_ctx->get_request());
+                delete http_ctx;
+                connection->state = nullptr;
+                return to_return;
             }
         } catch (const io::tcp_socket::connection_closed_by_peer &) {
             throw;
         }
         return {};
-    }
-
-    void remove_pending_contexts(const io::channel *ch) noexcept {
-        pending.erase(std::remove_if(pending.begin(), pending.end(), [ch](http::context &engine) {
-                          return (*engine.get_socket()) == (*ch->socket);
-                      }), pending.end());
     }
 
     private:
@@ -177,7 +169,7 @@ class dispatcher::dispatcher_impl {
 
 void dispatcher::add_route(route_util::route route) noexcept { impl->add_route(route); }
 
-schedule_item dispatcher::handle_connection(const io::channel *connection) {
+schedule_item dispatcher::handle_connection(io::channel *connection) {
     try {
         return impl->handle_connection(connection);
     } catch (...) {
@@ -189,7 +181,10 @@ std::unique_ptr<io::memory_buffer> dispatcher::handle_barrier(async_buffer<http:
     return impl->handle_barrier(item);
 }
 
-void dispatcher::will_remove(const io::channel *s) noexcept { impl->remove_pending_contexts(s); }
+void dispatcher::will_remove(io::channel *s) noexcept {
+    delete static_cast<http::context *>(s->state);
+    s->state = nullptr;
+}
 
 dispatcher::dispatcher() : impl(nullptr) { impl = new dispatcher_impl(); }
 

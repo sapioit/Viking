@@ -34,7 +34,6 @@ class scheduler::scheduler_impl {
     };
     struct write_error {};
 
-    std::vector<std::unique_ptr<channel>> channels;
     epoll poll;
     scheduler::read_cb read_callback;
     scheduler::barrier_cb barrier_callback;
@@ -55,18 +54,15 @@ class scheduler::scheduler_impl {
 
     void add(std::unique_ptr<tcp_socket> socket, std::uint32_t flags) {
         try {
-            auto ctx = std::make_unique<io::channel>(std::move(socket));
-            poll.schedule(ctx.get(), flags);
-            channels.emplace_back(std::move(ctx));
+            auto channel = new io::channel(std::move(socket));
+            poll.schedule(channel, flags);
         } catch (const epoll::poll_error &) {
             throw;
         }
     }
 
     void run() noexcept {
-        if (channels.size() == 0)
-            return;
-        const auto events = poll.await(channels.size());
+        const auto events = poll.await();
         for (const auto &event : events) {
             poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
             if (event.context->socket->is_acceptor()) {
@@ -137,8 +133,10 @@ class scheduler::scheduler_impl {
                         poll.modify(channel, ~static_cast<std::uint32_t>(epoll::write));
                         poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
                     } else {
-                        /* There is a chance that the channel has pending data right now, so we must not close it yet.
-                         * Instead we mark it, and the next time we poll, if it's not in the event list, we remove it */
+                        /* There is a chance that the channel has pending data right now, so
+                         * we must not close it yet.
+                         * Instead we mark it, and the next time we poll, if it's not in the
+                         * event list, we remove it */
                         remove(channel);
                         return;
                     }
@@ -184,7 +182,8 @@ class scheduler::scheduler_impl {
                     return true;
                 }
             } catch (const unix_file::diy &e) {
-                /* This is how Linux tells you that you'd better do it yourself in userspace.
+                /* This is how Linux tells you that you'd better do it yourself in
+                 * userspace.
                  * We need to replace this item with a MemoryBuffer version of this
                  * data, at the right offset.
                  */
@@ -211,8 +210,7 @@ class scheduler::scheduler_impl {
     void remove(channel *c) noexcept {
         before_removing(c);
         poll.remove(c);
-        channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
-                       channels.end());
+        delete c;
     }
 };
 

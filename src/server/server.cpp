@@ -50,7 +50,7 @@ class server::server_impl {
         debug("Pid = " + std::to_string(getpid()));
         if (auto sock = make_socket(m_port, m_max_pending)) {
             m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
-                                        [this](const io::channel *ch) {
+                                        [this](io::channel *ch) {
                                             try {
                                                 return m_dispatcher.handle_connection(ch);
                                             } catch (...) {
@@ -66,7 +66,7 @@ class server::server_impl {
                                             }
                                             return std::make_unique<memory_buffer>(std::vector<char>{});
                                         },
-                                        [this](const io::channel *ch) { m_dispatcher.will_remove(ch); });
+                                        [this](io::channel *ch) { m_dispatcher.will_remove(ch); });
         } else {
             throw server::port_in_use{m_port};
         }

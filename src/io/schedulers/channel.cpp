@@ -17,9 +17,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <io/schedulers/channel.h>
+#include <string.h>
 
-io::channel::channel() {}
+io::channel::channel() : state(nullptr) { memset(&ev_ctx, 0, sizeof(ev_ctx)); }
 
-io::channel::channel(std::unique_ptr<io::tcp_socket> socket) : socket(std::move(socket)) {}
+io::channel::channel(std::unique_ptr<io::tcp_socket> socket) : socket(std::move(socket)), state(nullptr) {
+    memset(&ev_ctx, 0, sizeof(ev_ctx));
+}
 
 bool io::channel::operator=(const io::channel &other) const { return (*socket == *other.socket); }

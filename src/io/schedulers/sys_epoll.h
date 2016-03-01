@@ -25,9 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class epoll {
     int efd_;
-    std::vector<epoll_event> events_;
-
-    epoll_event *find_event(const io::channel *socket);
 
     public:
     struct event {
@@ -41,7 +38,7 @@ class epoll {
         inline bool can_write() const noexcept { return (description & epoll::write); }
         inline bool can_read() const noexcept { return (description & epoll::read); }
         inline bool can_terminate() const noexcept {
-            return (description & epoll::termination) || (description & epoll::Error);
+            return (description & epoll::termination) || (description & epoll::error);
         }
     };
 
@@ -54,10 +51,10 @@ class epoll {
     static constexpr std::uint32_t termination = EPOLLRDHUP;
     static constexpr std::uint32_t edge_triggered = EPOLLET;
     static constexpr std::uint32_t level_triggered = ~EPOLLET;
-    static constexpr std::uint32_t Error = EPOLLERR;
+    static constexpr std::uint32_t error = EPOLLERR;
     void schedule(io::channel *, std::uint32_t);
-    void modify(const io::channel *, std::uint32_t);
-    void remove(const io::channel *);
+    void modify(io::channel *, std::uint32_t);
+    void remove(io::channel *);
     std::vector<event> await(std::uint32_t = 1000) const;
 
     epoll();

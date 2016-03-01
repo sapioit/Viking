@@ -305,7 +305,8 @@ static std::unordered_map<std::string, std::string> mime_types{
     {"dwf", "model/vnd.dwf"},
     {"silo", "model/mesh"},
     {"pcf", "application/x-font-pcf"},
-    {"pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"},
+    {"pptx", "application/"
+             "vnd.openxmlformats-officedocument.presentationml.presentation"},
     {"mp2a", "audio/mpeg"},
     {"daf", "application/vnd.mobius.daf"},
     {"nsc", "application/x-conference"},

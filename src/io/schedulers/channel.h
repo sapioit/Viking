@@ -22,12 +22,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
 #include <io/socket/socket.h>
 #include <io/schedulers/sched_item.h>
+#include <sys/epoll.h>
 
 namespace io {
 struct channel {
     std::unique_ptr<tcp_socket> socket;
     schedule_item queue;
     std::vector<std::uint32_t> journal;
+    epoll_event ev_ctx;
+    void *state;
     channel();
     channel(std::unique_ptr<tcp_socket> socket);
     channel(const channel &) = delete;

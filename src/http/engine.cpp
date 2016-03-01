@@ -69,9 +69,12 @@ http::context::context(const io::tcp_socket *socket) : m_socket(socket), complet
     settings_.on_body = [](http_parser *parser, const char *at, size_t length) -> int {
         auto me = get_me(parser);
         me->m_request.body += {at, at + length};
-        /* TODO check if body size is OK, and if yes, then copy it to the request. If not,
-         * we should provide the user with a way of getting the body on demand (either async,
-         * by returning a future -> implies starting an I/O scheduler async, or by
+        /* TODO check if body size is OK, and if yes, then copy it to the
+         * request. If not,
+         * we should provide the user with a way of getting the body on demand
+         * (either async,
+         * by returning a future -> implies starting an I/O scheduler async, or
+         * by
          * temporarily making the socket blocking and reading all the data
          */
 

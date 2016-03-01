@@ -32,7 +32,8 @@ static constexpr auto fs_lib_v() {
 #endif
 }
 
-static_assert(fs_lib_v(), "You need filesystem support in your standard library (std::experimental::filesystem");
+static_assert(fs_lib_v(), "You need filesystem support in your standard "
+                          "library (std::experimental::filesystem");
 
 namespace fs = std::experimental::filesystem;
 
