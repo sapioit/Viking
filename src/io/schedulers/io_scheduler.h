@@ -30,7 +30,7 @@ class scheduler {
     public:
     typedef schedule_item Resolution;
     typedef std::vector<char> DataType;
-    typedef std::function<Resolution(channel *)> read_cb;
+    typedef std::function<void(channel *)> read_cb;
     typedef std::function<std::unique_ptr<memory_buffer>(schedule_item &)> barrier_cb;
     typedef std::function<void(channel *)> before_removing_cb;
 

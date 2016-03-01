@@ -612,24 +612,24 @@ class JSON_API Value {
     Value(double value);
     Value(const char *value);                  ///< Copy til first 0. (NULL causes to seg-fault.)
     Value(const char *begin, const char *end); ///< Copy all, incl zeroes.
-                                               /** \brief Constructs a value from a static string.
-                                           
-                                                * Like other value string constructor but do not duplicate the string
-                                                for
-                                                * internal storage. The given string must remain alive after the call
-                                                to this
-                                                * constructor.
-                                                * \note This works only for null-terminated strings. (We cannot change
-                                                the
-                                                *   size of this class, so we have nowhere to store the length,
-                                                *   which might be computed later for various operations.)
-                                                *
-                                                * Example of usage:
-                                                * \code
-                                                * static StaticString foo("some text");
-                                                * Json::Value aValue(foo);
-                                                * \endcode
-                                                */
+    /** \brief Constructs a value from a static string.
+
+     * Like other value string constructor but do not duplicate the string
+     for
+     * internal storage. The given string must remain alive after the call
+     to this
+     * constructor.
+     * \note This works only for null-terminated strings. (We cannot change
+     the
+     *   size of this class, so we have nowhere to store the length,
+     *   which might be computed later for various operations.)
+     *
+     * Example of usage:
+     * \code
+     * static StaticString foo("some text");
+     * Json::Value aValue(foo);
+     * \endcode
+     */
     Value(const StaticString &value);
     Value(const std::string &value); ///< Copy data() til size(). Embedded zeroes too.
 #ifdef JSON_USE_CPPTL

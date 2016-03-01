@@ -52,7 +52,7 @@ class server::server_impl {
             m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
                                         [this](io::channel *ch) {
                                             try {
-                                                return m_dispatcher.handle_connection(ch);
+                                                m_dispatcher.handle_connection(ch);
                                             } catch (...) {
                                                 throw;
                                             }

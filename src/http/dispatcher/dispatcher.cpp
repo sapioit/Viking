@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <misc/debug.h>
 #include <algorithm>
 #include <type_traits>
+#include <typeindex>
 
 using namespace web;
 using namespace cache;
@@ -41,7 +42,6 @@ static response_serializer serializer;
 
 class dispatcher::dispatcher_impl {
     route_util::route_map routes;
-    // std::vector<http::context> pending;
 
     public:
     dispatcher_impl() = default;
@@ -53,22 +53,27 @@ class dispatcher::dispatcher_impl {
         return std::make_unique<io::memory_buffer>(serializer(http_response));
     }
 
-    inline schedule_item handle_connection(io::channel *connection) {
+    void handle_connection(io::channel *connection) {
         try {
             if (connection->state == nullptr)
                 connection->state = new http::context(connection->socket.get());
             auto http_ctx = static_cast<http::context *>(connection->state);
             (*http_ctx)();
             if (http_ctx->complete()) {
-                auto to_return = process_request(http_ctx->get_request());
+                auto iosched_item = process_request(http_ctx->get_request());
+                auto &front = *iosched_item.front();
+                std::type_index type = typeid(front);
+                if (type == typeid(io::memory_buffer) || type == typeid(io::unix_file))
+                    connection->queue.put_back(std::move(iosched_item));
+                else
+                    connection->queue.put_after_first_intact(std::move(iosched_item));
+
                 delete http_ctx;
                 connection->state = nullptr;
-                return to_return;
             }
         } catch (const io::tcp_socket::connection_closed_by_peer &) {
             throw;
         }
-        return {};
     }
 
     private:
@@ -169,7 +174,7 @@ class dispatcher::dispatcher_impl {
 
 void dispatcher::add_route(route_util::route route) noexcept { impl->add_route(route); }
 
-schedule_item dispatcher::handle_connection(io::channel *connection) {
+void dispatcher::handle_connection(io::channel *connection) {
     try {
         return impl->handle_connection(connection);
     } catch (...) {

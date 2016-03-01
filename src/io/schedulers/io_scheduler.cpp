@@ -100,15 +100,8 @@ class scheduler::scheduler_impl {
 
     void process_read(channel *channel) noexcept {
         try {
-            if (auto callback_response = read_callback(channel)) {
-                poll.modify(channel, static_cast<std::uint32_t>(epoll::write));
-                auto &front = *callback_response.front();
-                std::type_index type = typeid(front);
-                if (type == typeid(memory_buffer) || type == typeid(unix_file))
-                    enqueue_item(channel, callback_response, true);
-                else
-                    enqueue_item(channel, callback_response, false);
-            }
+            read_callback(channel);
+            poll.modify(channel, static_cast<std::uint32_t>(epoll::write));
         } catch (const io::tcp_socket::connection_closed_by_peer &) {
             remove(channel);
         }
@@ -129,14 +122,11 @@ class scheduler::scheduler_impl {
                 }
                 auto result = fill_channel(channel);
                 if (!(channel->queue)) {
+                    // We filled the channel
                     if (channel->queue.keep_file_open()) {
                         poll.modify(channel, ~static_cast<std::uint32_t>(epoll::write));
                         poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
                     } else {
-                        /* There is a chance that the channel has pending data right now, so
-                         * we must not close it yet.
-                         * Instead we mark it, and the next time we poll, if it's not in the
-                         * event list, we remove it */
                         remove(channel);
                         return;
                     }
@@ -201,10 +191,6 @@ class scheduler::scheduler_impl {
             }
         }
         return false;
-    }
-
-    void enqueue_item(channel *c, schedule_item &item, bool back) noexcept {
-        back ? c->queue.put_back(std::move(item)) : c->queue.put_after_first_intact(std::move(item));
     }
 
     void remove(channel *c) noexcept {
