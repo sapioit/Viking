@@ -129,19 +129,19 @@ class dispatcher::dispatcher_impl {
     //    }
 
     private:
-    inline schedule_item process_request(const http::request &r) const noexcept {
-        if (http::util::is_disk_resource(r))
-            return take_disk_resource(r);
-        if (http::util::is_passable(r)) {
-            if (auto user_handler = route_util::get_user_handler(r, routes))
-                return pass_request(r, user_handler);
-            else
-                return not_found();
-        } else {
-            // TODO handle internally
-            return {};
-        }
-    }
+//    inline schedule_item process_request(const http::request &r) const noexcept {
+//        if (http::util::is_disk_resource(r))
+//            return take_disk_resource(r);
+//        if (http::util::is_passable(r)) {
+//            if (auto user_handler = route_util::get_user_handler(r, routes))
+//                return pass_request(r, user_handler);
+//            else
+//                return not_found();
+//        } else {
+//            // TODO handle internally
+//            return {};
+//        }
+//    }
 
     bool should_keep_alive(const http::request &r) const noexcept {
         auto it = r.m_header.get_fields_c().find(http::header::fields::Connection);
