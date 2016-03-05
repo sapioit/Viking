@@ -53,21 +53,43 @@ class dispatcher::dispatcher_impl {
         return std::make_unique<io::memory_buffer>(serializer(http_response));
     }
 
+    void enqueue_item(io::channel *channel, http::context *http_context, auto &iosched_item) {
+        auto &front = *iosched_item.front();
+        std::type_index type = typeid(front);
+        if (type == typeid(io::memory_buffer) || type == typeid(io::unix_file))
+            channel->queue.put_back(std::move(iosched_item));
+        else
+            channel->queue.put_after_first_intact(std::move(iosched_item));
+
+        delete http_context;
+
+        channel->state = nullptr;
+    }
+
+    template <typename T> void handle_async_list(T begin, T end) {
+        auto put_resource = [this](auto b, auto e) {
+            for (auto it = b; it != e; ++it) {
+                auto iosched_item = take_disk_resource(it->second->get_request());
+                enqueue_item(it->first, it->second, iosched_item);
+            }
+        };
+        auto len = end - begin;
+        debug(len);
+        if (len < 4) {
+            for (auto it = begin; it != end; ++it)
+                put_resource(begin, end);
+            return;
+        }
+        auto mid = begin + len / 2;
+        auto handle =
+            std::async(std::launch::deferred, [this](auto b, auto e) { this->handle_async_list(b, e); }, mid, end);
+        put_resource(begin, mid);
+        handle.get();
+    }
+
     void handle_connections(std::vector<io::channel *> &connections, std::function<void(void *)> error_fn) {
         std::vector<std::pair<io::channel *, http::context *>> async_ready_list;
         std::vector<std::pair<io::channel *, http::context *>> sync_ready_list;
-        auto enqueue_item = [](io::channel *channel, http::context *http_context, auto &iosched_item) {
-            auto &front = *iosched_item.front();
-            std::type_index type = typeid(front);
-            if (type == typeid(io::memory_buffer) || type == typeid(io::unix_file))
-                channel->queue.put_back(std::move(iosched_item));
-            else
-                channel->queue.put_after_first_intact(std::move(iosched_item));
-
-            delete http_context;
-
-            channel->state = nullptr;
-        };
 
         for (auto it = connections.begin(); it != connections.end(); ++it) {
             try {
@@ -87,12 +109,9 @@ class dispatcher::dispatcher_impl {
                 error_fn(*it);
             }
         }
-        for (auto &pair : async_ready_list) {
-            auto channel = pair.first;
-            auto context = pair.second;
-            auto iosched_item = take_disk_resource(context->get_request());
-            enqueue_item(channel, context, iosched_item);
-        }
+
+        handle_async_list(async_ready_list.begin(), async_ready_list.end());
+
         for (auto &pair : sync_ready_list) {
             auto channel = pair.first;
             auto context = pair.second;
@@ -129,19 +148,19 @@ class dispatcher::dispatcher_impl {
     //    }
 
     private:
-//    inline schedule_item process_request(const http::request &r) const noexcept {
-//        if (http::util::is_disk_resource(r))
-//            return take_disk_resource(r);
-//        if (http::util::is_passable(r)) {
-//            if (auto user_handler = route_util::get_user_handler(r, routes))
-//                return pass_request(r, user_handler);
-//            else
-//                return not_found();
-//        } else {
-//            // TODO handle internally
-//            return {};
-//        }
-//    }
+    //    inline schedule_item process_request(const http::request &r) const noexcept {
+    //        if (http::util::is_disk_resource(r))
+    //            return take_disk_resource(r);
+    //        if (http::util::is_passable(r)) {
+    //            if (auto user_handler = route_util::get_user_handler(r, routes))
+    //                return pass_request(r, user_handler);
+    //            else
+    //                return not_found();
+    //        } else {
+    //            // TODO handle internally
+    //            return {};
+    //        }
+    //    }
 
     bool should_keep_alive(const http::request &r) const noexcept {
         auto it = r.m_header.get_fields_c().find(http::header::fields::Connection);
@@ -191,6 +210,8 @@ class dispatcher::dispatcher_impl {
     }
 
     inline schedule_item take_disk_resource(const http::request &request) const noexcept {
+        debug(storage::config().root_path);
+        debug(request.url);
         auto full_path = storage::config().root_path + request.url;
         try {
             if (fs::is_directory(full_path)) {
