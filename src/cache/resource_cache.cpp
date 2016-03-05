@@ -1,6 +1,7 @@
 #include <cache/resource_cache.h>
 #include <misc/common.h>
 #include <unordered_map>
+#include <mutex>
 
 namespace std {
 template <> struct hash<fs::path> {
@@ -12,6 +13,9 @@ template <> struct hash<fs::path> {
 
 resource cache::resource_cache::aquire(fs::path p) {
     static std::unordered_map<fs::path, resource> storage;
+
+    static std::mutex m;
+    std::lock_guard<std::mutex> hold(m);
 
     auto r = storage.find(p);
     if (!fs::exists(p) && r != storage.end()) {
