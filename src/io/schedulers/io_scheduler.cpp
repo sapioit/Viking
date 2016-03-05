@@ -29,24 +29,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using namespace io;
 
 class scheduler::scheduler_impl {
-    struct SocketNotFound {
-        const epoll::event *event;
-    };
     struct write_error {};
 
     epoll poll;
     scheduler::read_cb read_callback;
+    scheduler::batch_read_cb batch_read_callback;
     scheduler::barrier_cb barrier_callback;
     scheduler::before_removing_cb before_removing;
 
     public:
     scheduler_impl() = default;
     scheduler_impl(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback,
-                   scheduler::barrier_cb barrier_callback, scheduler::before_removing_cb before_removing)
-        : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
+                   scheduler::batch_read_cb batch_read_callback, scheduler::barrier_cb barrier_callback,
+                   scheduler::before_removing_cb before_removing)
+        : read_callback(read_callback), batch_read_callback(batch_read_callback), barrier_callback(barrier_callback),
+          before_removing(before_removing) {
         try {
-            add(std::move(sock),
-                static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
+            add(std::move(sock), static_cast<std::uint32_t>(epoll::read) |
+                                     static_cast<std::uint32_t>(epoll::termination) |
+                                     static_cast<std::uint32_t>(epoll::edge_triggered));
         } catch (const epoll::poll_error &) {
             throw;
         }
@@ -62,23 +63,30 @@ class scheduler::scheduler_impl {
     }
 
     void run() noexcept {
-        const auto events = poll.await();
-        for (const auto &event : events) {
-            poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
-            if (event.context->socket->is_acceptor()) {
-                add_new_connections(event.context);
+        auto events = poll.await();
+        auto begin_non_io = std::partition(events.begin(), events.end(), [](auto &event) {
+            return !(event.context->socket->is_acceptor() || event.can_terminate());
+        });
+        for (auto it = begin_non_io; it != events.end(); ++it) {
+            if (it->context->socket->is_acceptor()) {
+                add_new_connections(it->context);
                 continue;
             }
-            if (event.can_terminate()) {
-                remove(event.context);
+            if (it->can_terminate()) {
+                remove(it->context);
                 continue;
             }
-            if (event.can_read()) {
-                process_read(event.context);
-            }
-            if (event.can_write()) {
-                process_write(event.context);
-                continue;
+        }
+
+        events.erase(begin_non_io, events.end());
+        if (events.size()) {
+            process_batch_read(events);
+            for (auto &event : events) {
+                poll.modify(event.context, event.context->epoll_flags | epoll::edge_triggered);
+                if (event.can_write()) {
+                    if (!(event.flags & epoll::event::tainted))
+                        process_write(&event);
+                }
             }
         }
     }
@@ -98,49 +106,79 @@ class scheduler::scheduler_impl {
         } while (true);
     }
 
-    void process_read(channel *channel) noexcept {
+    void process_batch_read(std::vector<epoll::event> &events) {
+        std::vector<io::channel *> channels;
+        for (const auto &event : events)
+            if (event.can_read())
+                channels.emplace_back(event.context);
+        //        debug("------------------------------");
+        //        debug("readable channels " + std::to_string(channels.size()));
+        //        debug("events before " + std::to_string(events.size()));
+        auto error_cb = [this, &events](auto ch) {
+            auto it = std::find_if(events.begin(), events.end(), [this, ch](auto &ev) { return ev.context == ch; });
+            if (it != events.end()) {
+                remove(it->context);
+                it->flags |= epoll::event::tainted;
+            }
+        };
+        batch_read_callback(channels, error_cb);
+        events.erase(std::remove_if(events.begin(), events.end(), [](const epoll::event &ev) {
+                         return ev.flags & epoll::event::tainted;
+                     }), events.end());
+        for (auto &event : events) {
+            poll.modify(event.context, event.context->epoll_flags | static_cast<std::uint32_t>(epoll::write));
+        }
+        //        debug("events after " + std::to_string(events.size()));
+    }
+
+    void process_read(epoll::event *event) noexcept {
         try {
-            read_callback(channel);
-            poll.modify(channel, static_cast<std::uint32_t>(epoll::write));
+            read_callback(event->context);
         } catch (const io::tcp_socket::connection_closed_by_peer &) {
-            remove(channel);
+            remove(event->context);
+            event->flags |= epoll::event::tainted;
         }
     }
 
-    void process_write(channel *channel) noexcept {
+    void process_write(epoll::event *event) noexcept {
+        auto ch = event->context;
         try {
             auto filled = false;
-            while (channel->queue && !filled) {
-                if (channel->queue.is_front_async()) {
-                    auto new_sync_buffer = barrier_callback(channel->queue);
+            while (ch->queue && !filled) {
+                if (ch->queue.is_front_async()) {
+                    auto new_sync_buffer = barrier_callback(ch->queue);
                     if (*new_sync_buffer) {
-                        channel->queue.replace_front(std::move(new_sync_buffer));
+                        ch->queue.replace_front(std::move(new_sync_buffer));
                     } else {
-                        poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
+                        poll.modify(ch, ch->epoll_flags & ~epoll::edge_triggered);
                         return;
                     }
                 }
-                auto result = fill_channel(channel);
-                if (!(channel->queue)) {
+                auto result = fill_channel(ch);
+                if (!(ch->queue)) {
                     // We filled the channel
-                    if (channel->queue.keep_file_open()) {
-                        poll.modify(channel, ~static_cast<std::uint32_t>(epoll::write));
-                        poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
+                    if (ch->queue.keep_file_open()) {
+                        auto new_flags = ch->epoll_flags;
+                        new_flags &= ~epoll::write;
+                        new_flags &= ~epoll::edge_triggered;
+                        poll.modify(ch, new_flags);
                     } else {
-                        remove(channel);
+                        remove(ch);
+                        event->flags |= epoll::event::tainted;
                         return;
                     }
                 }
                 filled = result;
             }
             if (!filled)
-                poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
+                poll.modify(ch, ch->epoll_flags & ~epoll::edge_triggered);
         } catch (...) {
-            remove(channel);
+            remove(ch);
+            event->flags |= epoll::event::tainted;
         }
     }
 
-    bool fill_channel(channel *channel) {
+    bool fill_channel(io::channel *channel) {
         auto &front = *channel->queue.front();
         std::type_index sched_item_type = typeid(front);
 
@@ -208,10 +246,12 @@ scheduler::scheduler() {
     }
 }
 
-scheduler::scheduler(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback, barrier_cb barrier_callback,
+scheduler::scheduler(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback,
+                     batch_read_cb batch_read_callback, barrier_cb barrier_callback,
                      before_removing_cb before_removing) {
     try {
-        impl = new scheduler_impl(std::move(sock), read_callback, barrier_callback, before_removing);
+        impl =
+            new scheduler_impl(std::move(sock), read_callback, batch_read_callback, barrier_callback, before_removing);
     } catch (...) {
         throw;
     }

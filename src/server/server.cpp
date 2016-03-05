@@ -52,11 +52,15 @@ class server::server_impl {
             m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
                                         [this](io::channel *ch) {
                                             try {
-                                                m_dispatcher.handle_connection(ch);
+                                                (void)ch;
+                                                // THIS FUNCTION WILL BE REMOVED
+                                                std::terminate();
+                                                // m_dispatcher.handle_connection(ch);
                                             } catch (...) {
                                                 throw;
                                             }
                                         },
+                                        [this](auto vec, auto fn) { m_dispatcher.handle_connections(vec, fn); },
                                         [this](schedule_item & schedule_item) -> auto {
                                             if (schedule_item.is_front_async()) {
                                                 async_buffer<http::response> *buffer =

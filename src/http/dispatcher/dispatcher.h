@@ -42,7 +42,8 @@ class dispatcher {
     dispatcher &operator=(dispatcher &&) noexcept;
 
     void add_route(route_util::route) noexcept;
-    void handle_connection(io::channel *);
+    // void handle_connection(io::channel *);
+    void handle_connections(std::vector<io::channel *> &, std::function<void(void *)>) noexcept;
     std::unique_ptr<io::memory_buffer> handle_barrier(async_buffer<http::response> *) noexcept;
     void will_remove(io::channel *) noexcept;
 };

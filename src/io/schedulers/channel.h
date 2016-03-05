@@ -28,7 +28,7 @@ namespace io {
 struct channel {
     std::unique_ptr<tcp_socket> socket;
     schedule_item queue;
-    std::vector<std::uint32_t> journal;
+    std::uint32_t epoll_flags;
     epoll_event ev_ctx;
     void *state;
     channel();

@@ -83,11 +83,11 @@ http::context::context(const io::tcp_socket *socket) : m_socket(socket), complet
     };
 }
 
-const io::tcp_socket *http::context::get_socket() const { return m_socket; }
+const io::tcp_socket *http::context::get_socket() const noexcept { return m_socket; }
 
 const http::request &http::context::get_request() const noexcept { return m_request; }
 
-http::context &http::context::operator()() {
+http::context &http::context::run() {
     try {
         buffer += m_socket->read_some<std::string>();
         parser_.data = reinterpret_cast<void *>(this);
@@ -98,6 +98,7 @@ http::context &http::context::operator()() {
     } catch (io::tcp_socket::connection_closed_by_peer &) {
         throw;
     }
+    return *this;
 }
 
 bool http::context::complete() const noexcept { return complete_; }

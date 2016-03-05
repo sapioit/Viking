@@ -39,9 +39,9 @@ class context {
 
     public:
     context(const io::tcp_socket *socket);
-    const io::tcp_socket *get_socket() const;
+    const io::tcp_socket *get_socket() const noexcept;
     const request &get_request() const noexcept;
-    http::context &operator()();
+    http::context &run();
     bool complete() const noexcept;
 };
 };

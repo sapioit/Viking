@@ -31,7 +31,8 @@ class epoll {
         public:
         io::channel *context;
         std::uint32_t description;
-        event() noexcept = default;
+        std::uint8_t flags;
+        event() noexcept : context(nullptr), description(0), flags(0) {}
         event(io::channel *, std::uint32_t description) noexcept;
         bool operator<(const event &other) const { return context < other.context; }
         bool operator==(const event &other) const { return context == other.context; }
@@ -40,6 +41,7 @@ class epoll {
         inline bool can_terminate() const noexcept {
             return (description & epoll::termination) || (description & epoll::error);
         }
+        static constexpr std::uint8_t tainted = 1 << 1;
     };
 
     struct poll_error : public std::runtime_error {
@@ -50,7 +52,7 @@ class epoll {
     static constexpr std::uint32_t write = EPOLLOUT;
     static constexpr std::uint32_t termination = EPOLLRDHUP;
     static constexpr std::uint32_t edge_triggered = EPOLLET;
-    static constexpr std::uint32_t level_triggered = ~EPOLLET;
+    // static constexpr std::uint32_t level_triggered = ~EPOLLET;
     static constexpr std::uint32_t error = EPOLLERR;
     void schedule(io::channel *, std::uint32_t);
     void modify(io::channel *, std::uint32_t);

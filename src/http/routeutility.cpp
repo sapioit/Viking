@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "routeutility.h"
 #include "parser.h"
 #include <http/engine.h>
+#include <misc/debug.h>
 #include <algorithm>
 #include <regex>
 

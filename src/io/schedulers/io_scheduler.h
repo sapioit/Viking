@@ -31,6 +31,8 @@ class scheduler {
     typedef schedule_item Resolution;
     typedef std::vector<char> DataType;
     typedef std::function<void(channel *)> read_cb;
+    typedef std::function<void(void *)> error_func;
+    typedef std::function<void(std::vector<channel *> &, error_func)> batch_read_cb;
     typedef std::function<std::unique_ptr<memory_buffer>(schedule_item &)> barrier_cb;
     typedef std::function<void(channel *)> before_removing_cb;
 
@@ -40,7 +42,7 @@ class scheduler {
 
     public:
     scheduler();
-    scheduler(std::unique_ptr<tcp_socket> sock, read_cb, barrier_cb, before_removing_cb);
+    scheduler(std::unique_ptr<tcp_socket> sock, read_cb, batch_read_cb, barrier_cb, before_removing_cb);
     ~scheduler();
 
     scheduler(const scheduler &) = delete;

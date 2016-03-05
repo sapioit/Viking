@@ -42,19 +42,21 @@ epoll::~epoll() {
 
 void epoll::schedule(io::channel *channel, std::uint32_t flags) {
     channel->ev_ctx.data.ptr = channel;
-    channel->ev_ctx.events = flags | EPOLLET;
+    channel->ev_ctx.events = flags;
     if (unlikely(-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, channel->socket->get_fd(), &channel->ev_ctx))) {
         if (errno == EEXIST) {
             modify(channel, flags);
         }
-    }
+    } else
+        channel->epoll_flags = flags;
 }
 
 void epoll::modify(io::channel *channel, std::uint32_t flags) {
-    channel->ev_ctx.events |= flags;
+    channel->ev_ctx.events = flags;
     if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, channel->socket->get_fd(), &channel->ev_ctx)) {
         // WTF?
-    }
+    } else
+        channel->epoll_flags = flags;
 }
 
 void epoll::remove(io::channel *channel) {
@@ -65,10 +67,8 @@ void epoll::remove(io::channel *channel) {
 
 static std::vector<epoll::event> create_events(const std::vector<epoll_event> &events) noexcept {
     std::vector<epoll::event> epoll_events;
-    for (const auto &event : events) {
+    for (const auto &event : events)
         epoll_events.emplace_back(static_cast<io::channel *>(event.data.ptr), event.events);
-        epoll_events.back().context->journal.push_back(epoll_events.back().description);
-    }
     return epoll_events;
 }
 std::vector<epoll::event> epoll::await(std::uint32_t chunk_size) const {
@@ -89,7 +89,8 @@ std::vector<epoll::event> epoll::await(std::uint32_t chunk_size) const {
 }
 
 epoll::event::event(io::channel *channel, std::uint32_t description) noexcept : context(channel),
-                                                                                description(description) {}
+                                                                                description(description),
+                                                                                flags(0) {}
 
 epoll::poll_error::poll_error(const std::string &err) : std::runtime_error(err) {}
 

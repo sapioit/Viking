@@ -53,28 +53,80 @@ class dispatcher::dispatcher_impl {
         return std::make_unique<io::memory_buffer>(serializer(http_response));
     }
 
-    void handle_connection(io::channel *connection) {
-        try {
-            if (connection->state == nullptr)
-                connection->state = new http::context(connection->socket.get());
-            auto http_ctx = static_cast<http::context *>(connection->state);
-            (*http_ctx)();
-            if (http_ctx->complete()) {
-                auto iosched_item = process_request(http_ctx->get_request());
-                auto &front = *iosched_item.front();
-                std::type_index type = typeid(front);
-                if (type == typeid(io::memory_buffer) || type == typeid(io::unix_file))
-                    connection->queue.put_back(std::move(iosched_item));
-                else
-                    connection->queue.put_after_first_intact(std::move(iosched_item));
+    void handle_connections(std::vector<io::channel *> &connections, std::function<void(void *)> error_fn) {
+        std::vector<std::pair<io::channel *, http::context *>> async_ready_list;
+        std::vector<std::pair<io::channel *, http::context *>> sync_ready_list;
+        auto enqueue_item = [](io::channel *channel, http::context *http_context, auto &iosched_item) {
+            auto &front = *iosched_item.front();
+            std::type_index type = typeid(front);
+            if (type == typeid(io::memory_buffer) || type == typeid(io::unix_file))
+                channel->queue.put_back(std::move(iosched_item));
+            else
+                channel->queue.put_after_first_intact(std::move(iosched_item));
 
-                delete http_ctx;
-                connection->state = nullptr;
+            delete http_context;
+
+            channel->state = nullptr;
+        };
+
+        for (auto it = connections.begin(); it != connections.end(); ++it) {
+            try {
+                auto connection = *it;
+                if (connection->state == nullptr)
+                    connection->state = new http::context(connection->socket.get());
+                auto http_ctx = static_cast<http::context *>(connection->state);
+                if (http_ctx->run().complete()) {
+                    auto pair = std::make_pair(connection, http_ctx);
+                    if (http::util::is_disk_resource(http_ctx->get_request()))
+                        async_ready_list.emplace_back(pair);
+                    else if (http::util::is_passable(http_ctx->get_request()))
+                        sync_ready_list.emplace_back(pair);
+                }
+
+            } catch (const io::tcp_socket::connection_closed_by_peer &) {
+                error_fn(*it);
             }
-        } catch (const io::tcp_socket::connection_closed_by_peer &) {
-            throw;
+        }
+        for (auto &pair : async_ready_list) {
+            auto channel = pair.first;
+            auto context = pair.second;
+            auto iosched_item = take_disk_resource(context->get_request());
+            enqueue_item(channel, context, iosched_item);
+        }
+        for (auto &pair : sync_ready_list) {
+            auto channel = pair.first;
+            auto context = pair.second;
+            if (auto user_handler = route_util::get_user_handler(context->get_request(), routes)) {
+                auto sched = pass_request(context->get_request(), user_handler);
+                enqueue_item(channel, context, sched);
+            } else {
+                auto sched = not_found();
+                enqueue_item(channel, context, sched);
+            }
         }
     }
+
+    //    void handle_connection(io::channel *connection) {
+    //        try {
+    //            if (connection->state == nullptr)
+    //                connection->state = new http::context(connection->socket.get());
+    //            auto http_ctx = static_cast<http::context *>(connection->state);
+    //            if (http_ctx->run().complete()) {
+    //                auto iosched_item = process_request(http_ctx->get_request());
+    //                auto &front = *iosched_item.front();
+    //                std::type_index type = typeid(front);
+    //                if (type == typeid(io::memory_buffer) || type == typeid(io::unix_file))
+    //                    connection->queue.put_back(std::move(iosched_item));
+    //                else
+    //                    connection->queue.put_after_first_intact(std::move(iosched_item));
+
+    //                delete http_ctx;
+    //                connection->state = nullptr;
+    //            }
+    //        } catch (const io::tcp_socket::connection_closed_by_peer &) {
+    //            throw;
+    //        }
+    //    }
 
     private:
     inline schedule_item process_request(const http::request &r) const noexcept {
@@ -174,12 +226,16 @@ class dispatcher::dispatcher_impl {
 
 void dispatcher::add_route(route_util::route route) noexcept { impl->add_route(route); }
 
-void dispatcher::handle_connection(io::channel *connection) {
-    try {
-        return impl->handle_connection(connection);
-    } catch (...) {
-        throw;
-    }
+// void dispatcher::handle_connection(io::channel *connection) {
+//    try {
+//        return impl->handle_connection(connection);
+//    } catch (...) {
+//        throw;
+//    }
+//}
+
+void dispatcher::handle_connections(std::vector<io::channel *> &v, std::function<void(void *)> f) noexcept {
+    impl->handle_connections(v, f);
 }
 
 std::unique_ptr<io::memory_buffer> dispatcher::handle_barrier(async_buffer<http::response> *item) noexcept {
