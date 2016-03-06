@@ -20,7 +20,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define ENGINE_H
 
 #include <http/engine.h>
-#include <http/components.h>
 #include <http/util.h>
 #include <misc/debug.h>
 #include <misc/string_util.h>

@@ -17,7 +17,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <http/response_serializer.h>
-#include <http/components.h>
 #include <misc/string_util.h>
 #include <misc/date.h>
 #include <misc/common.h>
