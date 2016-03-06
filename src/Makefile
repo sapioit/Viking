@@ -8,12 +8,12 @@ INCLUDEDIRS = -I.
 .DEFAULT_GOAL := lib
 
 # Project name
-PROJECT = cppweb
+PROJECT = viking
 
 # Libraries
 LDFLAGS = -shared
-LIBNAME = libcppweb.so
-LIBNAME_ABBREVIATED = -lcppweb
+LIBNAME = libviking.so
+LIBNAME_ABBREVIATED = -lviking
 BINFOLDER = ../lib
 
 SUBDIR_ROOTS := .
@@ -43,37 +43,41 @@ clean:
 
 install:
 	cp $(BINFOLDER)/$(LIBNAME) /usr/lib
-	mkdir -p /usr/include/cppweb
-	mkdir -p /usr/include/cppweb/server
-	mkdir -p /usr/include/cppweb/misc
-	mkdir -p /usr/include/cppweb/http
-	mkdir -p /usr/include/cppweb/http/dispatcher
-	mkdir -p /usr/include/cppweb/io
-	mkdir -p /usr/include/cppweb/io/schedulers
-	mkdir -p /usr/include/cppweb/io/buffers
-	mkdir -p /usr/include/cppweb/io/socket
-	mkdir -p /usr/include/cppweb/http
-	mkdir -p /usr/include/cppweb/json
-	cp json/json.h /usr/include/cppweb/json/json.h
-	cp misc/settings.h /usr/include/cppweb/misc/settings.h
-	cp misc/resource.h /usr/include/cppweb/misc/resource.h
-	cp server/server.h /usr/include/cppweb/server/server.h
-	cp http/dispatcher/dispatcher.h /usr/include/cppweb/http/dispatcher/dispatcher.h
-	cp io/schedulers/sched_item.h /usr/include/cppweb/io/schedulers/sched_item.h
-	cp io/buffers/unix_file.h /usr/include/cppweb/io/buffers/unix_file.h
-	cp io/buffers/mem_buffer.h /usr/include/cppweb/io/buffers/mem_buffer.h
-	cp io/buffers/asyncbuffer.h /usr/include/cppweb/io/buffers/asyncbuffer.h
-	cp io/buffers/datasource.h /usr/include/cppweb/io/buffers/datasource.h
-	cp io/socket/socket.h /usr/include/cppweb/io/socket/socket.h
-	cp io/filesystem.h /usr/include/cppweb/io/filesystem.h
-	cp http/engine.h /usr/include/cppweb/http/engine.h
-	cp http/request.h /usr/include/cppweb/http/request.h
-	cp http/header.h /usr/include/cppweb/http/header.h
-	cp http/components.h /usr/include/cppweb/http/components.h
-	cp http/version.h /usr/include/cppweb/http/version.h
-	cp http/parser.h /usr/include/cppweb/http/parser.h
-	cp http/response.h /usr/include/cppweb/http/response.h
-	cp http/resolution.h /usr/include/cppweb/http/resolution.h
+	mkdir -p /usr/include/viking
+	mkdir -p /usr/include/viking/server
+	mkdir -p /usr/include/viking/misc
+	mkdir -p /usr/include/viking/http
+	mkdir -p /usr/include/viking/http/dispatcher
+	mkdir -p /usr/include/viking/io
+	mkdir -p /usr/include/viking/io/schedulers
+	mkdir -p /usr/include/viking/io/buffers
+	mkdir -p /usr/include/viking/io/socket
+	mkdir -p /usr/include/viking/http
+	mkdir -p /usr/include/viking/json
+	mkdir -p /usr/include/viking/inl
+	mkdir -p /usr/include/viking/misc
+	cp json/json.h /usr/include/viking/json/json.h
+	cp misc/settings.h /usr/include/viking/misc/settings.h
+	cp misc/resource.h /usr/include/viking/misc/resource.h
+	cp server/server.h /usr/include/viking/server/server.h
+	cp http/dispatcher/dispatcher.h /usr/include/viking/http/dispatcher/dispatcher.h
+	cp io/schedulers/sched_item.h /usr/include/viking/io/schedulers/sched_item.h
+	cp io/buffers/unix_file.h /usr/include/viking/io/buffers/unix_file.h
+	cp io/buffers/mem_buffer.h /usr/include/viking/io/buffers/mem_buffer.h
+	cp io/buffers/asyncbuffer.h /usr/include/viking/io/buffers/asyncbuffer.h
+	cp io/buffers/datasource.h /usr/include/viking/io/buffers/datasource.h
+	cp io/socket/socket.h /usr/include/viking/io/socket/socket.h
+	cp io/filesystem.h /usr/include/viking/io/filesystem.h
+	cp http/engine.h /usr/include/viking/http/engine.h
+	cp http/request.h /usr/include/viking/http/request.h
+	cp http/header.h /usr/include/viking/http/header.h
+	cp http/version.h /usr/include/viking/http/version.h
+	cp http/parser.h /usr/include/viking/http/parser.h
+	cp http/response.h /usr/include/viking/http/response.h
+	cp http/resolution.h /usr/include/viking/http/resolution.h
+	cp inl/methods.h /usr/include/viking/inl/methods.h
+	cp inl/status_codes.h /usr/include/viking/inl/status_codes.h
+	cp misc/common.h /usr/include/viking/misc/common.h
 
 uninstall:
 	rm /usr/lib/$(LIBNAME)

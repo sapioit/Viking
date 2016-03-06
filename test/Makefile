@@ -1,10 +1,10 @@
 CXX = g++
 CC = gcc
 CXX_OPTS = -fPIC -std=c++1z -O3 -Wall -Werror
-LIBS = -lpthread -lcppweb -lstdc++fs
-TESTAPP_INCLUDEDIRS = -I/usr/include/cppweb/
+LIBS = -lpthread -lviking -lstdc++fs
+TESTAPP_INCLUDEDIRS = -I/usr/include/viking/
 OBJS = test.cpp
-PROJECT = cppweb_test
+PROJECT = viking_test
 
 all: $(OBJS)
 	$(CXX) $(CXX_OPTS) $(TESTAPP_INCLUDEDIRS) $^ -o $(PROJECT) $(LIBS)

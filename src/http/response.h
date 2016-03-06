@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <http/header.h>
 #include <http/version.h>
+#include <inl/status_codes.h>
 #include <misc/resource.h>
 #include <io/buffers/unix_file.h>
 

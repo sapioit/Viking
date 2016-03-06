@@ -153,4 +153,4 @@ void server::run(bool indefinitely) { impl->run(indefinitely); }
 
 void server::freeze() { impl->freeze(); }
 
-std::string server::get_version() const noexcept { return "0.7.9"; }
+std::string server::get_version() const noexcept { return "0.8.0"; }

@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <inl/status_codes.h>
 #include <misc/storage.h>
 
 static std::string trim_quotes(std::string str) {

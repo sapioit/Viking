@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define SOCKET_HEADER_H
 
 #include <string>
-#include <http/components.h>
+#include <inl/methods.h>
 #include <unordered_map>
 
 namespace http {

@@ -1,6 +1,6 @@
-#C++ Web Development Framework v0.7.9
+#C++ Web Development Framework v0.8.0
 
-The main goal of this project is to create a way of developing complex and highly scalable web applications (and not only) in C++, on Linux.
+The main goal of this project is to develop a highly scalabe, general purpose HTTP server.
 
 #Features:
 
@@ -10,11 +10,15 @@ Sendfile support. Transfers files from the filesystem with no userspace copying
 
 Used as a library. One only has to provide the route/method/callback combinations
 
+Can be used for anything - Game servers, Website backends, Application backends
+
 HTTP responses can be returned asynchronously via std::future objects. Works great if you don't want other clients to wait for expensive operations
 
-Can be used as a backend for JavaScript frameworks like AngularJS
+Works fast on embedded platforms - for hobbyists
 
 #Requirements:
+
+Linux (anything above kernel version 3 should work)
 
 Modern compiler with filesystem support in the standard library. Tested with GCC 5.3.1 and GCC 6, but Clang fails to compile it due to the incomplete filesystem TS implementation.
 
