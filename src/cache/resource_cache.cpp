@@ -1,9 +1,8 @@
 #include <cache/resource_cache.h>
 #include <misc/common.h>
-#include <map>
 
 resource cache::resource_cache::aquire(fs::path p) {
-    static std::map<fs::path, resource> storage;
+    static std::unordered_map<fs::path, resource> storage;
 
     auto r = storage.find(p);
     if (!fs::exists(p) && r != storage.end()) {

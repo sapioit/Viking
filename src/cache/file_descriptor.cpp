@@ -21,9 +21,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <utility>
+#include <misc/common.h>
 
 struct handle_use_count {
     std::size_t use_count;
@@ -33,7 +34,7 @@ struct handle_use_count {
     }
 };
 
-static std::map<fs::path, handle_use_count> storage;
+static std::unordered_map<fs::path, handle_use_count> storage;
 
 int cache::file_descriptor::aquire(const std::string &path) noexcept {
     auto it = storage.find(path);

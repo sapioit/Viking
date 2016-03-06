@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef COMPONENTS
 #define COMPONENTS
 
-#include <map>
+#include <misc/common.h>
 
 namespace http {
 enum class method {
@@ -48,29 +48,29 @@ enum class method {
     Unsubscribe
 };
 
-const std::map<const std::string, const method> MethodMap{std::make_pair("GET", method::Get),
-                                                          std::make_pair("POST", method::Post),
-                                                          std::make_pair("PUT", method::Put),
-                                                          std::make_pair("DELETE", method::Delete),
-                                                          std::make_pair("Connect", method::Connect),
-                                                          std::make_pair("HEAD", method::Head),
-                                                          std::make_pair("OPTIONS", method::Options),
-                                                          std::make_pair("TRACE", method::Trace),
-                                                          std::make_pair("COPY", method::Copy),
-                                                          std::make_pair("LOCK", method::Lock),
-                                                          std::make_pair("MKCOL", method::Mkcol),
-                                                          std::make_pair("MOVE", method::Move),
-                                                          std::make_pair("PROPFIND", method::Propfind),
-                                                          std::make_pair("PROPPATCH", method::Proppatch),
-                                                          std::make_pair("UNLOCK", method::Unlock),
-                                                          std::make_pair("REPORT", method::Report),
-                                                          std::make_pair("MKACTIVITY", method::Mkactivity),
-                                                          std::make_pair("CHECKOUT", method::Checkout),
-                                                          std::make_pair("MERGE", method::Merge),
-                                                          std::make_pair("M-SEARCH", method::M_Search),
-                                                          std::make_pair("NOTIFY", method::Notify),
-                                                          std::make_pair("SUBSCRIBE", method::Subscribe),
-                                                          std::make_pair("UNSUBSCRIBE", method::Unsubscribe)};
+const std::unordered_map<std::string, method> method_map{{"GET", method::Get},
+                                                         {"POST", method::Post},
+                                                         {"PUT", method::Put},
+                                                         {"DELETE", method::Delete},
+                                                         {"Connect", method::Connect},
+                                                         {"HEAD", method::Head},
+                                                         {"OPTIONS", method::Options},
+                                                         {"TRACE", method::Trace},
+                                                         {"COPY", method::Copy},
+                                                         {"LOCK", method::Lock},
+                                                         {"MKCOL", method::Mkcol},
+                                                         {"MOVE", method::Move},
+                                                         {"PROPFIND", method::Propfind},
+                                                         {"PROPPATCH", method::Proppatch},
+                                                         {"UNLOCK", method::Unlock},
+                                                         {"REPORT", method::Report},
+                                                         {"MKACTIVITY", method::Mkactivity},
+                                                         {"CHECKOUT", method::Checkout},
+                                                         {"MERGE", method::Merge},
+                                                         {"M-SEARCH", method::M_Search},
+                                                         {"NOTIFY", method::Notify},
+                                                         {"SUBSCRIBE", method::Subscribe},
+                                                         {"UNSUBSCRIBE", method::Unsubscribe}};
 
 enum status_code {
     OK = 200,
@@ -81,12 +81,13 @@ enum status_code {
     InternalServerError = 500
 };
 
-const std::map<const status_code, const std::string> StatusCodes{
-    std::make_pair(status_code::OK, "OK"),
-    std::make_pair(status_code::BadRequest, "Bad Request"),
-    std::make_pair(status_code::Found, "Found"),
-    std::make_pair(status_code::NotFound, "Not Found"),
-    std::make_pair(status_code::UnsupportedMediaType, "Unsupported Media Type"),
-    std::make_pair(status_code::InternalServerError, "Internal Server Error")};
+const std::unordered_map<status_code, std::string> status_codes{
+    {status_code::OK, "OK"},
+    {status_code::BadRequest, "Bad Request"},
+    {status_code::Found, "Found"},
+    {status_code::NotFound, "Not Found"},
+    {status_code::UnsupportedMediaType, "Unsupported Media Type"},
+    {status_code::InternalServerError, "Internal Server Error"}};
 }
+
 #endif // COMPONENTS

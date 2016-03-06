@@ -30,8 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 http::context *get_me(http_parser *parser) { return static_cast<http::context *>(parser->data); }
 
 void http::context::assign_method(http_method method_numeric) {
-    auto method = http::MethodMap.find(http_method_str(method_numeric));
-    if (method != http::MethodMap.end())
+    auto method = http::method_map.find(http_method_str(method_numeric));
+    if (method != http::method_map.end())
         m_request.method = method->second;
 }
 

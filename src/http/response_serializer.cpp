@@ -37,7 +37,7 @@ std::vector<char> response_serializer::make_header(const http::response &r) noex
         .append(".")
         .append(std::to_string(r.version.minor));
     response.append(" ").append(std::to_string(r.get_code())).append(" ");
-    response.append(http::StatusCodes.at(r.get_code())).append(crlf);
+    response.append(http::status_codes.at(r.get_code())).append(crlf);
     for (const auto &pair : r.fields)
         response.append(pair.first).append(": ").append(pair.second).append(crlf);
     response.append(crlf);

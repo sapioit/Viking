@@ -19,8 +19,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef COMMON
 #define COMMON
 #include <misc/debug.h>
+#include <type_traits>
 
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
+
+#include <unordered_map>
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+namespace std {
+template <> struct hash<fs::path> {
+    typedef fs::path argument_type;
+    typedef std::size_t result_type;
+    result_type operator()(const argument_type &p) const { return std::hash<std::string>()(p.string()); }
+};
+}
+namespace std {
+template <class E> class hash {
+    using sfinae = typename std::enable_if<std::is_enum<E>::value, E>::type;
+
+    public:
+    size_t operator()(const E &e) const { return std::hash<typename std::underlying_type<E>::type>()(e); }
+};
+};
 
 #endif // COMMON
