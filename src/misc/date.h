@@ -23,18 +23,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <time.h>
 #include <string>
 
-struct Date {
+struct date {
     time_t _time;
     struct tm tm;
 
     public:
-    Date(time_t time) : _time(time), tm(*gmtime(&_time)) {}
+    date(time_t time) : _time(time), tm(*gmtime(&_time)) {}
 
-    bool operator<(const Date &other) { return _time < other._time; }
+    bool operator<(const date &other) { return _time < other._time; }
 
-    static Date Now() { return Date(time(0)); }
+    static date now() { return date(time(0)); }
 
-    std::string ToString() {
+    std::string to_string() {
         std::string text;
         text.resize(100);
         auto size = strftime(&text.front(), text.size(), "%a, %d %b %Y %H:%M:%S %Z", &tm);

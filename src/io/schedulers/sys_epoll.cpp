@@ -94,7 +94,7 @@ std::vector<epoll::event> epoll::await(std::uint32_t chunk_size) const {
     std::vector<epoll_event> active_files;
     active_files.resize(chunk_size);
 
-    auto events_number = epoll_wait(efd_, &active_files.front(), chunk_size, -1);
+    auto events_number = epoll_wait(efd_, &active_files.front(), chunk_size, 1000);
 
     if (-1 == events_number) {
         active_files.resize(0);

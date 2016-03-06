@@ -34,46 +34,38 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace http;
 
-status_code response::get_code() const { return code_; }
-void response::set_code(status_code code) { code_ = code; }
+status_code response::get_code() const noexcept { return code_; }
+void response::set_code(status_code code) noexcept { code_ = code; }
 
-response::type response::get_type() const { return type_; }
+response::type response::get_type() const noexcept { return type_; }
 void response::set_type(response::type type) noexcept { type_ = type; }
 
 const resource &response::get_resource() const { return resource_; }
+void response::set_resource(const resource &r) noexcept { resource_ = r; }
 
-const std::string &response::get_text() const { return text_; }
-void response::set_text(const std::string &text) {
+const std::string &response::get_text() const noexcept { return text_; }
+void response::set_text(const std::string &text) noexcept {
     text_ = text;
     type_ = type::text;
 }
 
-const io::unix_file *response::get_file() const { return file_; }
+const io::unix_file *response::get_file() const noexcept { return file_; }
 void response::set_file(io::unix_file *file) noexcept {
     file_ = file;
     type_ = type::file;
 }
 
-version response::get_version() const { return version_; }
-void response::set_version(version version) { version_ = version; }
+response &response::set(const std::string &field, const std::string &value) noexcept {
+    fields[field] = value;
 
-void response::set(const std::string &field, const std::string &value) noexcept {
-    auto it = std::find_if(fields_.begin(), fields_.end(), [field](auto pair) { return pair.first == field; });
-
-    if (it == fields_.end())
-        fields_.emplace_back(std::make_pair(field, value));
-    else
-        it->second = value;
+    return *this;
 }
-
-const std::vector<std::pair<std::string, std::string>> &response::get_fields() const noexcept { return fields_; }
 
 using f = http::header::fields;
 
-std::size_t response::content_len() const {
-    auto it = std::find_if(get_fields().begin(), get_fields().end(),
-                           [](auto pair) { return pair.first == f::Content_Length; });
-    if (it != get_fields().end())
+std::size_t response::content_len() const noexcept {
+    auto it = fields.find(f::Content_Length);
+    if (it != fields.end())
         return std::stoi(it->second);
     if (get_type() == type::file)
         return file_->size;
@@ -85,46 +77,56 @@ std::size_t response::content_len() const {
 }
 
 bool response::get_keep_alive() const noexcept {
-    auto it = std::find_if(fields_.begin(), fields_.end(), [](auto pair) { return pair.first == f::Connection; });
-    if (it != fields_.end() && it->second == "Keep-Alive")
-        return true;
-    return false;
+    auto it = fields.find(f::Connection);
+    return it != fields.end() ? it->second == "Keep-Alive" : false;
 }
 
 void response::init() {
-    fields_.reserve(256);
-    set(f::Date, Date::Now().ToString());
+    fields.reserve(7);
+    set(f::Date, date::now().to_string());
     set(f::Connection, "Keep-Alive");
     set(f::Access_Control_Allow_Origin, "*");
     set(f::Content_Type, "text/plain; charset=utf-8");
     set(f::Content_Length, std::to_string(content_len()));
     set(f::Transfer_Encoding, "binary");
     set(f::Cache_Control, "max-age=" + std::to_string(storage::config().default_max_age));
+    version = {1, 1};
 }
 
-response::response() : code_(status_code::OK) {
+response::response(bool cc) : code_(status_code::OK) {
     type_ = type::text;
     init();
+    if (!cc)
+        set(http::header::fields::Cache_Control, "no-cache");
 }
 
 response::response(status_code code) : code_(code) {
     type_ = type::text;
     init();
+    if (code == http::status_code::NotFound || code == http::status_code::InternalServerError ||
+        code == http::status_code::BadRequest)
+        set(http::header::fields::Cache_Control, "no-cache");
 }
 
-response::response(const std::string &text) : code_(status_code::OK), text_({text.begin(), text.end()}) {
+response::response(const std::string &text, bool cc) : code_(status_code::OK), text_({text.begin(), text.end()}) {
     type_ = type::text;
     init();
+    if (!cc)
+        set(http::header::fields::Cache_Control, "no-cache");
 }
 
-response::response(const resource &resource) : code_(status_code::OK), resource_(resource) {
+response::response(const resource &resource, bool cc) : code_(status_code::OK), resource_(resource) {
     type_ = type::resource;
     init();
     set(f::Content_Type, http::util::get_mimetype(resource.path()));
+    if (!cc)
+        set(http::header::fields::Cache_Control, "no-cache");
 }
 
-response::response(resource &&resource) : code_(status_code::OK), resource_(std::move(resource)) {
+response::response(resource &&resource, bool cc) : code_(status_code::OK), resource_(std::move(resource)) {
     type_ = type::resource;
     init();
     set(f::Content_Type, http::util::get_mimetype(resource.path()));
+    if (!cc)
+        set(http::header::fields::Cache_Control, "no-cache");
 }

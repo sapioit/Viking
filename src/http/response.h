@@ -25,48 +25,45 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/buffers/unix_file.h>
 
 #include <string>
+#include <unordered_map>
 #include <future>
 
 namespace http {
-using namespace http;
 class response {
     public:
     enum class type { resource, file, text };
-    response();
+    response(bool = true);
     response(status_code);
-    response(const std::string &);
+    response(const std::string &, bool cc = true);
     response(http::status_code, const std::string &);
-    response(const resource &);
-    response(resource &&);
+    response(const resource &, bool cc = true);
+    response(resource &&, bool cc = true);
     virtual ~response() = default;
 
-    version get_version() const;
-    void set_version(version);
+    status_code get_code() const noexcept;
+    void set_code(status_code get_code) noexcept;
 
-    status_code get_code() const;
-    void set_code(status_code get_code);
+    std::size_t content_len() const noexcept;
 
-    std::size_t content_len() const;
-
-    type get_type() const;
+    type get_type() const noexcept;
     void set_type(type type) noexcept;
 
     const resource &get_resource() const;
-    void set_resource(const resource &text);
+    void set_resource(const resource &text) noexcept;
 
-    const std::string &get_text() const;
-    void set_text(const std::string &);
+    const std::string &get_text() const noexcept;
+    void set_text(const std::string &) noexcept;
 
-    const io::unix_file *get_file() const;
+    const io::unix_file *get_file() const noexcept;
     void set_file(io::unix_file *file) noexcept;
 
     bool get_keep_alive() const noexcept;
-    void set(const std::string &field, const std::string &value) noexcept;
-    const std::vector<std::pair<std::string, std::string>> &get_fields() const noexcept;
+    response &set(const std::string &field, const std::string &value) noexcept;
+
+    std::unordered_map<std::string, std::string> fields;
+    http_version version;
 
     private:
-    std::vector<std::pair<std::string, std::string>> fields_;
-    version version_ = {1, 1};
     status_code code_;
     type type_;
     resource resource_;

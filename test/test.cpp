@@ -11,11 +11,7 @@ namespace fs = std::experimental::filesystem;
 int main() {
   web::server server(1234);
   configuration settings;
-#ifdef __arm__
-  settings.root_path = "/mnt/exthdd/server";
-#else
   settings.root_path = "/home/vladimir";
-#endif
   settings.max_connections = 1000;
   try {
     server.init();

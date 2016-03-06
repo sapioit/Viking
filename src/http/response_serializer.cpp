@@ -33,12 +33,12 @@ std::vector<char> response_serializer::make_header(const http::response &r) noex
     std::string response;
     response.reserve(256);
     response.append("HTTP/")
-        .append(std::to_string(r.get_version().major))
+        .append(std::to_string(r.version.major))
         .append(".")
-        .append(std::to_string(r.get_version().minor));
+        .append(std::to_string(r.version.minor));
     response.append(" ").append(std::to_string(r.get_code())).append(" ");
     response.append(http::StatusCodes.at(r.get_code())).append(crlf);
-    for (const auto &pair : r.get_fields())
+    for (const auto &pair : r.fields)
         response.append(pair.first).append(": ").append(pair.second).append(crlf);
     response.append(crlf);
     return {response.begin(), response.end()};
