@@ -75,6 +75,7 @@ install:
 	cp http/parser.h /usr/include/viking/http/parser.h
 	cp http/response.h /usr/include/viking/http/response.h
 	cp http/resolution.h /usr/include/viking/http/resolution.h
+	cp http/routeutility.h /usr/include/viking/http/routeutility.h
 	cp inl/methods.h /usr/include/viking/inl/methods.h
 	cp inl/status_codes.h /usr/include/viking/inl/status_codes.h
 	cp misc/common.h /usr/include/viking/misc/common.h

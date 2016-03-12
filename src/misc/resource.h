@@ -25,17 +25,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class resource {
     fs::path _path;
-    std::vector<char> _content;
     fs::file_time_type _last_write;
 
     public:
+    std::vector<char> raw;
+    std::vector<char> deflated;
+    std::vector<char> gzipped;
     resource() = default;
     resource(const fs::path &, const std::vector<char> &);
     resource(const fs::path &);
     ~resource() = default;
     operator bool();
 
-    const std::vector<char> &content() const;
     const fs::path &path() const;
     const fs::file_time_type &last_write() const;
 };

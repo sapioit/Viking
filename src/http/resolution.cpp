@@ -21,8 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using namespace http;
 resolution::resolution(http::response &&r) : m_response(std::move(r)), m_type(type::sync) {}
 
-resolution::resolution(std::future<response> &&future)
-    : future(std::forward<std::future<http::response>>(future)), m_type(type::async) {}
+resolution::resolution(std::future<response> &&future) : future(std::move(future)), m_type(type::async) {}
 
 resolution::type resolution::get_type() const noexcept { return m_type; }
 

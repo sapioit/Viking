@@ -18,16 +18,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <misc/resource.h>
 
-const std::vector<char> &resource::content() const { return _content; }
-
 const fs::path &resource::path() const { return _path; }
 
 const fs::file_time_type &resource::last_write() const { return _last_write; }
 
 resource::resource(const fs::path &path, const std::vector<char> &content)
-    : _path(path), _content(content), _last_write(fs::last_write_time(path)) {}
+    : _path(path), _last_write(fs::last_write_time(path)), raw(content) {}
 
 resource::resource(const fs::path &path)
-    : _path(path), _content(io::read_file(path)), _last_write(fs::last_write_time(path)) {}
+    : _path(path), _last_write(fs::last_write_time(path)), raw(io::read_file(path)) {}
 
-resource::operator bool() { return (_content.size() != 0); }
+resource::operator bool() { return (raw.size() != 0); }

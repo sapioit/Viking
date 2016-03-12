@@ -21,9 +21,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <vector>
 #include <string>
+#include <algorithm>
 #include <misc/date.h>
 
 std::vector<std::string> split(const std::string &, char) noexcept;
 std::string url_decode(const std::string &);
+
+template <typename T> T uppercase(const T &item) {
+    T ret = item;
+    std::transform(item.begin(), item.end(), ret.begin(), [](auto c) { return std::toupper(c); });
+    return ret;
+}
 
 #endif // UTIL_H

@@ -74,6 +74,16 @@ bool util::is_complete(const request &request) noexcept {
     return true;
 }
 
+static inline const std::string get_content_enc_text(const request &r) noexcept {
+    auto it = r.m_header.get_fields_c().find(http::header::fields::Accept_Encoding);
+    return it != r.m_header.get_fields_c().end() ? it->second : "";
+}
+
+bool util::can_compress(const request &r, const std::string &compression_type) noexcept {
+    auto str = get_content_enc_text(r);
+    return str.find(compression_type) != std::string::npos;
+}
+
 bool util::can_have_body(method method) noexcept {
     switch (method) {
     case http::method::Put:

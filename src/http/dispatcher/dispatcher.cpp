@@ -40,13 +40,13 @@ using namespace cache;
 static response_serializer serializer;
 
 class dispatcher::dispatcher_impl {
-    route_util::route_map routes;
+    route_map routes;
     std::vector<http::context> pending;
 
     public:
     dispatcher_impl() = default;
 
-    inline void add_route(route_util::route r) noexcept { routes.push_back(r); }
+    inline void add_route(route r) noexcept { routes.push_back(r); }
 
     inline std::unique_ptr<io::memory_buffer> handle_barrier(async_buffer<http::response> *r) noexcept {
         auto http_response = r->future.get();
@@ -87,18 +87,11 @@ class dispatcher::dispatcher_impl {
             if (auto user_handler = route_util::get_user_handler(r, routes))
                 return pass_request(r, user_handler);
             else
-                return not_found();
+                return not_found(r);
         } else {
             // TODO handle internally
             return {};
         }
-    }
-
-    bool should_keep_alive(const http::request &r) const noexcept {
-        auto it = r.m_header.get_fields_c().find(http::header::fields::Connection);
-        if (it != r.m_header.get_fields_c().end() && it->second == "Keep-Alive")
-            return true;
-        return false;
     }
 
     inline schedule_item take_folder(const http::request &request) const {
@@ -109,15 +102,14 @@ class dispatcher::dispatcher_impl {
 
     inline schedule_item take_file_from_memory(const http::request &request, fs::path full_path) const {
         if (auto resource = resource_cache::aquire(full_path)) {
-            http::response response{std::move(resource)};
-            response.set(http::header::fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
+            http::response response{request, resource};
             return {serializer(response), response.get_keep_alive()};
         } else {
             throw http::status_code::NotFound;
         }
     }
 
-    inline schedule_item take_unix_file(const http::request &request, fs::path full_path) const {
+    inline schedule_item take_unix_file(const http::request &, fs::path full_path) const {
         auto unix_file =
             std::make_unique<io::unix_file>(full_path, cache::file_descriptor::aquire, cache::file_descriptor::release);
         schedule_item response;
@@ -125,7 +117,6 @@ class dispatcher::dispatcher_impl {
         http_response.set_file(unix_file.get());
         http_response.set(http::header::fields::Content_Type, http::util::get_mimetype(full_path));
         http_response.set(http::header::fields::Content_Length, std::to_string(unix_file->size));
-        http_response.set(http::header::fields::Connection, should_keep_alive(request) ? "Keep-Alive" : "Close");
         response.put_back(std::make_unique<io::memory_buffer>(serializer.make_header(http_response)));
         response.put_back(std::move(unix_file));
         response.put_back(std::make_unique<io::memory_buffer>(serializer.make_ending(http_response)));
@@ -134,7 +125,7 @@ class dispatcher::dispatcher_impl {
     }
 
     inline schedule_item take_regular_file(const http::request &request, fs::path full_path) const {
-        if (should_copy(full_path)) {
+        if (should_copy(request, full_path)) {
             return take_file_from_memory(request, full_path);
         } else {
             return take_unix_file(request, full_path);
@@ -151,31 +142,42 @@ class dispatcher::dispatcher_impl {
             }
         } catch (...) {
         }
-        return not_found();
+        return not_found(request);
     }
 
-    inline schedule_item pass_request(const http::request &r, route_util::http_handler h) const noexcept {
-        http::resolution resolution = h(r);
+    inline schedule_item pass_request(const http::request &req, http_handler h) const noexcept {
+        auto response = http::response{};
+        response.set_request(req);
+        http::resolution resolution = h(req, response);
         if (resolution.get_type() == http::resolution::type::sync)
             return {serializer(resolution.get_response()), resolution.get_response().get_keep_alive()};
         else
             return {std::make_unique<async_buffer<http::response>>(std::move(resolution.get_future()))};
     }
 
-    bool should_copy(const fs::path &resource_path) const {
+    bool should_copy(const http::request &, const fs::path &resource_path) const {
         try {
-            auto page_size = static_cast<std::size_t>(getpagesize());
+            static auto page_size = static_cast<std::size_t>(getpagesize());
             auto file_size = fs::file_size(resource_path);
-            return file_size <= page_size;
+            if (file_size < 2000000 && io::get_extension(resource_path.string()) == "jpg")
+                return true;
+            if (file_size <= page_size)
+                return true;
+
+            return false;
         } catch (...) {
             throw http::status_code::NotFound;
         }
     }
 
-    inline schedule_item not_found() const noexcept { return schedule_item{serializer({http::status_code::NotFound})}; }
+    inline schedule_item not_found(const http::request &r) const noexcept {
+        http::response res{r, http::status_code::NotFound};
+        res.set("Cache-Control", "no-cache");
+        return schedule_item{serializer(res)};
+    }
 };
 
-void dispatcher::add_route(route_util::route route) noexcept { impl->add_route(route); }
+void dispatcher::add_route(route route) noexcept { impl->add_route(route); }
 
 schedule_item dispatcher::handle_connection(const io::channel *connection) {
     try {

@@ -40,8 +40,9 @@ http::response http::list_directory(const http::request &req) {
     auto root_path = storage::config().root_path;
     try {
         if (req.url.back() != '/') {
-            http::response r{http::status_code::Found};
+            http::response r{req, http::status_code::Found};
             r.set("Location", req.url + '/');
+            r.set("Cache-Control", "no-cache");
             return r;
         }
         fs::path root = root_path + req.url;
@@ -54,10 +55,13 @@ http::response http::list_directory(const http::request &req) {
             stream << trim_quotes(p.filename());
             stream << "</a><br/>";
         }
-        http::response r{stream.str()};
+        http::response r{req, stream.str()};
         r.set("Content-Type", "text/html; charset=utf-8");
+        r.set("Cache-Control", "no-cache");
         return r;
     } catch (...) {
-        return {http::status_code::NotFound};
+        http::response r{req, http::status_code::NotFound};
+        r.set("Cache-Control", "no-cache");
+        return r;
     }
 }

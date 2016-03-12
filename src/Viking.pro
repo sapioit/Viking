@@ -10,9 +10,9 @@ TARGET = viking_test
 TEMPLATE = app
 QMAKE_CXXFLAGS += -std=c++1z
 QMAKE_CXXFLAGS += -Wall -Werror
-QMAKE_CXXFLAGS += -Ijson/ -I$$PWD
+QMAKE_CXXFLAGS += -Ijson/ -I$$PWD -I/usr/include/
 DEFINES += API_LIBRARY
-LIBS += -lstdc++fs
+LIBS += -lstdc++fs -lz
 
 
 QMAKE_CXXFLAGS_DEBUG += -O0 -g
@@ -25,7 +25,8 @@ HEADERS += \
     cache/resource_cache.h \
     http/directory_listing.h \
     inl/methods.h \
-    inl/status_codes.h
+    inl/status_codes.h \
+    misc/compression.h
 #INL-END
 
 #CACHE

@@ -86,12 +86,11 @@ class server::server_impl {
     inline void freeze() { m_stop_requested = true; }
 
     inline void add_route(const http::method &method, std::function<bool(const std::string &)> validator,
-                          std::function<http::resolution(http::request)> function) {
+                          http_handler function) {
         m_dispatcher.add_route(std::make_pair(std::make_pair(method, validator), function));
     }
 
-    inline void add_route(const http::method &method, const std::regex &regex,
-                          std::function<http::resolution(http::request)> function) {
+    inline void add_route(const http::method &method, const std::regex &regex, http_handler function) {
 
         auto ptr = [regex](auto string) {
             try {
@@ -136,12 +135,11 @@ server &server::operator=(server &&other) {
 server::server(server &&other) { *this = std::move(other); }
 
 void server::add_route(const http::method &method, std::function<bool(const std::string &)> validator,
-                       std::function<http::resolution(http::request)> function) {
+                       http_handler function) {
     impl->add_route(method, validator, function);
 }
 
-void server::add_route(const http::method &method, const std::regex &regex,
-                       std::function<http::resolution(http::request)> function) {
+void server::add_route(const http::method &method, const std::regex &regex, http_handler function) {
     impl->add_route(method, regex, function);
 }
 

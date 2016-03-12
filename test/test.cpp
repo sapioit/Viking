@@ -13,6 +13,7 @@ int main() {
   configuration settings;
   settings.root_path = "/home/vladimir";
   settings.max_connections = 1000;
+  settings.default_max_age = 99999999;
   try {
     server.init();
   } catch (const web::server::port_in_use &e) {
@@ -21,7 +22,7 @@ int main() {
   }
 
   server.add_route(http::method::Get, std::regex{"^\\/adsaf\\/json\\/(\\d+)$"},
-                   [](auto req) -> http::response {
+                   [](auto req, auto res) -> http::response {
                      Json::Value root(Json::arrayValue);
                      Json::Value records(Json::arrayValue);
                      Json::Value val;
@@ -37,13 +38,13 @@ int main() {
                      records.append(a1);
                      records.append(a2);
                      root.append(records);
-                     return {root.toStyledString()};
+                     return res = root.toStyledString();
                    });
 
   server.add_route(http::method::Get, std::regex{"^\\/adsaf\\/jsons\\/$"},
-                   [](auto) -> http::resolution {
+                   [](auto req,auto res) -> http::resolution {
                      auto future =
-                         std::async(std::launch::async, []() -> http::response {
+                         std::async(std::launch::async, [](auto, auto res) -> http::response {
                            Json::Value root(Json::arrayValue);
                            Json::Value records(Json::arrayValue);
                            Json::Value a1(Json::arrayValue);
@@ -56,8 +57,8 @@ int main() {
                            records.append(a2);
                            root.append(records);
                            std::this_thread::sleep_for(std::chrono::seconds(5));
-                           return {root.toStyledString()};
-                         });
+                           return res = root.toStyledString();
+                         },req, res);
                      return {std::move(future)};
                    });
 

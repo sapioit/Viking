@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <inl/status_codes.h>
 #include <misc/resource.h>
 #include <io/buffers/unix_file.h>
+#include <http/request.h>
 
 #include <string>
 #include <unordered_map>
@@ -32,13 +33,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace http {
 class response {
     public:
+    struct body_unavailable {};
     enum class type { resource, file, text };
-    response(bool = true);
-    response(status_code);
-    response(const std::string &, bool cc = true);
-    response(http::status_code, const std::string &);
-    response(const resource &, bool cc = true);
-    response(resource &&, bool cc = true);
+    enum class compression_type { deflate, gzip, none };
+    response();
+    response(request);
+    response(request, status_code);
+    response(request, const std::string &);
+    response(request, http::status_code, const std::string &);
+    response(request, const resource &);
+    response &operator=(const std::string &);
+    response &operator=(const resource &);
+    response &operator=(status_code);
     virtual ~response() = default;
 
     status_code get_code() const noexcept;
@@ -52,7 +58,7 @@ class response {
     const resource &get_resource() const;
     void set_resource(const resource &text) noexcept;
 
-    const std::string &get_text() const noexcept;
+    const std::vector<char> &get_text() const noexcept;
     void set_text(const std::string &) noexcept;
 
     const io::unix_file *get_file() const noexcept;
@@ -60,17 +66,27 @@ class response {
 
     bool get_keep_alive() const noexcept;
     response &set(const std::string &field, const std::string &value) noexcept;
+    std::string get(const std::string &, bool = false) const noexcept;
 
     std::unordered_map<std::string, std::string> fields;
     http_version version;
 
+    request get_request() const;
+    void set_request(const request &value);
+
+    bool body_available() const noexcept;
+    const std::vector<char> &body() const;
+
     private:
+    request req;
     status_code code_;
     type type_;
-    resource resource_;
-    std::string text_;
+    compression_type compressed;
+    resource res;
+    std::vector<char> text_;
     const io::unix_file *file_ = nullptr;
     void init();
+    void try_to_compress() noexcept;
 };
 };
 

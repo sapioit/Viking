@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <misc/settings.h>
 #include <http/resolution.h>
 #include <http/request.h>
+#include <http/routeutility.h>
 #include <vector>
 #include <regex>
 
@@ -38,9 +39,8 @@ class server {
     server(server &&);
     server &operator=(server &&);
     void add_route(const http::method &method, const std::function<bool(const std::string &)> validator,
-                   std::function<http::resolution(http::request)> function);
-    void add_route(const http::method &method, const std::regex &regex,
-                   std::function<http::resolution(http::request)> function);
+                   http_handler function);
+    void add_route(const http::method &method, const std::regex &regex, http_handler function);
     void set_config(const configuration &);
     void init();
     void run(bool indefinitely = true);

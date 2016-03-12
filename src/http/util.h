@@ -27,6 +27,7 @@ class util {
     static bool is_passable(const request &) noexcept;
     static bool is_disk_resource(const request &) noexcept;
     static bool is_complete(const request &) noexcept;
+    static bool can_compress(const request &r, const std::string &) noexcept;
     static bool can_have_body(http::method) noexcept;
     static std::string get_mimetype(fs::path) noexcept;
 };
