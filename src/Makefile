@@ -62,6 +62,7 @@ install:
 	cp server/server.h /usr/include/viking/server/server.h
 	cp http/dispatcher/dispatcher.h /usr/include/viking/http/dispatcher/dispatcher.h
 	cp io/schedulers/sched_item.h /usr/include/viking/io/schedulers/sched_item.h
+	cp io/schedulers/channel.h /usr/include/viking/io/schedulers/channel.h
 	cp io/buffers/unix_file.h /usr/include/viking/io/buffers/unix_file.h
 	cp io/buffers/mem_buffer.h /usr/include/viking/io/buffers/mem_buffer.h
 	cp io/buffers/asyncbuffer.h /usr/include/viking/io/buffers/asyncbuffer.h
