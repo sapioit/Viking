@@ -146,9 +146,7 @@ class dispatcher::dispatcher_impl {
     }
 
     inline schedule_item pass_request(const http::request &req, http_handler h) const noexcept {
-        auto response = http::response{};
-        response.set_request(req);
-        http::resolution resolution = h(req, response);
+        http::resolution resolution = h(req);
         if (resolution.get_type() == http::resolution::type::sync)
             return {serializer(resolution.get_response()), resolution.get_response().get_keep_alive()};
         else

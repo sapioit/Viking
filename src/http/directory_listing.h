@@ -5,7 +5,7 @@
 #include <http/request.h>
 
 namespace http {
-http::response list_directory(const http::request &req);
+response list_directory(const request &req);
 }
 
 #endif // DIRECTORY_LISTING_H

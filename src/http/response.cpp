@@ -111,7 +111,7 @@ bool response::get_keep_alive() const noexcept {
 }
 
 void response::try_to_compress() noexcept {
-    if (body_available()) {
+    if (body_available() && compressed == compression_type::none) {
         switch (get_type()) {
         case type::resource:
             if (util::can_compress(req, "deflate")) {
@@ -144,7 +144,8 @@ void response::try_to_compress() noexcept {
 }
 
 void response::init() {
-    try_to_compress();
+    if (storage::config().enable_compression)
+        try_to_compress();
     version = {1, 1};
     fields.reserve(7);
     set(f::Date, date::now().to_string());
@@ -159,28 +160,29 @@ void response::init() {
         set(f::Content_Length, std::to_string(content_len()));
 }
 
-response::response() : code_(status_code::OK) {
+response::response() : code_(status_code::OK), compressed(compression_type::none) {
     type_ = type::file;
     init();
 }
 
-response::response(request r) : req(r), code_(status_code::OK) {
+response::response(request r) : req(r), code_(status_code::OK), compressed(compression_type::none) {
     type_ = type::text;
     init();
 }
 
-response::response(request r, status_code code) : req(r), code_(code) {
+response::response(request r, status_code code) : req(r), code_(code), compressed(compression_type::none) {
     type_ = type::text;
     init();
 }
 
 response::response(request r, const std::string &text)
-    : req(r), code_(status_code::OK), text_({text.begin(), text.end()}) {
+    : req(r), code_(status_code::OK), text_({text.begin(), text.end()}), compressed(compression_type::none) {
     type_ = type::text;
     init();
 }
 
-response::response(request r, const resource &resource) : req(r), code_(status_code::OK), res(resource) {
+response::response(request r, const resource &resource)
+    : req(r), code_(status_code::OK), res(resource), compressed(compression_type::none) {
     type_ = type::resource;
     init();
     set(f::Content_Type, http::util::get_mimetype(resource.path()));

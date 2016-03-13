@@ -7,7 +7,7 @@
 namespace compression {
 template <typename T> T deflate(const T &data) {
     T deflated;
-    deflated.resize(data.size());
+    deflated.resize(compressBound(data.size()));
 
     z_stream defstream;
     defstream.zalloc = Z_NULL;
@@ -29,7 +29,7 @@ template <typename T> T deflate(const T &data) {
 
 template <typename T> T gzip(const T &data) {
     T gzipped;
-    gzipped.resize(data.size());
+    gzipped.resize(compressBound(data.size()));
 
     z_stream defstream;
     defstream.zalloc = Z_NULL;

@@ -30,6 +30,7 @@ struct configuration {
     std::uint32_t max_connections;
     std::uint32_t default_max_age = 300;
     bool allow_directory_listing;
+    bool enable_compression;
     std::function<http::resolution(http::request)> folder_cb;
 };
 

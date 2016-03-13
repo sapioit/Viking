@@ -81,9 +81,9 @@ class response {
     request req;
     status_code code_;
     type type_;
-    compression_type compressed;
     resource res;
     std::vector<char> text_;
+    compression_type compressed;
     const io::unix_file *file_ = nullptr;
     void init();
     void try_to_compress() noexcept;
