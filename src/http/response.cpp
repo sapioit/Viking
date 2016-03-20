@@ -160,14 +160,19 @@ void response::init() {
         set(f::Content_Length, std::to_string(content_len()));
 }
 
-response::response() : code_(status_code::OK), compressed(compression_type::none) {
-    type_ = type::file;
-    init();
-}
-
 response::response(request r) : req(r), code_(status_code::OK), compressed(compression_type::none) {
     type_ = type::text;
     init();
+}
+
+response::response(request r, io::unix_file *file)
+    : req(r), code_(status_code::OK), compressed(compression_type::none), file_(file) {
+    type_ = type::file;
+    init();
+    if (file) {
+        set(f::Content_Type, http::util::get_mimetype(file->path));
+        set(f::Content_Length, std::to_string(file->size));
+    }
 }
 
 response::response(request r, status_code code) : req(r), code_(code), compressed(compression_type::none) {

@@ -36,8 +36,9 @@ class response {
     struct body_unavailable {};
     enum class type { resource, file, text };
     enum class compression_type { deflate, gzip, none };
-    response();
+    response() = delete;
     response(request);
+    response(request, io::unix_file *);
     response(request, status_code);
     response(request, const std::string &);
     response(request, http::status_code, const std::string &);

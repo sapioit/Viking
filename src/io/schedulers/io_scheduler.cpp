@@ -66,8 +66,9 @@ class scheduler::scheduler_impl {
     void run() noexcept {
         if (channels.size() == 0)
             return;
-        const auto events = poll.await(channels.size());
-        for (const auto &event : events) {
+        auto events = poll.await(channels.size());
+        std::random_shuffle(events.begin(), events.end());
+        for (auto &event : events) {
             poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
             if (event.context->socket->is_acceptor()) {
                 add_new_connections(event.context);

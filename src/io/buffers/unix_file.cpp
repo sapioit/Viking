@@ -50,7 +50,8 @@ bool unix_file::intact() const noexcept { return offset == 0; }
 
 unix_file::operator bool() const noexcept { return !(offset == size); }
 
-unix_file::unix_file(const std::string &path, aquire_func a, release_func r) : aquire_func_(a), release_func_(r) {
+unix_file::unix_file(const std::string &path, aquire_func a, release_func r)
+    : path(path), aquire_func_(a), release_func_(r) {
     fd = aquire_func_(path);
     if (-1 == fd)
         throw error{path};

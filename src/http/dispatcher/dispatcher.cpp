@@ -80,18 +80,13 @@ class dispatcher::dispatcher_impl {
     }
 
     private:
-    inline schedule_item process_request(const http::request &r) const noexcept {
-        if (http::util::is_disk_resource(r))
-            return take_disk_resource(r);
-        if (http::util::is_passable(r)) {
+    schedule_item process_request(const http::request &r) const noexcept {
+        if (http::util::is_passable(r))
             if (auto user_handler = route_util::get_user_handler(r, routes))
                 return pass_request(r, user_handler);
-            else
-                return not_found(r);
-        } else {
-            // TODO handle internally
-            return {};
-        }
+        if (http::util::is_disk_resource(r))
+            return take_disk_resource(r);
+        return not_found(r);
     }
 
     inline schedule_item take_folder(const http::request &request) const {
@@ -100,7 +95,7 @@ class dispatcher::dispatcher_impl {
         return {serializer(resolution.get_response()), resolution.get_response().get_keep_alive()};
     }
 
-    inline schedule_item take_file_from_memory(const http::request &request, fs::path full_path) const {
+    schedule_item take_file_from_memory(const http::request &request, fs::path full_path) const {
         if (auto resource = resource_cache::aquire(full_path)) {
             http::response response{request, resource};
             return {serializer(response), response.get_keep_alive()};
@@ -109,19 +104,16 @@ class dispatcher::dispatcher_impl {
         }
     }
 
-    inline schedule_item take_unix_file(const http::request &, fs::path full_path) const {
+    schedule_item take_unix_file(const http::request &r, fs::path full_path) const {
         auto unix_file =
             std::make_unique<io::unix_file>(full_path, cache::file_descriptor::aquire, cache::file_descriptor::release);
-        schedule_item response;
-        http::response http_response;
-        http_response.set_file(unix_file.get());
-        http_response.set(http::header::fields::Content_Type, http::util::get_mimetype(full_path));
-        http_response.set(http::header::fields::Content_Length, std::to_string(unix_file->size));
-        response.put_back(std::make_unique<io::memory_buffer>(serializer.make_header(http_response)));
-        response.put_back(std::move(unix_file));
-        response.put_back(std::make_unique<io::memory_buffer>(serializer.make_ending(http_response)));
-        response.set_keep_file_open(http_response.get_keep_alive());
-        return response;
+        schedule_item scheduler_item;
+        http::response http_response(r, unix_file.get());
+        scheduler_item.put_back(std::make_unique<io::memory_buffer>(serializer.make_header(http_response)));
+        scheduler_item.put_back(std::move(unix_file));
+        scheduler_item.put_back(std::make_unique<io::memory_buffer>(serializer.make_ending(http_response)));
+        scheduler_item.set_keep_file_open(http_response.get_keep_alive());
+        return scheduler_item;
     }
 
     inline schedule_item take_regular_file(const http::request &request, fs::path full_path) const {

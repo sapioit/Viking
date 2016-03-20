@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define UNIX_FILE_H
 
 #include <io/buffers/datasource.h>
-
+#include <io/filesystem.h>
 #include <sys/types.h>
 #include <functional>
 #include <string>
@@ -34,6 +34,7 @@ struct unix_file : public data_source {
     public:
     typedef std::function<int(const std::string &)> aquire_func;
     typedef std::function<void(int)> release_func;
+    fs::path path;
 
     private:
     std::function<int(const std::string &)> aquire_func_;
