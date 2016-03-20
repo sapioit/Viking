@@ -69,7 +69,6 @@ class tcp_socket {
     void make_non_blocking() const;
     void listen(int pending_max) const;
     int available_read() const;
-    bool was_shut_down() const;
     void close();
 
     template <typename T> T read_some() const {

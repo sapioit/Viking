@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace io;
 
-tcp_socket::tcp_socket(int port) : port_(port) {
+tcp_socket::tcp_socket(int port) : connection_(false), port_(port) {
     if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Could not create socket");
     int opt = 1;
@@ -101,11 +101,6 @@ void tcp_socket::close() {
 }
 
 tcp_socket::~tcp_socket() { close(); }
-
-bool tcp_socket::was_shut_down() const {
-    char a;
-    return (::recv(fd_, &a, 1, MSG_PEEK) == 0);
-}
 
 bool tcp_socket::operator<(const tcp_socket &other) const { return fd_ < other.fd_; }
 bool tcp_socket::operator==(const tcp_socket &other) const { return fd_ == other.fd_; }
