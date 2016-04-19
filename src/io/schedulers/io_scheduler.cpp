@@ -169,8 +169,10 @@ class scheduler::scheduler_impl {
                 } else {
                     return true;
                 }
-            } catch (...) {
-                debug("Caught exception when writing a memory buffer");
+            } catch (tcp_socket::write_error) {
+                debug("Caught exception when writing a memory buffer: write_error. errno = " + std::to_string(errno));
+                throw write_error{};
+            } catch(tcp_socket::connection_closed_by_peer) {
                 throw write_error{};
             }
 

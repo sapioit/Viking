@@ -73,13 +73,25 @@ class tcp_socket {
 
     template <typename T> T read_some() const {
         T result;
-        auto available = available_read();
-        result.resize(static_cast<std::size_t>(available));
-        ssize_t readBytes = ::read(fd_, &result.front(), available);
-        if (readBytes == 0)
+
+        static std::size_t max_read = 500;
+
+        std::size_t bytes_read_total = 0;
+        ssize_t bytes_read_loop = 0;
+        do {
+            auto old_size = result.size();
+            result.resize(old_size + static_cast<std::size_t>(max_read));
+            bytes_read_loop = ::read(fd_, &result.front() + old_size, max_read);
+            bytes_read_total += bytes_read_loop > 0 ? bytes_read_loop : 0;
+            result.resize(bytes_read_total);
+            if(bytes_read_loop > 0)
+                max_read = std::max(max_read, static_cast<std::size_t>(bytes_read_loop));
+        } while(bytes_read_loop > 0);
+
+        if (bytes_read_total == 0)
             throw connection_closed_by_peer{fd_, this};
-        if (readBytes != -1)
-            result.resize(static_cast<std::size_t>(readBytes));
+        if (bytes_read_loop == -1)
+            result.resize(static_cast<std::size_t>(bytes_read_total));
         return result;
     }
 
