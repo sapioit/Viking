@@ -165,7 +165,7 @@ void response::init() {
     if (get(f::Connection, req_conn_status, true))
         set(f::Connection, req_conn_status);
     else
-        set(f::Connection, "Keep-Alive");
+        set(f::Connection, "Close");
 
     std::string req_cache_control;
     if (get(f::Cache_Control, req_cache_control, true) && req_cache_control.find("no-cache") == std::string::npos)
