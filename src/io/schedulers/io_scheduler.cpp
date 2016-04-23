@@ -111,6 +111,7 @@ class scheduler::scheduler_impl {
                     enqueue_item(channel, callback_response, true);
                 else
                     enqueue_item(channel, callback_response, false);
+                process_write(channel);
             }
         } catch (const io::tcp_socket::connection_closed_by_peer &) {
             remove(channel);

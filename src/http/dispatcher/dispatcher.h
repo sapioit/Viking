@@ -42,9 +42,9 @@ class dispatcher {
     dispatcher &operator=(dispatcher &&) noexcept;
 
     void add_route(route) noexcept;
-    schedule_item handle_connection(const io::channel *) const;
+    schedule_item handle_connection(io::channel *) const;
     std::unique_ptr<io::memory_buffer> handle_barrier(async_buffer<http::response> *) noexcept;
-    void will_remove(const io::channel *) noexcept;
+    void will_remove(io::channel *) noexcept;
 };
 }
 

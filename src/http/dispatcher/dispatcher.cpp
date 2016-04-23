@@ -55,13 +55,13 @@ class dispatcher::dispatcher_impl {
         return std::make_unique<io::memory_buffer>(serializer(http_response));
     }
 
-    inline schedule_item handle_connection(const io::channel *connection) {
+    inline schedule_item handle_connection(io::channel *connection) {
         try {
-            ctx_ptr &p = unfinished_transactions[connection];
-            if (!p)
-                p = std::move(ctx_ptr{new http::context{connection->socket.get()}});
 
-            http::context &context = *p;
+            if (connection->cookie == nullptr)
+                connection->cookie = new http::context{connection->socket.get()};
+
+            http::context &context = *static_cast<http::context *>(connection->cookie);
             if (context().complete()) {
                 static int i = 0;
                 ++i;
@@ -76,7 +76,10 @@ class dispatcher::dispatcher_impl {
         return {};
     }
 
-    void remove_pending_contexts(const io::channel *ch) noexcept { unfinished_transactions.erase(ch); }
+    void remove_pending_contexts(io::channel *ch) noexcept {
+        delete static_cast<http::context *>(ch->cookie);
+        ch->cookie = nullptr;
+    }
 
     private:
     schedule_item process_request(const http::request &r) const noexcept {
@@ -168,7 +171,7 @@ class dispatcher::dispatcher_impl {
 
 void dispatcher::add_route(route route) noexcept { impl->add_route(route); }
 
-schedule_item dispatcher::handle_connection(const io::channel *connection) const {
+schedule_item dispatcher::handle_connection(io::channel *connection) const {
     try {
         return impl->handle_connection(connection);
     } catch (...) {
@@ -180,7 +183,7 @@ std::unique_ptr<io::memory_buffer> dispatcher::handle_barrier(async_buffer<http:
     return impl->handle_barrier(item);
 }
 
-void dispatcher::will_remove(const io::channel *s) noexcept { impl->remove_pending_contexts(s); }
+void dispatcher::will_remove(io::channel *s) noexcept { impl->remove_pending_contexts(s); }
 
 dispatcher::dispatcher() : impl(nullptr) { impl = new dispatcher_impl(); }
 

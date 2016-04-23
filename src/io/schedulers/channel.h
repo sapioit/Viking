@@ -28,6 +28,7 @@ struct channel {
     std::unique_ptr<tcp_socket> socket;
     schedule_item queue;
     std::uint32_t flags;
+    void *cookie;
     channel();
     channel(std::unique_ptr<tcp_socket> socket, std::uint32_t = 0);
     channel(const channel &) = delete;
