@@ -62,7 +62,6 @@ class scheduler::scheduler_impl {
         if (channels.size() == 0)
             return;
         auto events = poll.await(channels.size());
-        std::random_shuffle(events.begin(), events.end());
         for (auto &event : events) {
             if (!(event.context->flags & epoll::edge_triggered)) {
                 event.context->flags |= epoll::edge_triggered;
