@@ -144,8 +144,10 @@ class scheduler::scheduler_impl {
                 if (!channel->queue) {
                     if (channel->queue.keep_file_open()) {
                         channel->flags &= ~epoll::write;
-                        remove(channel);
-                        return;
+                        channel->flags &= epoll::edge_triggered;
+                        channel->flags |= epoll::read;
+                        callbacks.on_remove(channel);
+                        poll.update(channel);
                     } else {
                         remove(channel);
                         return;
