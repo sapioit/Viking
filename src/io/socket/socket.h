@@ -96,6 +96,32 @@ class tcp_socket {
     }
 
     template <typename T> std::size_t write_some(const T &data) const {
+
+        auto total_to_write = data.size();
+        std::size_t bytes_written_total = 0;
+        ssize_t bytes_written_loop = 0;
+
+        do {
+            bytes_written_loop = ::write(fd_, static_cast<const void *>(data.data() + bytes_written_total),
+                                         total_to_write - bytes_written_total); //, MSG_NOSIGNAL);
+            if (bytes_written_loop > 0)
+                bytes_written_total += bytes_written_loop;
+        } while (bytes_written_loop > 0 && bytes_written_total < total_to_write);
+
+        if (bytes_written_loop == -1) {
+            switch (errno) {
+            case EWOULDBLOCK:
+                return bytes_written_total;
+            case EPIPE:
+            case ECONNRESET:
+                throw connection_closed_by_peer{fd_, this};
+            default:
+                break;
+            }
+        }
+        return bytes_written_total;
+
+        /*
         auto written = ::send(fd_, static_cast<const void *>(data.data()), data.size(), MSG_NOSIGNAL);
         if (written <= 0) {
             if (!((errno == EAGAIN) || (errno == EWOULDBLOCK)))
@@ -105,7 +131,7 @@ class tcp_socket {
             if (errno == EPIPE)
                 throw connection_closed_by_peer{fd_, this};
         }
-        return written == -1 ? 0 : written;
+        return written == -1 ? 0 : written;*/
     }
 
     private:
