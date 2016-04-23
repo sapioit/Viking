@@ -65,13 +65,21 @@ response &response::set(const std::string &field, const std::string &value) noex
 
 using f = http::header::fields;
 
-std::string response::get(const std::string &str, bool from_req) const noexcept {
+bool response::get(const std::string &str, std::string &target, bool from_req) const noexcept {
     if (from_req) {
         auto it = fields.find(str);
-        return it != fields.end() ? it->second : "";
+        if (it != fields.end()) {
+            target = it->second;
+            return true;
+        }
+        return false;
     } else {
         auto it = req.m_header.get_fields_c().find(str);
-        return it != req.m_header.get_fields_c().end() ? it->second : "";
+        if (it != req.m_header.get_fields_c().end()) {
+            target = it->second;
+            return true;
+        }
+        return false;
     }
 }
 
@@ -152,10 +160,17 @@ void response::init() {
     set(f::Access_Control_Allow_Origin, "*");
     set(f::Content_Type, "text/plain; charset=utf-8");
     set(f::Transfer_Encoding, "binary");
-    auto conn_status = get(f::Connection, true);
-    set(f::Connection, conn_status == "" ? "Keep-Alive" : conn_status);
-    if (get(f::Cache_Control, true).find("no-cache") == std::string::npos)
+
+    std::string req_conn_status;
+    if (get(f::Connection, req_conn_status, true))
+        set(f::Connection, req_conn_status);
+    else
+        set(f::Connection, "Keep-Alive");
+
+    std::string req_cache_control;
+    if (get(f::Cache_Control, req_cache_control, true) && req_cache_control.find("no-cache") == std::string::npos)
         set(f::Cache_Control, "max-age=" + std::to_string(storage::config().default_max_age));
+
     if (body_available())
         set(f::Content_Length, std::to_string(content_len()));
 }

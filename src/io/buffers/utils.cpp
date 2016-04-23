@@ -23,6 +23,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sys/mman.h>
 #include <unistd.h>
 
+/* TODO this may not work. A quick fix would be to mmap the entire file, madvise the
+ * zone at the right offset and start reading from there
+ */
+
 std::unique_ptr<io::memory_buffer> from(const io::unix_file &file) {
     static constexpr std::size_t max_file_path = 255;
     std::string path;

@@ -67,7 +67,7 @@ class response {
 
     bool get_keep_alive() const noexcept;
     response &set(const std::string &field, const std::string &value) noexcept;
-    std::string get(const std::string &, bool = false) const noexcept;
+    bool get(const std::string &, std::string &, bool = false) const noexcept;
 
     std::unordered_map<std::string, std::string> fields;
     http_version version;

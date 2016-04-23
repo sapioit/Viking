@@ -121,6 +121,12 @@ class scheduler::scheduler_impl {
             auto filled = false;
             while (channel->queue && !filled) {
                 if (channel->queue.is_front_async()) {
+
+                    /* We've encountered a barrier, that means we have to check if the
+                     * future is ready. If it is, we put it in the front of the queue.
+                     * If not, we make the channel level triggered and return
+                     */
+
                     auto new_sync_buffer = callbacks.on_barrier(channel->queue);
                     if (*new_sync_buffer) {
                         channel->queue.replace_front(std::move(new_sync_buffer));
@@ -130,25 +136,25 @@ class scheduler::scheduler_impl {
                         return;
                     }
                 }
-                auto result = fill_channel(channel);
-                if (!(channel->queue)) {
+
+                filled = fill_channel(channel);
+
+                if (!channel->queue) {
                     if (channel->queue.keep_file_open()) {
                         channel->flags &= ~epoll::write;
-                        channel->flags &= ~epoll::edge_triggered;
-                        poll.update(channel);
                     } else {
-                        /* There is a chance that the channel has pending data right now, so we must not close it yet.
-                         * Instead we mark it, and the next time we poll, if it's not in the event list, we remove it */
                         remove(channel);
                         return;
                     }
                 }
-                filled = result;
             }
-            if (!filled) {
-                channel->flags &= ~epoll::edge_triggered;
-                poll.update(channel);
-            }
+
+            /* If the socket could have had more data written to it, we set it back to level triggered mode so that
+             * the polling service notifies us again
+             */
+
+            filled ? channel->flags |= epoll::edge_triggered : channel->flags &= ~epoll::edge_triggered;
+            poll.update(channel);
         } catch (...) {
             remove(channel);
         }
