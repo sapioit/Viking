@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace web;
 using namespace io;
-tcp_socket *make_socket(int port, int max_pending);
+static tcp_socket *make_socket(int port, int max_pending);
 
 class server::server_impl {
     int m_port;
@@ -107,7 +107,7 @@ class server::server_impl {
     }
 };
 
-io::tcp_socket *make_socket(int port, int max_pending) {
+static io::tcp_socket *make_socket(int port, int max_pending) {
     try {
         auto sock = new io::tcp_socket(port);
         sock->bind();
