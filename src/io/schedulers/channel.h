@@ -27,15 +27,15 @@ namespace io {
 struct channel {
     std::unique_ptr<tcp_socket> socket;
     schedule_item queue;
-    std::vector<std::uint32_t> journal;
+    std::uint32_t flags;
     channel();
-    channel(std::unique_ptr<tcp_socket> socket);
+    channel(std::unique_ptr<tcp_socket> socket, std::uint32_t = 0);
     channel(const channel &) = delete;
     channel &operator=(const channel &) = delete;
     channel(channel &&other) = default;
     channel &operator=(channel &other) = default;
     ~channel() = default;
-    bool operator=(const channel &other) const;
+    bool operator==(const channel &other) const;
 };
 }
 

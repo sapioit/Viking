@@ -18,8 +18,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <io/schedulers/channel.h>
 
-io::channel::channel() {}
+io::channel::channel() : flags(0) {}
 
-io::channel::channel(std::unique_ptr<io::tcp_socket> socket) : socket(std::move(socket)) {}
+io::channel::channel(std::unique_ptr<io::tcp_socket> socket, std::uint32_t flags)
+    : socket(std::move(socket)), flags(flags) {}
 
-bool io::channel::operator=(const io::channel &other) const { return (*socket == *other.socket); }
+bool io::channel::operator==(const io::channel &other) const { return (*socket == *other.socket); }

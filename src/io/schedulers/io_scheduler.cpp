@@ -42,8 +42,7 @@ class scheduler::scheduler_impl {
     scheduler_impl() = default;
     scheduler_impl(std::unique_ptr<tcp_socket> sock, callback_set callbacks) : callbacks(callbacks) {
         try {
-            add(std::move(sock),
-                static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
+            add(std::move(sock), epoll::read | epoll::termination);
         } catch (const epoll::poll_error &) {
             throw;
         }
@@ -51,8 +50,8 @@ class scheduler::scheduler_impl {
 
     void add(std::unique_ptr<tcp_socket> socket, std::uint32_t flags) {
         try {
-            auto ctx = std::make_unique<io::channel>(std::move(socket));
-            poll.schedule(ctx.get(), flags);
+            auto ctx = std::make_unique<io::channel>(std::move(socket), flags);
+            poll.schedule(ctx.get());
             channels.emplace_back(std::move(ctx));
         } catch (const epoll::poll_error &) {
             throw;
@@ -65,7 +64,8 @@ class scheduler::scheduler_impl {
         auto events = poll.await(channels.size());
         std::random_shuffle(events.begin(), events.end());
         for (auto &event : events) {
-            poll.modify(event.context, static_cast<std::uint32_t>(epoll::edge_triggered));
+            event.context->flags |= epoll::edge_triggered;
+            poll.update(event.context);
             if (event.context->socket->is_acceptor()) {
                 add_new_connections(event.context);
                 continue;
@@ -102,7 +102,8 @@ class scheduler::scheduler_impl {
     void process_read(channel *channel) noexcept {
         try {
             if (auto callback_response = callbacks.on_read(channel)) {
-                poll.modify(channel, static_cast<std::uint32_t>(epoll::write));
+                channel->flags |= epoll::write;
+                poll.update(channel);
                 auto &front = *callback_response.front();
                 std::type_index type = typeid(front);
                 if (type == typeid(memory_buffer) || type == typeid(unix_file))
@@ -124,15 +125,17 @@ class scheduler::scheduler_impl {
                     if (*new_sync_buffer) {
                         channel->queue.replace_front(std::move(new_sync_buffer));
                     } else {
-                        poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
+                        channel->flags &= ~epoll::edge_triggered;
+                        poll.update(channel);
                         return;
                     }
                 }
                 auto result = fill_channel(channel);
                 if (!(channel->queue)) {
                     if (channel->queue.keep_file_open()) {
-                        poll.modify(channel, ~static_cast<std::uint32_t>(epoll::write));
-                        poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
+                        channel->flags &= ~epoll::write;
+                        channel->flags &= ~epoll::edge_triggered;
+                        poll.update(channel);
                     } else {
                         /* There is a chance that the channel has pending data right now, so we must not close it yet.
                          * Instead we mark it, and the next time we poll, if it's not in the event list, we remove it */
@@ -142,8 +145,10 @@ class scheduler::scheduler_impl {
                 }
                 filled = result;
             }
-            if (!filled)
-                poll.modify(channel, static_cast<std::uint32_t>(epoll::level_triggered));
+            if (!filled) {
+                channel->flags &= ~epoll::edge_triggered;
+                poll.update(channel);
+            }
         } catch (...) {
             remove(channel);
         }

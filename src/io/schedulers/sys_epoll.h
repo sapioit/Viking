@@ -53,10 +53,9 @@ class epoll {
     static constexpr std::uint32_t write = EPOLLOUT;
     static constexpr std::uint32_t termination = EPOLLRDHUP;
     static constexpr std::uint32_t edge_triggered = EPOLLET;
-    static constexpr std::uint32_t level_triggered = ~EPOLLET;
     static constexpr std::uint32_t Error = EPOLLERR;
-    void schedule(io::channel *, std::uint32_t);
-    void modify(const io::channel *, std::uint32_t);
+    void schedule(io::channel *);
+    void update(const io::channel *);
     void remove(const io::channel *);
     std::vector<event> await(std::uint32_t = 1000) const;
 

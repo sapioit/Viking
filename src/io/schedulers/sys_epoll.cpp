@@ -39,25 +39,25 @@ epoll::~epoll() {
         ::close(efd_);
 }
 
-void epoll::schedule(io::channel *context, std::uint32_t flags) {
+void epoll::schedule(io::channel *context) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     // ev.data.fd = file_descriptor;
     ev.data.ptr = context;
-    ev.events = flags | EPOLLET;
+    ev.events = context->flags;
     if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->get_fd(), &ev)) {
         if (errno != EEXIST) {
         } else {
-            modify(context, flags);
+            update(context);
         }
     } else
         events_.push_back(ev);
 }
 
-void epoll::modify(const io::channel *context, std::uint32_t flags) {
+void epoll::update(const io::channel *context) {
     auto *event = find_event(context);
     if (event) {
-        event->events |= flags;
+        event->events = context->flags;
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->get_fd(), event)) {
             // WTF?
         }
@@ -86,7 +86,6 @@ static std::vector<epoll::event> create_events(const std::vector<epoll_event> &e
     std::vector<epoll::event> epoll_events;
     for (const auto &event : events) {
         epoll_events.emplace_back(static_cast<io::channel *>(event.data.ptr), event.events);
-        epoll_events.back().context->journal.push_back(epoll_events.back().description);
     }
     return epoll_events;
 }
