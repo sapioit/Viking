@@ -41,7 +41,9 @@ static response_serializer serializer;
 
 class dispatcher::dispatcher_impl {
     route_map routes;
-    std::vector<http::context> pending;
+    typedef std::unique_ptr<http::context> ctx_ptr;
+    typedef std::unordered_map<const io::channel *, ctx_ptr> transaction_map;
+    transaction_map unfinished_transactions;
 
     public:
     dispatcher_impl() = default;
@@ -55,17 +57,18 @@ class dispatcher::dispatcher_impl {
 
     inline schedule_item handle_connection(const io::channel *connection) {
         try {
-            auto context_it = std::find_if(pending.begin(), pending.end(), [connection](http::context &engine) {
-                return (*engine.get_socket()) == (*connection->socket);
-            });
-            if (context_it != pending.end())
-                std::swap(*context_it, pending.back());
-            else
-                pending.emplace_back(connection->socket.get());
-            auto context = pending.back();
+            ctx_ptr &p = unfinished_transactions[connection];
+            if (!p)
+                p = std::move(ctx_ptr{new http::context{connection->socket.get()}});
+
+            http::context &context = *p;
             if (context().complete()) {
+                static int i = 0;
+                ++i;
+                debug(i);
+                auto resp = process_request(context.get_request());
                 remove_pending_contexts(connection);
-                return process_request(context.get_request());
+                return resp;
             }
         } catch (const io::tcp_socket::connection_closed_by_peer &) {
             throw;
@@ -73,11 +76,7 @@ class dispatcher::dispatcher_impl {
         return {};
     }
 
-    void remove_pending_contexts(const io::channel *ch) noexcept {
-        pending.erase(std::remove_if(pending.begin(), pending.end(),
-                                     [ch](http::context &engine) { return (*engine.get_socket()) == (*ch->socket); }),
-                      pending.end());
-    }
+    void remove_pending_contexts(const io::channel *ch) noexcept { unfinished_transactions.erase(ch); }
 
     private:
     schedule_item process_request(const http::request &r) const noexcept {

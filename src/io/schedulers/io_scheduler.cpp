@@ -143,6 +143,8 @@ class scheduler::scheduler_impl {
                 if (!channel->queue) {
                     if (channel->queue.keep_file_open()) {
                         channel->flags &= ~epoll::write;
+                        remove(channel);
+                        return;
                     } else {
                         remove(channel);
                         return;
