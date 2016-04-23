@@ -1,4 +1,4 @@
-#C++ Web Development Framework v0.8.0
+#C++ Web Development Framework v0.8.2
 
 The main goal of this project is to develop a highly scalabe, general purpose HTTP server.
 
