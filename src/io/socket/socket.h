@@ -102,8 +102,13 @@ class tcp_socket {
         ssize_t bytes_written_loop = 0;
 
         do {
-            bytes_written_loop = ::write(fd_, static_cast<const void *>(data.data() + bytes_written_total),
-                                         total_to_write - bytes_written_total); //, MSG_NOSIGNAL);
+            std::uint64_t flags = MSG_NOSIGNAL;
+            auto left_to_write = total_to_write - bytes_written_total;
+            static unsigned int page_size = getpagesize();
+            if (left_to_write >= page_size / 2)
+                flags |= MSG_MORE;
+            bytes_written_loop =
+                ::send(fd_, static_cast<const void *>(data.data() + bytes_written_total), left_to_write, flags);
             if (bytes_written_loop > 0)
                 bytes_written_total += bytes_written_loop;
         } while (bytes_written_loop > 0 && bytes_written_total < total_to_write);
@@ -120,18 +125,6 @@ class tcp_socket {
             }
         }
         return bytes_written_total;
-
-        /*
-        auto written = ::send(fd_, static_cast<const void *>(data.data()), data.size(), MSG_NOSIGNAL);
-        if (written <= 0) {
-            if (!((errno == EAGAIN) || (errno == EWOULDBLOCK)))
-                throw write_error{fd_, this};
-            if (errno == ECONNRESET)
-                throw connection_closed_by_peer{fd_, this};
-            if (errno == EPIPE)
-                throw connection_closed_by_peer{fd_, this};
-        }
-        return written == -1 ? 0 : written;*/
     }
 
     private:
