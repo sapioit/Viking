@@ -181,19 +181,19 @@ static inline void fixNumericLocale(char *begin, char *end) {
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #if !defined(JSON_IS_AMALGAMATION)
+#include "json_tool.h"
 #include <json/assertions.h>
 #include <json/reader.h>
 #include <json/value.h>
-#include "json_tool.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
-#include <utility>
-#include <cstdio>
 #include <cassert>
+#include <cstdio>
 #include <cstring>
 #include <istream>
-#include <sstream>
 #include <memory>
 #include <set>
+#include <sstream>
+#include <utility>
 
 #if defined(_MSC_VER) && _MSC_VER < 1500 // VC++ 8.0 and below
 #define snprintf _snprintf
@@ -2210,16 +2210,16 @@ ValueIterator &ValueIterator::operator=(const SelfType &other) {
 #include <json/value.h>
 #include <json/writer.h>
 #endif // if !defined(JSON_IS_AMALGAMATION)
+#include <cassert>
+#include <cstring>
 #include <math.h>
 #include <sstream>
 #include <utility>
-#include <cstring>
-#include <cassert>
 #ifdef JSON_USE_CPPTL
 #include <cpptl/conststring.h>
 #endif
-#include <cstddef>   // size_t
 #include <algorithm> // min()
+#include <cstddef>   // size_t
 
 #define JSON_ASSERT_UNREACHABLE assert(false)
 
@@ -3649,17 +3649,17 @@ Value &Path::make(Value &root) const {
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
 #if !defined(JSON_IS_AMALGAMATION)
-#include <json/writer.h>
 #include "json_tool.h"
+#include <json/writer.h>
 #endif // if !defined(JSON_IS_AMALGAMATION)
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include <iomanip>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <utility>
-#include <set>
-#include <cassert>
-#include <cstring>
-#include <cstdio>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1200 && _MSC_VER < 1800 // Between VC++ 6.0 and VC++ 11.0
 #include <float.h>

@@ -20,10 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define SCHEDITEM_H
 
 #include <deque>
-#include <memory>
-#include <io/buffers/unix_file.h>
-#include <io/buffers/mem_buffer.h>
 #include <io/buffers/asyncbuffer.h>
+#include <io/buffers/mem_buffer.h>
+#include <io/buffers/unix_file.h>
+#include <memory>
 
 class schedule_item {
     std::deque<std::unique_ptr<data_source>> buffers;

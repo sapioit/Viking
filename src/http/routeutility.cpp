@@ -18,8 +18,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "routeutility.h"
 #include "parser.h"
-#include <http/engine.h>
 #include <algorithm>
+#include <http/engine.h>
 #include <regex>
 
 http_handler route_util::get_user_handler(const http::request &request, const route_map &routes) {

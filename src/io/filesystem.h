@@ -19,10 +19,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef FILE_H
 #define FILE_H
 
-#include <vector>
-#include <string>
-#include <stdexcept>
 #include <experimental/filesystem>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 static constexpr auto fs_lib_v() {
 #ifdef __cpp_lib_experimental_filesystem

@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef DIRECTORY_LISTING_H
 #define DIRECTORY_LISTING_H
 
-#include <http/resolution.h>
 #include <http/request.h>
+#include <http/resolution.h>
 
 namespace http {
 response list_directory(const request &req);

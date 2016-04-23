@@ -16,23 +16,23 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-#include <cache/resource_cache.h>
+#include <algorithm>
 #include <cache/file_descriptor.h>
+#include <cache/resource_cache.h>
 #include <http/dispatcher/dispatcher.h>
 #include <http/engine.h>
-#include <http/util.h>
+#include <http/engine.h>
 #include <http/resolution.h>
 #include <http/response_serializer.h>
 #include <http/routeutility.h>
-#include <http/engine.h>
+#include <http/util.h>
+#include <inl/mime_types.h>
+#include <io/buffers/asyncbuffer.h>
 #include <io/filesystem.h>
 #include <io/socket/socket.h>
-#include <io/buffers/asyncbuffer.h>
-#include <inl/mime_types.h>
-#include <misc/storage.h>
 #include <misc/common.h>
 #include <misc/debug.h>
-#include <algorithm>
+#include <misc/storage.h>
 #include <type_traits>
 
 using namespace web;
@@ -74,9 +74,9 @@ class dispatcher::dispatcher_impl {
     }
 
     void remove_pending_contexts(const io::channel *ch) noexcept {
-        pending.erase(std::remove_if(pending.begin(), pending.end(), [ch](http::context &engine) {
-                          return (*engine.get_socket()) == (*ch->socket);
-                      }), pending.end());
+        pending.erase(std::remove_if(pending.begin(), pending.end(),
+                                     [ch](http::context &engine) { return (*engine.get_socket()) == (*ch->socket); }),
+                      pending.end());
     }
 
     private:
@@ -169,7 +169,7 @@ class dispatcher::dispatcher_impl {
 
 void dispatcher::add_route(route route) noexcept { impl->add_route(route); }
 
-schedule_item dispatcher::handle_connection(const io::channel *connection) {
+schedule_item dispatcher::handle_connection(const io::channel *connection) const {
     try {
         return impl->handle_connection(connection);
     } catch (...) {

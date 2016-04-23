@@ -18,9 +18,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #ifndef SETTINGS_H
 #define SETTINGS_H
-#include <string>
 #include <http/request.h>
 #include <http/resolution.h>
+#include <string>
 
 struct configuration {
     configuration();

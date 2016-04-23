@@ -16,9 +16,9 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-#include <misc/settings.h>
-#include <io/filesystem.h>
 #include <http/directory_listing.h>
+#include <io/filesystem.h>
+#include <misc/settings.h>
 
 configuration::configuration()
     : max_connections(1000), allow_directory_listing(true), enable_compression(true), folder_cb(http::list_directory) {}

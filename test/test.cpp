@@ -16,13 +16,13 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-#include <server/server.h>
-#include <http/resolution.h>
-#include <http/request.h>
-#include <json/json.h>
-#include <iostream>
-#include <iomanip>
 #include <experimental/filesystem>
+#include <http/request.h>
+#include <http/resolution.h>
+#include <iomanip>
+#include <iostream>
+#include <json/json.h>
+#include <server/server.h>
 namespace fs = std::experimental::filesystem;
 
 int main() {
@@ -60,7 +60,8 @@ int main() {
   server.add_route(http::method::Get, std::regex{"^\\/adsaf\\/jsons\\/$"},
                    [](auto req) -> http::resolution {
                      auto future = std::async(
-                         std::launch::async, [](auto req) -> http::response {
+                         std::launch::async,
+                         [](auto req) -> http::response {
                            Json::Value root(Json::arrayValue);
                            Json::Value records(Json::arrayValue);
                            Json::Value a1(Json::arrayValue);
@@ -74,7 +75,8 @@ int main() {
                            root.append(records);
                            std::this_thread::sleep_for(std::chrono::seconds(5));
                            return {req, root.toStyledString()};
-                         }, req);
+                         },
+                         req);
                      return {std::move(future)};
                    });
 

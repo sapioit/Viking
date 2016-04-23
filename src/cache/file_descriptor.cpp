@@ -16,15 +16,15 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+#include <algorithm>
 #include <cache/file_descriptor.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <misc/common.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <unordered_map>
-#include <algorithm>
 #include <utility>
-#include <misc/common.h>
 
 struct handle_use_count {
     std::size_t use_count;

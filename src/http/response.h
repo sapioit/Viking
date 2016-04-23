@@ -20,15 +20,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define RESPONSE_H
 
 #include <http/header.h>
+#include <http/request.h>
 #include <http/version.h>
 #include <inl/status_codes.h>
-#include <misc/resource.h>
 #include <io/buffers/unix_file.h>
-#include <http/request.h>
+#include <misc/resource.h>
 
+#include <future>
 #include <string>
 #include <unordered_map>
-#include <future>
 
 namespace http {
 class response {

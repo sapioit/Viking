@@ -16,18 +16,18 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-#include <io/schedulers/io_scheduler.h>
-#include <io/schedulers/channel.h>
 #include <http/dispatcher/dispatcher.h>
-#include <server/server.h>
-#include <misc/storage.h>
+#include <io/schedulers/channel.h>
+#include <io/schedulers/io_scheduler.h>
 #include <misc/debug.h>
+#include <misc/storage.h>
+#include <server/server.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <fstream>
 #include <functional>
 #include <signal.h>
-#include <fstream>
 
 using namespace web;
 using namespace io;
@@ -42,44 +42,43 @@ class server::server_impl {
 
     inline void ignore_sigpipe() { signal(SIGPIPE, SIG_IGN); }
 
+    auto handle_barrier(schedule_item &schedule_item) {
+        if (schedule_item.is_front_async()) {
+            async_buffer<http::response> *buffer = static_cast<async_buffer<http::response> *>(schedule_item.front());
+            if (buffer->is_ready())
+                return m_dispatcher.handle_barrier(buffer);
+        }
+        return std::make_unique<memory_buffer>(std::vector<char>{});
+    }
+
     public:
     server_impl(int port) : m_port(port), m_stop_requested(false) {}
 
     inline void init() {
         ignore_sigpipe();
         debug("Pid = " + std::to_string(getpid()));
+
         if (auto sock = make_socket(m_port, m_max_pending)) {
-            m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock),
-                                        [this](const io::channel *ch) {
-                                            try {
-                                                return m_dispatcher.handle_connection(ch);
-                                            } catch (...) {
-                                                throw;
-                                            }
-                                        },
-                                        [this](schedule_item & schedule_item) -> auto {
-                                            if (schedule_item.is_front_async()) {
-                                                async_buffer<http::response> *buffer =
-                                                    static_cast<async_buffer<http::response> *>(schedule_item.front());
-                                                if (buffer->is_ready())
-                                                    return m_dispatcher.handle_barrier(buffer);
-                                            }
-                                            return std::make_unique<memory_buffer>(std::vector<char>{});
-                                        },
-                                        [this](const io::channel *ch) { m_dispatcher.will_remove(ch); });
+            io::scheduler::callback_set callbacks;
+
+            namespace ph = std::placeholders;
+            callbacks.on_barrier = std::bind(&server_impl::handle_barrier, this, ph::_1);
+            callbacks.on_read = std::bind(&dispatcher::handle_connection, &m_dispatcher, ph::_1);
+            callbacks.on_remove = std::bind(&dispatcher::will_remove, &m_dispatcher, ph::_1);
+
+            m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock), callbacks);
         } else {
             throw server::port_in_use{m_port};
         }
     }
 
     inline void run(bool indefinitely) {
-        if (!indefinitely)
+        if (!indefinitely) {
             m_scheduler.run();
-        else {
+        } else {
             m_stop_requested = false;
-            while (!m_stop_requested) {
+            while (!m_stop_requested)
                 m_scheduler.run();
-            }
         }
     }
 

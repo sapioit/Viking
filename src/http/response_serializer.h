@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef RESPONSEMANAGER_H
 #define RESPONSEMANAGER_H
 
-#include <http/response.h>
 #include <http/request.h>
+#include <http/response.h>
 
 class response_serializer {
     public:

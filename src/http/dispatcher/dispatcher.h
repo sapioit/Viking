@@ -19,14 +19,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef DISPATCHER_H
 #define DISPATCHER_H
 
-#include <io/schedulers/sched_item.h>
-#include <io/socket/socket.h>
-#include <io/schedulers/channel.h>
 #include <http/resolution.h>
 #include <http/routeutility.h>
+#include <io/schedulers/channel.h>
+#include <io/schedulers/sched_item.h>
+#include <io/socket/socket.h>
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace web {
 class dispatcher {
@@ -42,7 +42,7 @@ class dispatcher {
     dispatcher &operator=(dispatcher &&) noexcept;
 
     void add_route(route) noexcept;
-    schedule_item handle_connection(const io::channel *);
+    schedule_item handle_connection(const io::channel *) const;
     std::unique_ptr<io::memory_buffer> handle_barrier(async_buffer<http::response> *) noexcept;
     void will_remove(const io::channel *) noexcept;
 };

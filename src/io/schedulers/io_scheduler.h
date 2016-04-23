@@ -19,11 +19,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef SOCKET_WATCHER_H
 #define SOCKET_WATCHER_H
 
-#include <io/schedulers/sched_item.h>
-#include <io/schedulers/channel.h>
-#include <io/socket/socket.h>
-#include <io/buffers/mem_buffer.h>
 #include <functional>
+#include <io/buffers/mem_buffer.h>
+#include <io/schedulers/channel.h>
+#include <io/schedulers/sched_item.h>
+#include <io/socket/socket.h>
 
 namespace io {
 class scheduler {
@@ -34,13 +34,21 @@ class scheduler {
     typedef std::function<std::unique_ptr<memory_buffer>(schedule_item &)> barrier_cb;
     typedef std::function<void(const channel *)> before_removing_cb;
 
+    struct callback_set {
+        read_cb on_read;
+        barrier_cb on_barrier;
+        before_removing_cb on_remove;
+        callback_set() = default;
+        ~callback_set() = default;
+    };
+
     private:
     class scheduler_impl;
     scheduler_impl *impl;
 
     public:
     scheduler();
-    scheduler(std::unique_ptr<tcp_socket> sock, read_cb, barrier_cb, before_removing_cb);
+    scheduler(std::unique_ptr<tcp_socket> sock, callback_set);
     ~scheduler();
 
     scheduler(const scheduler &) = delete;

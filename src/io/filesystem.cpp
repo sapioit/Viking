@@ -16,10 +16,10 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-#include <io/filesystem.h>
-#include <misc/debug.h>
-#include <misc/common.h>
 #include <fstream>
+#include <io/filesystem.h>
+#include <misc/common.h>
+#include <misc/debug.h>
 
 std::vector<char> io::read_file(const fs::path &path) {
     std::ifstream stream(path, std::ios::binary);

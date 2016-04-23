@@ -20,8 +20,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define DATE
 
 #include <stdio.h>
-#include <time.h>
 #include <string>
+#include <time.h>
 
 struct date {
     time_t _time;

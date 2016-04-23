@@ -16,15 +16,15 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+#include <algorithm>
+#include <io/buffers/utils.h>
 #include <io/schedulers/io_scheduler.h>
 #include <io/schedulers/sys_epoll.h>
-#include <io/buffers/utils.h>
 #include <misc/common.h>
 #include <misc/debug.h>
 #include <stdexcept>
-#include <algorithm>
-#include <utility>
 #include <typeindex>
+#include <utility>
 
 using namespace io;
 
@@ -36,15 +36,11 @@ class scheduler::scheduler_impl {
 
     std::vector<std::unique_ptr<channel>> channels;
     epoll poll;
-    scheduler::read_cb read_callback;
-    scheduler::barrier_cb barrier_callback;
-    scheduler::before_removing_cb before_removing;
+    scheduler::callback_set callbacks;
 
     public:
     scheduler_impl() = default;
-    scheduler_impl(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback,
-                   scheduler::barrier_cb barrier_callback, scheduler::before_removing_cb before_removing)
-        : read_callback(read_callback), barrier_callback(barrier_callback), before_removing(before_removing) {
+    scheduler_impl(std::unique_ptr<tcp_socket> sock, callback_set callbacks) : callbacks(callbacks) {
         try {
             add(std::move(sock),
                 static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
@@ -105,7 +101,7 @@ class scheduler::scheduler_impl {
 
     void process_read(channel *channel) noexcept {
         try {
-            if (auto callback_response = read_callback(channel)) {
+            if (auto callback_response = callbacks.on_read(channel)) {
                 poll.modify(channel, static_cast<std::uint32_t>(epoll::write));
                 auto &front = *callback_response.front();
                 std::type_index type = typeid(front);
@@ -124,7 +120,7 @@ class scheduler::scheduler_impl {
             auto filled = false;
             while (channel->queue && !filled) {
                 if (channel->queue.is_front_async()) {
-                    auto new_sync_buffer = barrier_callback(channel->queue);
+                    auto new_sync_buffer = callbacks.on_barrier(channel->queue);
                     if (*new_sync_buffer) {
                         channel->queue.replace_front(std::move(new_sync_buffer));
                     } else {
@@ -172,7 +168,7 @@ class scheduler::scheduler_impl {
             } catch (tcp_socket::write_error) {
                 debug("Caught exception when writing a memory buffer: write_error. errno = " + std::to_string(errno));
                 throw write_error{};
-            } catch(tcp_socket::connection_closed_by_peer) {
+            } catch (tcp_socket::connection_closed_by_peer) {
                 throw write_error{};
             }
 
@@ -212,7 +208,7 @@ class scheduler::scheduler_impl {
     }
 
     void remove(channel *c) noexcept {
-        before_removing(c);
+        callbacks.on_remove(c);
         poll.remove(c);
         channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
                        channels.end());
@@ -227,10 +223,9 @@ scheduler::scheduler() {
     }
 }
 
-scheduler::scheduler(std::unique_ptr<tcp_socket> sock, scheduler::read_cb read_callback, barrier_cb barrier_callback,
-                     before_removing_cb before_removing) {
+scheduler::scheduler(std::unique_ptr<tcp_socket> sock, callback_set callbacks) {
     try {
-        impl = new scheduler_impl(std::move(sock), read_callback, barrier_callback, before_removing);
+        impl = new scheduler_impl(std::move(sock), callbacks);
     } catch (...) {
         throw;
     }

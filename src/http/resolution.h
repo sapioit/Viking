@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef RESOLUTION_H
 #define RESOLUTION_H
 
-#include <http/response.h>
 #include <future>
+#include <http/response.h>
 namespace http {
 class resolution {
     http::response m_response;

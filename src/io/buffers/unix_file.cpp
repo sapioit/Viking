@@ -16,12 +16,12 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-#include <io/buffers/unix_file.h>
-#include <sys/stat.h>
-#include <sys/sendfile.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <io/buffers/unix_file.h>
 #include <io/filesystem.h>
+#include <sys/sendfile.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace io;
 

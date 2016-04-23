@@ -16,9 +16,9 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+#include <iomanip>
 #include <misc/string_util.h>
 #include <sstream>
-#include <iomanip>
 
 std::vector<std::string> split(const std::string &source, char delimiter) noexcept {
     std::vector<std::string> result;

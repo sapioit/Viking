@@ -19,9 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <memory>
 #include <io/buffers/mem_buffer.h>
 #include <io/buffers/unix_file.h>
+#include <memory>
 
 std::unique_ptr<io::memory_buffer> from(const io::unix_file &);
 

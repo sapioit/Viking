@@ -16,13 +16,13 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+#include <algorithm>
+#include <cstring>
+#include <errno.h>
 #include <io/schedulers/sys_epoll.h>
 #include <io/socket/socket.h>
 #include <misc/debug.h>
-#include <cstring>
-#include <algorithm>
 #include <stdexcept>
-#include <errno.h>
 #include <unistd.h>
 
 epoll::epoll() {
@@ -74,9 +74,9 @@ void epoll::remove(const io::channel *context) {
             throw poll_error("Could not remove the file with fd = " + std::to_string(context->socket->get_fd()) +
                              " from the OS queue");
 
-        events_.erase(std::remove_if(events_.begin(), events_.end(), [&event_it](auto &ev) {
-                          return ev.data.fd == event_it->data.fd;
-                      }), events_.end());
+        events_.erase(std::remove_if(events_.begin(), events_.end(),
+                                     [&event_it](auto &ev) { return ev.data.fd == event_it->data.fd; }),
+                      events_.end());
     } else {
         // WTF?
     }

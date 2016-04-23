@@ -20,9 +20,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef SOCKET_HTTPUTILITY_H
 #define SOCKET_HTTPUTILITY_H
 
-#include <io/socket/socket.h>
-#include <http/request.h>
 #include <http/parser.h>
+#include <http/request.h>
+#include <io/socket/socket.h>
 #include <string>
 
 namespace http {

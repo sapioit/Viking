@@ -19,10 +19,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef STRING_UTIL_H
 #define STRING_UTIL_H
 
-#include <vector>
-#include <string>
 #include <algorithm>
 #include <misc/date.h>
+#include <string>
+#include <vector>
 
 std::vector<std::string> split(const std::string &, char) noexcept;
 std::string url_decode(const std::string &);

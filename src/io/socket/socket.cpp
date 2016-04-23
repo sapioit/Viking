@@ -20,10 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io/socket/socket.h>
 #include <misc/debug.h>
 
+#include <assert.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <system_error>
-#include <assert.h>
 
 using namespace io;
 

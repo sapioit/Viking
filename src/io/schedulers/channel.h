@@ -19,9 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
-#include <memory>
-#include <io/socket/socket.h>
 #include <io/schedulers/sched_item.h>
+#include <io/socket/socket.h>
+#include <memory>
 
 namespace io {
 struct channel {

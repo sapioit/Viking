@@ -19,12 +19,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <misc/settings.h>
-#include <http/resolution.h>
 #include <http/request.h>
+#include <http/resolution.h>
 #include <http/routeutility.h>
-#include <vector>
+#include <misc/settings.h>
 #include <regex>
+#include <vector>
 
 namespace web {
 class server {

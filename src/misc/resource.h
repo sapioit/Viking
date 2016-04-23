@@ -19,9 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+#include <io/filesystem.h>
 #include <string>
 #include <vector>
-#include <io/filesystem.h>
 
 class resource {
     fs::path _path;

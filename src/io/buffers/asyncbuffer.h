@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ASYNCBUFFER
 #define ASYNCBUFFER
 
-#include <io/buffers/datasource.h>
 #include <future>
+#include <io/buffers/datasource.h>
 
 template <typename T> struct async_buffer : public data_source {
     std::future<T> future;

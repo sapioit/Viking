@@ -17,11 +17,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include "directory_listing.h"
-#include <string>
-#include <sstream>
-#include <iomanip>
 #include <inl/status_codes.h>
+#include <iomanip>
 #include <misc/storage.h>
+#include <sstream>
+#include <string>
 
 static std::string trim_quotes(std::string str) {
     if (str.front() == '\"')

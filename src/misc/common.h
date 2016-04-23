@@ -23,8 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
 
-#include <unordered_map>
 #include <experimental/filesystem>
+#include <unordered_map>
 namespace fs = std::experimental::filesystem;
 namespace std {
 template <> struct hash<fs::path> {

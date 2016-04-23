@@ -345,9 +345,9 @@ class JSON_API Features {
 #if !defined(JSON_IS_AMALGAMATION)
 #include "forwards.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
+#include <exception>
 #include <string>
 #include <vector>
-#include <exception>
 
 #ifndef JSON_USE_CPPTL_SMALLMAP
 #include <map>
@@ -1219,9 +1219,9 @@ template <> inline void swap(Json::Value &a, Json::Value &b) { a.swap(b); }
 #endif // if !defined(JSON_IS_AMALGAMATION)
 #include <deque>
 #include <iosfwd>
+#include <istream>
 #include <stack>
 #include <string>
-#include <istream>
 
 // Disable warning C4251: <data member>: <type> needs to have dll-interface to
 // be used by...
@@ -1632,9 +1632,9 @@ JSON_API std::istream &operator>>(std::istream &, Value &);
 #if !defined(JSON_IS_AMALGAMATION)
 #include "value.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
-#include <vector>
-#include <string>
 #include <ostream>
+#include <string>
+#include <vector>
 
 // Disable warning C4251: <data member>: <type> needs to have dll-interface to
 // be used by...
@@ -1975,8 +1975,8 @@ JSON_API std::ostream &operator<<(std::ostream &, const Value &root);
 #ifndef CPPTL_JSON_ASSERTIONS_H_INCLUDED
 #define CPPTL_JSON_ASSERTIONS_H_INCLUDED
 
-#include <stdlib.h>
 #include <sstream>
+#include <stdlib.h>
 
 #if !defined(JSON_IS_AMALGAMATION)
 #include "config.h"

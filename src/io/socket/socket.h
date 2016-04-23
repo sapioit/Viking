@@ -20,14 +20,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define SOCKET_SOCKET_H
 
 #include <arpa/inet.h>
+#include <functional>
+#include <memory>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <memory>
 #include <unistd.h>
 #include <vector>
-#include <functional>
 
 namespace io {
 class tcp_socket {
@@ -84,9 +84,9 @@ class tcp_socket {
             bytes_read_loop = ::read(fd_, &result.front() + old_size, max_read);
             bytes_read_total += bytes_read_loop > 0 ? bytes_read_loop : 0;
             result.resize(bytes_read_total);
-            if(bytes_read_loop > 0)
+            if (bytes_read_loop > 0)
                 max_read = std::max(max_read, static_cast<std::size_t>(bytes_read_loop));
-        } while(bytes_read_loop > 0);
+        } while (bytes_read_loop > 0);
 
         if (bytes_read_total == 0)
             throw connection_closed_by_peer{fd_, this};

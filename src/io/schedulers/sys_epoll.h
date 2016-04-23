@@ -19,9 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef SYS_EPOLL_H
 #define SYS_EPOLL_H
 
+#include <io/schedulers/channel.h>
 #include <sys/epoll.h>
 #include <vector>
-#include <io/schedulers/channel.h>
 
 class epoll {
     int efd_;

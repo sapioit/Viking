@@ -19,10 +19,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ROUTESMANAGER_H
 #define ROUTESMANAGER_H
 
-#include <http/request.h>
-#include <http/response.h>
-#include <http/resolution.h>
 #include <functional>
+#include <http/request.h>
+#include <http/resolution.h>
+#include <http/response.h>
 
 typedef std::function<bool(std::string)> route_validator;
 typedef std::pair<http::method, route_validator> method_route_validator;

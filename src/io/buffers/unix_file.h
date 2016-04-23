@@ -19,11 +19,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef UNIX_FILE_H
 #define UNIX_FILE_H
 
+#include <functional>
 #include <io/buffers/datasource.h>
 #include <io/filesystem.h>
-#include <sys/types.h>
-#include <functional>
 #include <string>
+#include <sys/types.h>
 
 namespace io {
 struct unix_file : public data_source {
