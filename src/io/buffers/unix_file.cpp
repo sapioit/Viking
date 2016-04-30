@@ -62,31 +62,28 @@ unix_file::unix_file(const std::string &path, aquire_func a, release_func r)
     size = stat.st_size;
 }
 
-std::uint64_t unix_file::send_to_fd(int other_file) {
-    const ssize_t ret = ::sendfile64(other_file, fd, std::addressof(offset), size_left());
-    if (ret == -1) {
+std::uint64_t unix_file::send_to_fd(int other_file, error_code &ec) noexcept {
+    ec = error_code::none;
+    const ssize_t sent = ::sendfile64(other_file, fd, std::addressof(offset), size_left());
+    if (sent == -1) {
         switch (errno) {
         case EAGAIN:
-            return 0;
+            ec = error_code::blocked;
+            break;
         case EINVAL:
-            throw diy{this};
+            ec = error_code::diy;
             break;
         case EBADF:
-            throw bad_file{this};
-            break;
         case EIO:
-            throw bad_file{this};
-            break;
-        case EFAULT:
-            // WTF
+            ec = error_code::bad_file;
             break;
         case EPIPE:
-            throw broken_pipe{this};
+            ec = error_code::broken_pipe;
         default:
             break;
         }
     }
-    return ret;
+    return sent >= 0 ? sent : 0;
 }
 
 std::uint64_t unix_file::size_left() const noexcept { return static_cast<std::size_t>(size - offset); }

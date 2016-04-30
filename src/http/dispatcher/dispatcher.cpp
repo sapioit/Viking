@@ -41,9 +41,6 @@ static response_serializer serializer;
 
 class dispatcher::dispatcher_impl {
     route_map routes;
-    typedef std::unique_ptr<http::context> ctx_ptr;
-    typedef std::unordered_map<const io::channel *, ctx_ptr> transaction_map;
-    transaction_map unfinished_transactions;
 
     public:
     dispatcher_impl() = default;
@@ -63,11 +60,13 @@ class dispatcher::dispatcher_impl {
 
             http::context &context = *static_cast<http::context *>(connection->cookie);
             if (context().complete()) {
+                static int i = 0;
+                debug(++i);
                 auto resp = process_request(context.get_request());
                 remove_pending_contexts(connection);
                 return resp;
             }
-        } catch (const io::tcp_socket::connection_closed_by_peer &) {
+        } catch (http::context::connection_closed_by_peer) {
             throw;
         }
         return {};

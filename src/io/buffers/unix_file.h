@@ -59,6 +59,8 @@ struct unix_file : public data_source {
         const unix_file *ptr;
     };
 
+    enum class error_code { none, blocked, broken_pipe, bad_file, diy };
+
     unix_file() = default;
     virtual ~unix_file();
     unix_file(const std::string &, aquire_func a, release_func r);
@@ -68,7 +70,7 @@ struct unix_file : public data_source {
     unix_file &operator=(const unix_file &) = delete;
     virtual operator bool() const noexcept;
     virtual bool intact() const noexcept;
-    std::uint64_t send_to_fd(int);
+    std::uint64_t send_to_fd(int, error_code &) noexcept;
     std::uint64_t size_left() const noexcept;
 };
 }

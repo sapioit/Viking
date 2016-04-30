@@ -71,67 +71,74 @@ class tcp_socket {
     int available_read() const;
     void close();
 
-    template <typename T> T read_some() const {
-        T result;
+    enum class error_code { none, blocked, connection_closed_by_peer, unknown_error };
 
-        static std::size_t max_read = 500;
+    std::size_t write(const char *data, std::size_t, error_code &) const noexcept;
+    std::size_t read(char *const, std::size_t, error_code &) const noexcept;
+    std::string read(error_code &) const noexcept;
 
-        std::size_t bytes_read_total = 0;
-        ssize_t bytes_read_loop = 0;
-        do {
-            auto old_size = result.size();
-            result.resize(old_size + static_cast<std::size_t>(max_read));
-            bytes_read_loop = ::read(fd_, &result.front() + old_size, max_read);
-            bytes_read_total += bytes_read_loop > 0 ? bytes_read_loop : 0;
-            result.resize(bytes_read_total);
-            if (bytes_read_loop > 0)
-                max_read = std::max(max_read, static_cast<std::size_t>(bytes_read_loop));
-        } while (bytes_read_loop > 0);
+    //    template <typename T> T read_some() const {
+    //        T result;
 
-        if (bytes_read_total == 0)
-            throw connection_closed_by_peer{fd_, this};
-        if (bytes_read_loop == -1)
-            result.resize(static_cast<std::size_t>(bytes_read_total));
-        return result;
-    }
+    //        static std::size_t max_read = 500;
 
-    template <typename T> std::size_t write_some(const T &data) const {
+    //        std::size_t bytes_read_total = 0;
+    //        ssize_t bytes_read_loop = 0;
+    //        do {
+    //            auto old_size = result.size();
+    //            result.resize(old_size + static_cast<std::size_t>(max_read));
+    //            bytes_read_loop = ::read(fd_, &result.front() + old_size, max_read);
+    //            bytes_read_total += bytes_read_loop > 0 ? bytes_read_loop : 0;
+    //            result.resize(bytes_read_total);
+    //            if (bytes_read_loop > 0)
+    //                max_read = std::max(max_read, static_cast<std::size_t>(bytes_read_loop));
+    //        } while (bytes_read_loop > 0);
 
-        auto total_to_write = data.size();
-        std::size_t bytes_written_total = 0;
-        ssize_t bytes_written_loop = 0;
+    //        if (bytes_read_total == 0)
+    //            throw connection_closed_by_peer{fd_, this};
+    //        if (bytes_read_loop == -1)
+    //            result.resize(static_cast<std::size_t>(bytes_read_total));
+    //        return result;
+    //    }
 
-        do {
-            std::uint64_t flags = MSG_NOSIGNAL;
-            auto left_to_write = total_to_write - bytes_written_total;
-            static unsigned int page_size = getpagesize();
-            if (left_to_write >= page_size / 2)
-                flags |= MSG_MORE;
-            bytes_written_loop =
-                ::send(fd_, static_cast<const void *>(data.data() + bytes_written_total), left_to_write, flags);
-            if (bytes_written_loop > 0)
-                bytes_written_total += bytes_written_loop;
-        } while (bytes_written_loop > 0 && bytes_written_total < total_to_write);
+    //    template <typename T> std::size_t write_some(const T &data) const {
 
-        if (bytes_written_loop == -1) {
-            switch (errno) {
-            case EWOULDBLOCK:
-                return bytes_written_total;
-            case EPIPE:
-            case ECONNRESET:
-                throw connection_closed_by_peer{fd_, this};
-            default:
-                break;
-            }
-        }
-        return bytes_written_total;
-    }
+    //        auto total_to_write = data.size();
+    //        std::size_t bytes_written_total = 0;
+    //        ssize_t bytes_written_loop = 0;
+
+    //        do {
+    //            std::uint64_t flags = MSG_NOSIGNAL;
+    //            auto left_to_write = total_to_write - bytes_written_total;
+    //            static unsigned int page_size = getpagesize();
+    //            if (left_to_write >= page_size / 2)
+    //                flags |= MSG_MORE;
+    //            bytes_written_loop =
+    //                ::send(fd_, static_cast<const void *>(data.data() + bytes_written_total), left_to_write, flags);
+    //            if (bytes_written_loop > 0)
+    //                bytes_written_total += bytes_written_loop;
+    //        } while (bytes_written_loop > 0 && bytes_written_total < total_to_write);
+
+    //        if (bytes_written_loop == -1) {
+    //            switch (errno) {
+    //            case EWOULDBLOCK:
+    //                return bytes_written_total;
+    //            case EPIPE:
+    //            case ECONNRESET:
+    //                throw connection_closed_by_peer{fd_, this};
+    //            default:
+    //                break;
+    //            }
+    //        }
+    //        return bytes_written_total;
+    //    }
 
     private:
     int fd_ = -1;
     bool connection_ = false;
     struct sockaddr_in address_;
     int port_;
+    std::uint8_t flags;
 };
 }
 

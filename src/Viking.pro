@@ -13,6 +13,7 @@ QMAKE_CXXFLAGS += -Wall -Werror
 QMAKE_CXXFLAGS += -Ijson/ -I$$PWD -I/usr/include/
 DEFINES += API_LIBRARY
 LIBS += -lstdc++fs -lz
+QMAKE_LFLAGS += -rdynamic
 
 
 QMAKE_CXXFLAGS_DEBUG += -O0 -g
@@ -38,7 +39,8 @@ SOURCES += \
     io/schedulers/channel.cpp \
     http/resolution.cpp \
     cache/resource_cache.cpp \
-    http/directory_listing.cpp
+    http/directory_listing.cpp \
+    misc/debug.cpp
 
 HEADERS += \
     cache/file_descriptor.h \

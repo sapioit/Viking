@@ -43,6 +43,9 @@ class context {
     const request &get_request() const noexcept;
     http::context &operator()();
     bool complete() const noexcept;
+    struct connection_closed_by_peer {
+        const context *me;
+    };
 };
 };
 

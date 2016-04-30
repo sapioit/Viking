@@ -40,9 +40,8 @@ class epoll {
         bool operator==(const event &other) const { return context == other.context; }
         inline bool can_write() const noexcept { return (description & epoll::write); }
         inline bool can_read() const noexcept { return (description & epoll::read); }
-        inline bool can_terminate() const noexcept {
-            return (description & epoll::termination) || (description & epoll::Error);
-        }
+        inline bool can_terminate() const noexcept { return description & epoll::termination; }
+        inline bool has_error() const noexcept { return description & epoll::error; }
     };
 
     struct poll_error : public std::runtime_error {
@@ -53,7 +52,7 @@ class epoll {
     static constexpr std::uint32_t write = EPOLLOUT;
     static constexpr std::uint32_t termination = EPOLLRDHUP;
     static constexpr std::uint32_t edge_triggered = EPOLLET;
-    static constexpr std::uint32_t Error = EPOLLERR;
+    static constexpr std::uint32_t error = EPOLLERR;
     void schedule(io::channel *);
     void update(const io::channel *);
     void remove(const io::channel *);

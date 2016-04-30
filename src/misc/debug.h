@@ -27,6 +27,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define debug(x)
 #endif
 
+void bug_on(bool condition, const std::string &text);
+
+#define BUG_ON(x, t)                                                                                                   \
+    if (x)                                                                                                             \
+        debug(t);                                                                                                      \
+    exit(EXIT_FAILURE);
+
 // void debug(const std::string &message) noexcept;
 
 #endif // DEBUG_H

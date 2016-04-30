@@ -17,6 +17,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 #include <algorithm>
+#include <execinfo.h>
 #include <io/buffers/utils.h>
 #include <io/schedulers/io_scheduler.h>
 #include <io/schedulers/sys_epoll.h>
@@ -25,7 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdexcept>
 #include <typeindex>
 #include <utility>
-
 using namespace io;
 
 class scheduler::scheduler_impl {
@@ -75,6 +75,11 @@ class scheduler::scheduler_impl {
                 remove(event.context);
                 continue;
             }
+            if (event.has_error()) {
+                debug("epoll event has error");
+                remove(event.context);
+                continue;
+            }
             if (event.can_read()) {
                 process_read(event.context);
             }
@@ -91,8 +96,7 @@ class scheduler::scheduler_impl {
                 auto new_connection = channel->socket->accept();
                 if (*new_connection) {
                     new_connection->make_non_blocking();
-                    add(std::move(new_connection),
-                        static_cast<std::uint32_t>(epoll::read) | static_cast<std::uint32_t>(epoll::termination));
+                    add(std::move(new_connection), epoll::read | epoll::termination);
                 } else
                     break;
             } catch (epoll::poll_error &) {
@@ -113,15 +117,15 @@ class scheduler::scheduler_impl {
                     enqueue_item(channel, callback_response, false);
                 process_write(channel);
             }
-        } catch (const io::tcp_socket::connection_closed_by_peer &) {
+        } catch (...) {
             remove(channel);
         }
     }
 
     void process_write(channel *channel) noexcept {
         try {
-            auto filled = false;
-            while (channel->queue && !filled) {
+            auto blocked = false;
+            while (channel->queue && !blocked) {
                 if (channel->queue.is_front_async()) {
 
                     /* We've encountered a barrier, that means we have to check if the
@@ -139,79 +143,96 @@ class scheduler::scheduler_impl {
                     }
                 }
 
-                filled = fill_channel(channel);
+                blocked = fill_channel(channel);
 
-                if (!channel->queue) {
-                    if (channel->queue.keep_file_open()) {
-                        channel->flags &= ~epoll::write;
+                if (blocked) {
+                    if (!channel->queue) {
+                        if (channel->queue.keep_file_open()) {
+                            channel->flags &= ~epoll::write;
+                            channel->flags |= epoll::read;
+                            callbacks.on_remove(channel);
+                            poll.update(channel);
+                        } else {
+                            remove(channel);
+                        }
+                    }
+                } else {
+                    if (channel->queue) {
+                        channel->flags |= epoll::write;
                         channel->flags |= epoll::read;
-                        callbacks.on_remove(channel);
+                        channel->flags &= ~epoll::edge_triggered;
+                        poll.update(channel);
                     } else {
-                        remove(channel);
-                        return;
+                        if (channel->queue.keep_file_open()) {
+
+                            channel->flags &= ~epoll::write;
+                            channel->flags |= epoll::read;
+                            callbacks.on_remove(channel);
+                            poll.update(channel);
+                        } else {
+                            remove(channel);
+                        }
                     }
                 }
             }
-
-            /* If the socket could have had more data written to it, we set it back to level triggered mode so that
-             * the polling service notifies us again
-             */
-
-            filled ? channel->flags |= epoll::edge_triggered : channel->flags &= ~epoll::edge_triggered;
-            poll.update(channel);
         } catch (...) {
             remove(channel);
         }
     }
 
     bool fill_channel(channel *channel) {
-        auto &front = *channel->queue.front();
+        if (!channel->queue.buffers_left())
+            return false;
+        auto &front = *(channel->queue.front());
         std::type_index sched_item_type = typeid(front);
 
         if (sched_item_type == typeid(memory_buffer)) {
             memory_buffer *mem_buffer = reinterpret_cast<memory_buffer *>(channel->queue.front());
-            try {
-                if (const auto written = channel->socket->write_some(mem_buffer->data)) {
-                    if (written == mem_buffer->data.size())
-                        channel->queue.remove_front();
-                    else
-                        std::vector<char>(mem_buffer->data.begin() + written, mem_buffer->data.end())
-                            .swap(mem_buffer->data);
+            io::tcp_socket::error_code ec;
+            const auto written = channel->socket->write(mem_buffer->data.data(), mem_buffer->data.size(), ec);
+            if (ec == io::tcp_socket::error_code::blocked || ec == io::tcp_socket::error_code::none) {
+                if (written == mem_buffer->data.size()) {
+                    channel->queue.remove_front();
+                    return fill_channel(channel);
                 } else {
-                    return true;
+                    std::vector<char>(mem_buffer->data.begin() + written, mem_buffer->data.end())
+                        .swap(mem_buffer->data);
                 }
-            } catch (tcp_socket::write_error) {
-                debug("Caught exception when writing a memory buffer: write_error. errno = " + std::to_string(errno));
-                throw write_error{};
-            } catch (tcp_socket::connection_closed_by_peer) {
+                return true;
+            } else {
                 throw write_error{};
             }
-
         } else if (sched_item_type == typeid(io::unix_file)) {
             io::unix_file *unix_file = reinterpret_cast<io::unix_file *>(channel->queue.front());
-            try {
+            io::unix_file::error_code ec;
+
+            do {
                 auto size_left = unix_file->size_left();
-                if (const auto written = unix_file->send_to_fd(channel->socket->get_fd())) {
-                    if (written == size_left)
-                        channel->queue.remove_front();
-                } else {
-                    return true;
+                auto written = unix_file->send_to_fd(channel->socket->get_fd(), ec);
+                // TODO handle ec
+                if (written == size_left) {
+                    channel->queue.remove_front();
+                    return fill_channel(channel);
                 }
-            } catch (const unix_file::diy &e) {
+            } while (ec == io::unix_file::error_code::none);
+            if (ec == io::unix_file::error_code::blocked)
+                return true;
+            if (ec == io::unix_file::error_code::diy) {
                 /* This is how Linux tells you that you'd better do it yourself in userspace.
                  * We need to replace this item with a MemoryBuffer version of this
                  * data, at the right offset.
                  */
-                try {
-                    debug("diy");
-                    auto buffer = from(*e.ptr);
-                    channel->queue.replace_front(std::move(buffer));
-                    return fill_channel(channel);
-                } catch (...) {
-                    throw write_error{};
-                }
-            } catch (...) {
-                debug("Caught exception when writing a unix file");
+                debug("diy");
+                auto buffer = from(*unix_file);
+                channel->queue.replace_front(std::move(buffer));
+                return fill_channel(channel);
+            }
+            if (ec == io::unix_file::error_code::broken_pipe) {
+                debug("Error when writing a unix file: broken pipe");
+                throw write_error{};
+            }
+            if (ec == io::unix_file::error_code::bad_file) {
+                debug("Error when writing a unix file: bad file");
                 throw write_error{};
             }
         }
@@ -222,11 +243,36 @@ class scheduler::scheduler_impl {
         back ? c->queue.put_back(std::move(item)) : c->queue.put_after_first_intact(std::move(item));
     }
 
-    void remove(channel *c) noexcept {
-        callbacks.on_remove(c);
-        poll.remove(c);
-        channels.erase(std::remove_if(channels.begin(), channels.end(), [&c](auto &ctx) { return c == &*ctx; }),
-                       channels.end());
+    void remove(channel *channel) noexcept {
+        if (channel->queue) {
+            debug("Attempted to kill a channel with buffers still left");
+            int j, nptrs;
+            void *buffer[500];
+            char **strings;
+
+            nptrs = backtrace(buffer, 500);
+            printf("backtrace() returned %d addresses\n", nptrs);
+
+            /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
+               would produce similar output to the following: */
+
+            strings = backtrace_symbols(buffer, nptrs);
+            if (strings == NULL) {
+                perror("backtrace_symbols");
+                exit(EXIT_FAILURE);
+            }
+
+            for (j = 0; j < nptrs; j++)
+                printf("%s\n", strings[j]);
+
+            free(strings);
+            exit(EXIT_FAILURE);
+        }
+        callbacks.on_remove(channel);
+        poll.remove(channel);
+        channels.erase(
+            std::remove_if(channels.begin(), channels.end(), [&channel](auto &ctx) { return channel == ctx.get(); }),
+            channels.end());
     }
 };
 

@@ -84,7 +84,10 @@ const http::request &http::context::get_request() const noexcept { return m_requ
 
 http::context &http::context::operator()() {
     try {
-        buffer += m_socket->read_some<std::string>();
+        io::tcp_socket::error_code ec;
+        buffer += m_socket->read(ec);
+        if (unlikely(ec == io::tcp_socket::error_code::connection_closed_by_peer))
+            throw connection_closed_by_peer{this};
         parser_.data = reinterpret_cast<void *>(this);
         http_parser_init(&parser_, HTTP_REQUEST);
         http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
