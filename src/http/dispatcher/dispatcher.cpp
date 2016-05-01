@@ -60,8 +60,6 @@ class dispatcher::dispatcher_impl {
 
             http::context &context = *static_cast<http::context *>(connection->cookie);
             if (context().complete()) {
-                static int i = 0;
-                debug(++i);
                 auto resp = process_request(context.get_request());
                 remove_pending_contexts(connection);
                 return resp;
