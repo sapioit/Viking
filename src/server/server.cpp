@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/dispatcher/dispatcher.h>
 #include <io/schedulers/channel.h>
 #include <io/schedulers/io_scheduler.h>
+#include <io/socket/ssl_socket.h>
 #include <misc/debug.h>
 #include <misc/storage.h>
 #include <server/server.h>
@@ -31,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace web;
 using namespace io;
-static tcp_socket *make_socket(int port, int max_pending);
+static tcp_socket *make_socket(int port, int max_pending, bool ssl);
 
 class server::server_impl {
     int m_port;
@@ -58,7 +59,7 @@ class server::server_impl {
         ignore_sigpipe();
         debug("Pid = " + std::to_string(getpid()));
 
-        if (auto sock = make_socket(m_port, m_max_pending)) {
+        if (auto sock = make_socket(m_port, m_max_pending, false)) {
             io::scheduler::callback_set callbacks;
 
             namespace ph = std::placeholders;
@@ -67,6 +68,8 @@ class server::server_impl {
             callbacks.on_remove = std::bind(&dispatcher::will_remove, &m_dispatcher, ph::_1);
 
             m_scheduler = io::scheduler(sock, callbacks);
+            if (auto ssl_sock = make_socket(8080, m_max_pending, true))
+                m_scheduler.add(ssl_sock);
         } else {
             throw server::port_in_use{m_port};
         }
@@ -107,9 +110,13 @@ class server::server_impl {
     }
 };
 
-static io::tcp_socket *make_socket(int port, int max_pending) {
+static io::tcp_socket *make_socket(int port, int max_pending, bool ssl) {
     try {
-        auto sock = new io::tcp_socket(port);
+        tcp_socket *sock;
+        if (ssl)
+            sock = new io::ssl_socket(port);
+        else
+            sock = new io::tcp_socket(port);
         sock->bind();
         sock->make_non_blocking();
         sock->listen(max_pending);

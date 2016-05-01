@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fcntl.h>
 #include <io/buffers/unix_file.h>
 #include <io/filesystem.h>
+#include <sys/mman.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -28,6 +29,9 @@ using namespace io;
 void unix_file::close() {
     if (-1 != fd) {
         release_func_(fd);
+    }
+    if (mem_mapping) {
+        munmap(mem_mapping, size);
     }
 }
 
@@ -42,6 +46,8 @@ unix_file &unix_file::operator=(unix_file &&other) {
         other.fd = -1;
         offset = other.offset;
         other.offset = 0;
+        mem_mapping = other.mem_mapping;
+        other.mem_mapping = nullptr;
     }
     return *this;
 }
@@ -53,13 +59,12 @@ unix_file::operator bool() const noexcept { return !(offset == size); }
 unix_file::unix_file(const std::string &path, aquire_func a, release_func r)
     : path(path), aquire_func_(a), release_func_(r) {
     fd = aquire_func_(path);
-    if (-1 == fd)
-        throw error{path};
-    struct stat64 stat;
-    if (-1 == ::stat64(path.c_str(), &stat)) {
-        throw error{path};
-    }
-    size = stat.st_size;
+    size = fs::file_size(path);
+    mem_mapping = (char *)::mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+    if ((void *)mem_mapping == (void *)MAP_FAILED)
+        mem_mapping = nullptr;
+    else
+        madvise(mem_mapping, size, MADV_SEQUENTIAL | MADV_WILLNEED);
 }
 
 std::uint64_t unix_file::send_to_fd(int other_file, error_code &ec) noexcept {

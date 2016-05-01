@@ -12,7 +12,9 @@ QMAKE_CXXFLAGS += -std=c++1z
 QMAKE_CXXFLAGS += -Wall -Werror
 QMAKE_CXXFLAGS += -Ijson/ -I$$PWD -I/usr/include/
 DEFINES += API_LIBRARY
-LIBS += -lstdc++fs -lz
+#QMAKE_LFLAGS += -Llib/
+QMAKE_LIBDIR += /home/vladimir/Documents/Viking/src/lib
+LIBS += -lstdc++fs -lz -ls2n -ldl
 QMAKE_LFLAGS += -rdynamic
 
 
@@ -27,7 +29,9 @@ HEADERS += \
     http/directory_listing.h \
     inl/methods.h \
     inl/status_codes.h \
-    misc/compression.h
+    misc/compression.h \
+    io/socket/ssl_socket.h \
+    cache/memory_mapping.h
 #INL-END
 
 #CACHE
@@ -40,7 +44,9 @@ SOURCES += \
     http/resolution.cpp \
     cache/resource_cache.cpp \
     http/directory_listing.cpp \
-    misc/debug.cpp
+    misc/debug.cpp \
+    io/socket/ssl_socket.cpp \
+    cache/memory_mapping.cpp
 
 HEADERS += \
     cache/file_descriptor.h \
@@ -134,6 +140,11 @@ HEADERS += \
 
 SOURCES += \
     ../test/test.cpp
+
+#SSL
+HEADERS += \
+    ssl/s2n.h
+#SSL-END
 
 unix {
     target.path = /mnt/exthdd/debugg

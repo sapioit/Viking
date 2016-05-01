@@ -55,6 +55,11 @@ class scheduler::scheduler_impl {
         }
     }
 
+    void add(tcp_socket *socket) {
+        std::uint32_t flags = epoll::read | epoll::termination;
+        add(socket, flags);
+    }
+
     void run() noexcept {
         auto events = poll.await();
         for (auto &event : events) {
@@ -89,7 +94,7 @@ class scheduler::scheduler_impl {
         do {
             try {
                 auto new_connection = channel->socket->accept();
-                if (*new_connection) {
+                if (new_connection) {
                     new_connection->make_non_blocking();
                     add(new_connection.release(), epoll::read | epoll::termination);
                 } else
@@ -200,34 +205,51 @@ class scheduler::scheduler_impl {
         } else if (sched_item_type == typeid(io::unix_file)) {
             io::unix_file *unix_file = reinterpret_cast<io::unix_file *>(channel->queue.front());
             io::unix_file::error_code ec;
+            io::tcp_socket::error_code sock_ec;
 
-            do {
-                auto size_left = unix_file->size_left();
-                auto written = unix_file->send_to_fd(channel->socket->get_fd(), ec);
-                if (written == size_left) {
-                    channel->queue.remove_front();
+            if (channel->socket->flags & 1 << 1) {
+                do {
+                    auto size_left = unix_file->size_left();
+                    std::size_t written = 0;
+                    written = channel->socket->write(unix_file->mem_mapping + unix_file->offset, size_left, sock_ec);
+                    if (written > 0)
+                        unix_file->offset += written;
+                    if (written == size_left) {
+                        channel->queue.remove_front();
+                        return fill_channel(channel);
+                    }
+
+                } while (sock_ec == io::tcp_socket::error_code::none);
+            } else {
+                do {
+                    auto size_left = unix_file->size_left();
+                    auto written = unix_file->send_to_fd(channel->socket->get_fd(), ec);
+
+                    if (written == size_left) {
+                        channel->queue.remove_front();
+                        return fill_channel(channel);
+                    }
+                } while (ec == io::unix_file::error_code::none);
+                if (ec == io::unix_file::error_code::blocked)
+                    return true;
+                if (ec == io::unix_file::error_code::diy) {
+                    /* This is how Linux tells you that you'd better do it yourself in userspace.
+                     * We need to replace this item with a MemoryBuffer version of this
+                     * data, at the right offset.
+                     */
+                    debug("diy");
+                    auto buffer = from(*unix_file);
+                    channel->queue.replace_front(std::move(buffer));
                     return fill_channel(channel);
                 }
-            } while (ec == io::unix_file::error_code::none);
-            if (ec == io::unix_file::error_code::blocked)
-                return true;
-            if (ec == io::unix_file::error_code::diy) {
-                /* This is how Linux tells you that you'd better do it yourself in userspace.
-                 * We need to replace this item with a MemoryBuffer version of this
-                 * data, at the right offset.
-                 */
-                debug("diy");
-                auto buffer = from(*unix_file);
-                channel->queue.replace_front(std::move(buffer));
-                return fill_channel(channel);
-            }
-            if (ec == io::unix_file::error_code::broken_pipe) {
-                debug("Error when writing a unix file: broken pipe");
-                throw write_error{};
-            }
-            if (ec == io::unix_file::error_code::bad_file) {
-                debug("Error when writing a unix file: bad file");
-                throw write_error{};
+                if (ec == io::unix_file::error_code::broken_pipe) {
+                    debug("Error when writing a unix file: broken pipe");
+                    throw write_error{};
+                }
+                if (ec == io::unix_file::error_code::bad_file) {
+                    debug("Error when writing a unix file: bad file");
+                    throw write_error{};
+                }
             }
         }
         return false;
@@ -238,7 +260,7 @@ class scheduler::scheduler_impl {
     }
 
     void remove(channel *channel) noexcept {
-        WARN_ON(channel->queue, "Attempted to kill a channel with buffers still left");
+        // WARN_ON(channel->queue, "Attempted to kill a channel with buffers still left");
         callbacks.on_remove(channel);
         poll.remove(channel);
         delete channel;
@@ -255,7 +277,7 @@ scheduler::scheduler() {
 
 scheduler::scheduler(tcp_socket *sock, callback_set callbacks) {
     try {
-        impl = new scheduler_impl(std::move(sock), callbacks);
+        impl = new scheduler_impl(sock, callbacks);
     } catch (...) {
         throw;
     }
@@ -265,7 +287,15 @@ scheduler::~scheduler() { delete impl; }
 
 void scheduler::add(io::tcp_socket *socket, uint32_t flags) {
     try {
-        impl->add(std::move(socket), flags);
+        impl->add(socket, flags);
+    } catch (const epoll::poll_error &) {
+        throw;
+    }
+}
+
+void scheduler::add(io::tcp_socket *socket) {
+    try {
+        impl->add(socket);
     } catch (const epoll::poll_error &) {
         throw;
     }

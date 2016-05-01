@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace io {
 class tcp_socket {
     protected:
-    tcp_socket() = default;
+    tcp_socket(int fd, int port);
 
     public:
     struct port_in_use {
@@ -48,7 +48,7 @@ class tcp_socket {
     bool operator==(const tcp_socket &) const;
     operator bool() const;
     virtual ~tcp_socket();
-    std::unique_ptr<tcp_socket> accept() const;
+    virtual std::unique_ptr<tcp_socket> accept() const;
     inline int get_fd() const { return fd_; }
     bool is_acceptor() const;
     void bind() const;
@@ -58,15 +58,18 @@ class tcp_socket {
 
     enum class error_code { none, blocked, connection_closed_by_peer, unknown_error };
 
-    std::size_t write(const char *data, std::size_t, error_code &) const noexcept;
-    std::size_t read(char *const, std::size_t, error_code &) const noexcept;
-    std::string read(error_code &) const noexcept;
+    virtual std::size_t write(const char *data, std::size_t, error_code &) const noexcept;
+    virtual std::size_t read(char *const, std::size_t, error_code &) const noexcept;
+    virtual std::string read(error_code &) const noexcept;
 
-    private:
+    protected:
     int fd_ = -1;
+    int port_;
     bool connection_ = false;
     struct sockaddr_in address_;
-    int port_;
+
+    public:
+    std::uint8_t flags;
 };
 }
 

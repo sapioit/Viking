@@ -38,8 +38,7 @@ std::unique_ptr<io::memory_buffer> from(const io::unix_file &file) {
     auto at = length + file.offset - pa_offset;
 
     char *const mem_zone = static_cast<char *>(::mmap(NULL, at, PROT_READ, MAP_SHARED, file.fd, file.offset));
-    if (mem_zone == MAP_FAILED)
-        throw io::unix_file::bad_file{std::addressof(file)};
+
     const char *const my_thing = mem_zone + file.offset - pa_offset;
     auto result = std::make_unique<io::memory_buffer>(std::vector<char>{my_thing, my_thing + length});
     ::munmap(mem_zone, at);

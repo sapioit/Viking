@@ -30,6 +30,7 @@ struct unix_file : public data_source {
     int fd = -1;
     off64_t size = 0;
     off64_t offset = 0;
+    char *mem_mapping;
 
     public:
     typedef std::function<int(const std::string &)> aquire_func;
@@ -42,23 +43,6 @@ struct unix_file : public data_source {
     void close();
 
     public:
-    struct error {
-        std::string path;
-        error() = default;
-        virtual ~error() = default;
-        error(const std::string &path) : path(path) {}
-    };
-    struct bad_file {
-        const unix_file *ptr;
-    };
-
-    struct diy {
-        const unix_file *ptr;
-    };
-    struct broken_pipe {
-        const unix_file *ptr;
-    };
-
     enum class error_code { none, blocked, broken_pipe, bad_file, diy };
 
     unix_file() = default;

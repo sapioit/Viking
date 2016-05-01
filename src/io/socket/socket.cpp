@@ -18,6 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include <io/socket/socket.h>
+#include <misc/common.h>
 #include <misc/debug.h>
 
 #include <assert.h>
@@ -27,7 +28,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace io;
 
-tcp_socket::tcp_socket(int port) : connection_(false), port_(port) {
+tcp_socket::tcp_socket(int fd, int port) : fd_(fd), port_(port), connection_(true), flags(0) {}
+
+tcp_socket::tcp_socket(int port) : port_(port), connection_(false), flags(0) {
     if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Could not create socket");
     int opt = 1;
@@ -47,6 +50,8 @@ tcp_socket &tcp_socket::operator=(tcp_socket &&other) {
         port_ = other.port_;
         address_ = other.address_;
         connection_ = other.connection_;
+        flags = other.flags;
+        other.flags = 0;
         other.fd_ = -1;
     }
     return *this;
@@ -79,10 +84,11 @@ std::unique_ptr<tcp_socket> tcp_socket::accept() const {
     struct sockaddr in_addr;
     socklen_t in_len;
     in_len = sizeof(in_addr);
-    tcp_socket *sock = new tcp_socket();
-    sock->connection_ = true;
-    sock->port_ = port_;
-    sock->fd_ = ::accept(fd_, &in_addr, &in_len);
+
+    int new_fd = ::accept(fd_, &in_addr, &in_len);
+    if (unlikely(new_fd == -1))
+        return nullptr;
+    tcp_socket *sock = new tcp_socket(new_fd, port_);
     return std::unique_ptr<tcp_socket>(sock);
 }
 

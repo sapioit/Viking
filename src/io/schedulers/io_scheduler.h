@@ -57,6 +57,7 @@ class scheduler {
     scheduler &operator=(scheduler &&);
 
     void add(tcp_socket *socket, std::uint32_t flags);
+    void add(tcp_socket *socket);
     void run() noexcept;
 };
 }
