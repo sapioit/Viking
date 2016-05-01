@@ -83,19 +83,15 @@ const io::tcp_socket *http::context::get_socket() const { return m_socket; }
 const http::request &http::context::get_request() const noexcept { return m_request; }
 
 http::context &http::context::operator()() {
-    try {
-        io::tcp_socket::error_code ec;
-        buffer += m_socket->read(ec);
-        if (unlikely(ec == io::tcp_socket::error_code::connection_closed_by_peer))
-            throw connection_closed_by_peer{this};
-        parser_.data = reinterpret_cast<void *>(this);
-        http_parser_init(&parser_, HTTP_REQUEST);
-        http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
-        complete_ = http::util::is_complete(m_request);
-        return *this;
-    } catch (io::tcp_socket::connection_closed_by_peer &) {
-        throw;
-    }
+    io::tcp_socket::error_code ec;
+    buffer += m_socket->read(ec);
+    if (unlikely(ec == io::tcp_socket::error_code::connection_closed_by_peer))
+        throw connection_closed_by_peer{this};
+    parser_.data = reinterpret_cast<void *>(this);
+    http_parser_init(&parser_, HTTP_REQUEST);
+    http_parser_execute(&parser_, &settings_, &buffer.front(), buffer.size());
+    complete_ = http::util::is_complete(m_request);
+    return *this;
 }
 
 bool http::context::complete() const noexcept { return complete_; }

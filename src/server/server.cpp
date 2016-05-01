@@ -66,7 +66,7 @@ class server::server_impl {
             callbacks.on_read = std::bind(&dispatcher::handle_connection, &m_dispatcher, ph::_1);
             callbacks.on_remove = std::bind(&dispatcher::will_remove, &m_dispatcher, ph::_1);
 
-            m_scheduler = io::scheduler(std::unique_ptr<io::tcp_socket>(sock), callbacks);
+            m_scheduler = io::scheduler(sock, callbacks);
         } else {
             throw server::port_in_use{m_port};
         }

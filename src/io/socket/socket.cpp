@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using namespace io;
 
-tcp_socket::tcp_socket(int port) : connection_(false), port_(port), flags(0) {
+tcp_socket::tcp_socket(int port) : connection_(false), port_(port) {
     if ((fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw std::runtime_error("Could not create socket");
     int opt = 1;
@@ -38,8 +38,6 @@ tcp_socket::tcp_socket(int port) : connection_(false), port_(port), flags(0) {
     address_.sin_port = htons(port);
 }
 
-tcp_socket::tcp_socket(int fd, int port) : fd_(fd), connection_(true), port_(port), flags(0) {}
-
 tcp_socket::tcp_socket(tcp_socket &&other) : fd_(-1) { *this = std::move(other); }
 
 tcp_socket &tcp_socket::operator=(tcp_socket &&other) {
@@ -49,7 +47,6 @@ tcp_socket &tcp_socket::operator=(tcp_socket &&other) {
         port_ = other.port_;
         address_ = other.address_;
         connection_ = other.connection_;
-        flags = other.flags;
         other.fd_ = -1;
     }
     return *this;
@@ -76,21 +73,17 @@ void tcp_socket::make_non_blocking() const {
     if (fcntl(fd_, F_SETFL, flags) == -1)
         throw std::runtime_error("Could not set the non-blocking flag "
                                  "for the file descriptor");
-    flags |= 1 << 1;
 }
-int tcp_socket::available_read() const {
-    int count;
-    if (-1 == ioctl(fd_, FIONREAD, &count)) {
-        debug("ioctl failed, errno " + std::to_string(errno));
-        throw internal_error{fd_, this};
-    }
-    return count;
-}
+
 std::unique_ptr<tcp_socket> tcp_socket::accept() const {
     struct sockaddr in_addr;
     socklen_t in_len;
     in_len = sizeof(in_addr);
-    return std::make_unique<tcp_socket>(::accept(fd_, &in_addr, &in_len), port_);
+    tcp_socket *sock = new tcp_socket();
+    sock->connection_ = true;
+    sock->port_ = port_;
+    sock->fd_ = ::accept(fd_, &in_addr, &in_len);
+    return std::unique_ptr<tcp_socket>(sock);
 }
 
 bool tcp_socket::is_acceptor() const { return (!connection_); }

@@ -33,53 +33,41 @@ epoll::epoll() {
 
 epoll::~epoll() {
     /* We only close the epoll file descriptor, because epoll is aware of
-     * sockets
-     * that get closed */
+     * sockets that get closed */
     if (efd_ != -1)
         ::close(efd_);
 }
 
 void epoll::schedule(io::channel *context) {
-    struct epoll_event ev;
-    memset(&ev, 0, sizeof(struct epoll_event));
-    // ev.data.fd = file_descriptor;
-    ev.data.ptr = context;
-    ev.events = context->flags;
-    if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->get_fd(), &ev)) {
-        if (errno != EEXIST) {
-        } else {
+    auto event = new epoll_event;
+    std::memset(event, 0, sizeof(*event));
+    context->cookie_1 = event;
+
+    event->data.ptr = context;
+    event->events = context->flags;
+    if (-1 == epoll_ctl(efd_, EPOLL_CTL_ADD, context->socket->get_fd(), event)) {
+        if (errno == EEXIST) {
             update(context);
         }
-    } else
-        events_.push_back(ev);
+    }
 }
 
 void epoll::update(const io::channel *context) {
-    auto *event = find_event(context);
+    epoll_event *event = static_cast<epoll_event *>(context->cookie_1);
     if (event) {
         event->events = context->flags;
         if (-1 == epoll_ctl(efd_, EPOLL_CTL_MOD, context->socket->get_fd(), event)) {
-            // WTF?
+            debug("Could not modify the epoll parameters for file with fd = " << context->socket->get_fd());
         }
     }
 }
 
-void epoll::remove(const io::channel *context) {
-    auto event_it =
-        std::find_if(events_.begin(), events_.end(), [context](epoll_event &ev) { return (context == ev.data.ptr); });
-
-    if (event_it != events_.end()) {
-        auto *event = std::addressof(*event_it);
-        if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->get_fd(), event))
-            throw poll_error("Could not remove the file with fd = " + std::to_string(context->socket->get_fd()) +
-                             " from the OS queue");
-
-        events_.erase(std::remove_if(events_.begin(), events_.end(),
-                                     [&event_it](auto &ev) { return ev.data.fd == event_it->data.fd; }),
-                      events_.end());
-    } else {
-        // WTF?
-    }
+void epoll::remove(io::channel *context) {
+    auto event = static_cast<epoll_event *>(context->cookie_1);
+    if (-1 == epoll_ctl(efd_, EPOLL_CTL_DEL, context->socket->get_fd(), event))
+        debug("Could not remove the file with fd = " << context->socket->get_fd() << " from the OS queue");
+    delete event;
+    context->cookie_1 = nullptr;
 }
 
 static std::vector<epoll::event> create_events(const std::vector<epoll_event> &events) noexcept {
@@ -89,6 +77,7 @@ static std::vector<epoll::event> create_events(const std::vector<epoll_event> &e
     }
     return epoll_events;
 }
+
 std::vector<epoll::event> epoll::await(std::uint32_t chunk_size) const {
     std::vector<epoll_event> active_files;
     active_files.resize(chunk_size);
@@ -106,11 +95,6 @@ std::vector<epoll::event> epoll::await(std::uint32_t chunk_size) const {
     return create_events(active_files);
 }
 
-epoll_event *epoll::find_event(const io::channel *channel) {
-    auto event_it = std::find_if(events_.begin(), events_.end(),
-                                 [channel](const epoll_event &ev) { return (channel == ev.data.ptr); });
-    return (event_it == events_.end() ? nullptr : std::addressof(*event_it));
-}
 epoll::event::event(io::channel *context, std::uint32_t description) noexcept : context(context),
                                                                                 description(description) {}
 

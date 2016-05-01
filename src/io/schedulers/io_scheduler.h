@@ -48,7 +48,7 @@ class scheduler {
 
     public:
     scheduler();
-    scheduler(std::unique_ptr<tcp_socket> sock, callback_set);
+    scheduler(tcp_socket *sock, callback_set);
     ~scheduler();
 
     scheduler(const scheduler &) = delete;
@@ -56,7 +56,7 @@ class scheduler {
     scheduler(scheduler &&);
     scheduler &operator=(scheduler &&);
 
-    void add(std::unique_ptr<tcp_socket> socket, std::uint32_t flags);
+    void add(tcp_socket *socket, std::uint32_t flags);
     void run() noexcept;
 };
 }

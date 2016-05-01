@@ -25,9 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class epoll {
     int efd_;
-    std::vector<epoll_event> events_;
-
-    epoll_event *find_event(const io::channel *socket);
 
     public:
     struct event {
@@ -55,7 +52,7 @@ class epoll {
     static constexpr std::uint32_t error = EPOLLERR;
     void schedule(io::channel *);
     void update(const io::channel *);
-    void remove(const io::channel *);
+    void remove(io::channel *);
     std::vector<event> await(std::uint32_t = 1000) const;
 
     epoll();

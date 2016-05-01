@@ -33,14 +33,12 @@ class scheduler::scheduler_impl {
         const epoll::event *event;
     };
     struct write_error {};
-
-    std::vector<std::unique_ptr<channel>> channels;
     epoll poll;
     scheduler::callback_set callbacks;
 
     public:
     scheduler_impl() = default;
-    scheduler_impl(std::unique_ptr<tcp_socket> sock, callback_set callbacks) : callbacks(callbacks) {
+    scheduler_impl(tcp_socket *sock, callback_set callbacks) : callbacks(callbacks) {
         try {
             add(std::move(sock), epoll::read | epoll::termination);
         } catch (const epoll::poll_error &) {
@@ -48,20 +46,17 @@ class scheduler::scheduler_impl {
         }
     }
 
-    void add(std::unique_ptr<tcp_socket> socket, std::uint32_t flags) {
+    void add(tcp_socket *socket, std::uint32_t flags) {
         try {
-            auto ctx = std::make_unique<io::channel>(std::move(socket), flags);
-            poll.schedule(ctx.get());
-            channels.emplace_back(std::move(ctx));
+            auto ctx = new io::channel(socket, flags);
+            poll.schedule(ctx);
         } catch (const epoll::poll_error &) {
             throw;
         }
     }
 
     void run() noexcept {
-        if (channels.size() == 0)
-            return;
-        auto events = poll.await(channels.size());
+        auto events = poll.await();
         for (auto &event : events) {
             if (!(event.context->flags & epoll::edge_triggered)) {
                 event.context->flags |= epoll::edge_triggered;
@@ -96,7 +91,7 @@ class scheduler::scheduler_impl {
                 auto new_connection = channel->socket->accept();
                 if (*new_connection) {
                     new_connection->make_non_blocking();
-                    add(std::move(new_connection), epoll::read | epoll::termination);
+                    add(new_connection.release(), epoll::read | epoll::termination);
                 } else
                     break;
             } catch (epoll::poll_error &) {
@@ -108,6 +103,7 @@ class scheduler::scheduler_impl {
         try {
             if (auto callback_response = callbacks.on_read(channel)) {
                 channel->flags |= epoll::write;
+                channel->flags &= ~epoll::read;
                 poll.update(channel);
                 auto &front = *callback_response.front();
                 std::type_index type = typeid(front);
@@ -164,7 +160,6 @@ class scheduler::scheduler_impl {
                         poll.update(channel);
                     } else {
                         if (channel->queue.keep_file_open()) {
-
                             channel->flags &= ~epoll::write;
                             channel->flags |= epoll::read;
                             callbacks.on_remove(channel);
@@ -209,7 +204,6 @@ class scheduler::scheduler_impl {
             do {
                 auto size_left = unix_file->size_left();
                 auto written = unix_file->send_to_fd(channel->socket->get_fd(), ec);
-                // TODO handle ec
                 if (written == size_left) {
                     channel->queue.remove_front();
                     return fill_channel(channel);
@@ -244,35 +238,10 @@ class scheduler::scheduler_impl {
     }
 
     void remove(channel *channel) noexcept {
-        if (channel->queue) {
-            debug("Attempted to kill a channel with buffers still left");
-            int j, nptrs;
-            void *buffer[500];
-            char **strings;
-
-            nptrs = backtrace(buffer, 500);
-            printf("backtrace() returned %d addresses\n", nptrs);
-
-            /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
-               would produce similar output to the following: */
-
-            strings = backtrace_symbols(buffer, nptrs);
-            if (strings == NULL) {
-                perror("backtrace_symbols");
-                exit(EXIT_FAILURE);
-            }
-
-            for (j = 0; j < nptrs; j++)
-                printf("%s\n", strings[j]);
-
-            free(strings);
-            exit(EXIT_FAILURE);
-        }
+        WARN_ON(channel->queue, "Attempted to kill a channel with buffers still left");
         callbacks.on_remove(channel);
         poll.remove(channel);
-        channels.erase(
-            std::remove_if(channels.begin(), channels.end(), [&channel](auto &ctx) { return channel == ctx.get(); }),
-            channels.end());
+        delete channel;
     }
 };
 
@@ -284,7 +253,7 @@ scheduler::scheduler() {
     }
 }
 
-scheduler::scheduler(std::unique_ptr<tcp_socket> sock, callback_set callbacks) {
+scheduler::scheduler(tcp_socket *sock, callback_set callbacks) {
     try {
         impl = new scheduler_impl(std::move(sock), callbacks);
     } catch (...) {
@@ -294,7 +263,7 @@ scheduler::scheduler(std::unique_ptr<tcp_socket> sock, callback_set callbacks) {
 
 scheduler::~scheduler() { delete impl; }
 
-void scheduler::add(std::unique_ptr<io::tcp_socket> socket, uint32_t flags) {
+void scheduler::add(io::tcp_socket *socket, uint32_t flags) {
     try {
         impl->add(std::move(socket), flags);
     } catch (const epoll::poll_error &) {
