@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <http/resolution.h>
 #include <string>
 
+namespace web {
 struct configuration {
     configuration();
     ~configuration() = default;
@@ -33,5 +34,5 @@ struct configuration {
     bool enable_compression;
     std::function<http::resolution(http::request)> folder_cb;
 };
-
+}
 #endif // SETTINGS_H

@@ -22,11 +22,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <misc/settings.h>
 
 class storage {
-    static configuration m_settings;
+    static web::configuration m_settings;
 
     public:
-    static const configuration &config();
-    static void set_config(const configuration &);
+    static const web::configuration &config();
+    static void set_config(const web::configuration &);
 };
 
 #endif // STORAGE_H

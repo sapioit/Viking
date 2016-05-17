@@ -27,7 +27,7 @@ namespace fs = std::experimental::filesystem;
 
 int main() {
   web::server server(1234);
-  configuration settings;
+  web::configuration settings;
   settings.root_path = "/home/vladimir";
   settings.max_connections = 1000;
   settings.default_max_age = 99999999;
