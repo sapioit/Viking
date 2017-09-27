@@ -1,8 +1,8 @@
-#C++ Web Development Framework v0.8.2
+# C++ Web Development Framework v0.8.2 [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 
 The main goal of this project is to develop a highly scalabe, general purpose HTTP server.
 
-#Features:
+# Features:
 
 High performance
 
@@ -16,13 +16,13 @@ HTTP responses can be returned asynchronously via std::future objects. Works gre
 
 Works fast on embedded platforms - for hobbyists
 
-#Requirements:
+# Requirements:
 
 Linux (anything above kernel version 3 should work)
 
 Modern compiler with filesystem support in the standard library. Tested with GCC 5.3.1 and GCC 6, but Clang fails to compile it due to the incomplete filesystem TS implementation.
 
-#Backlog:
+# Backlog:
 
 Multiple threading within the internals. Request handlers should still be called from the main thread
 
